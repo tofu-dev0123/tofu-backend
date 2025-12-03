@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
+SQLAlchemy>=2.0.0
+asyncmy>=0.2.9
 pymysql
 cryptography
 python-dotenv
