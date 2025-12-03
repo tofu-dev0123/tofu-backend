@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     DB_PASSWORD: Optional[str] = None
     DB_NAME: Optional[str] = None
     
+    # JWT設定
+    SECRET_KEY: Optional[str] = None
+    ALGORITHM: str = "HS256"
+    
     @property
     def db_host(self) -> str:
         """データベースホストを取得（Railway優先、次にカスタム、最後にデフォルト）"""
@@ -88,6 +92,14 @@ class Settings(BaseSettings):
             os.getenv("MYSQL_DATABASE") or
             "blog_db"
         )
+    
+    @property
+    def secret_key(self) -> str:
+        """JWT秘密鍵を取得"""
+        key = self.SECRET_KEY or os.getenv("SECRET_KEY")
+        if not key:
+            raise ValueError("SECRET_KEY環境変数が設定されていません")
+        return key
     
     # データベースURLを構築
     @property

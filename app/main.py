@@ -2,8 +2,12 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.db.database import get_db
+from app.api.admin import auth
 
 app = FastAPI()
+
+# ルーターの登録
+app.include_router(auth.router, prefix="/admin/auth", tags=["admin"])
 
 @app.get("/")
 def health_check():
