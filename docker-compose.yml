@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   api:
     build: .
@@ -7,26 +6,33 @@ services:
       - "8000:8000"
     environment:
       DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
+      DB_PORT: 3306
+      DB_USER: root
       DB_PASSWORD: password
       DB_NAME: blog_db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
 
   db:
-    image: postgres:15
+    image: mysql:8.0
     container_name: blog-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: blog_db
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: blog_db
+      MYSQL_USER: blog_user
+      MYSQL_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db-data:
