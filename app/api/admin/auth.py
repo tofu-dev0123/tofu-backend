@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.auth import LoginRequest, LoginResponse, ErrorResponse, ErrorDetail
-from app.core.security import create_access_token, verify_password, ValidationError, LoginFailError
+from app.schemas.auth import LoginRequest, LoginResponse, ErrorResponse
+from app.core.security import create_access_token, verify_password, LoginFailError
+from app.core.validation import validate_login_request, ValidationError
 
 router = APIRouter()
 
@@ -25,23 +26,7 @@ async def login(
     """
     try:
         # 1. 入力値バリデーション
-        validation_errors = []
-        
-        if not request.username or not request.username.strip():
-            validation_errors.append(
-                ErrorDetail(value="username", message="ユーザー名は必須項目です")
-            )
-        
-        if not request.password or not request.password.strip():
-            validation_errors.append(
-                ErrorDetail(value="password", message="パスワードは必須項目です")
-            )
-        
-        if validation_errors:
-            raise ValidationError(
-                message="",
-                details=validation_errors
-            )
+        validate_login_request(request)
         
         # 2. ユーザー情報を取得
         try:

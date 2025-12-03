@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
-from typing import List
 import bcrypt
 from jose import jwt
 from app.core.config import settings
-from app.schemas.auth import ErrorDetail
 
 
 def create_access_token(user_id: int, username: str) -> str:
@@ -53,14 +51,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         plain_password.encode('utf-8'),
         hashed_password.encode('utf-8')
     )
-
-
-class ValidationError(Exception):
-    """バリデーションエラー"""
-    def __init__(self, message: str, details: List[ErrorDetail]):
-        self.message = message
-        self.details = details
-        super().__init__(self.message)
 
 
 class LoginFailError(Exception):
