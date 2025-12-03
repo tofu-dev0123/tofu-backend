@@ -95,11 +95,11 @@ class Settings(BaseSettings):
         # パスワードに特殊文字が含まれる場合のエスケープ処理
         password = self.db_password.replace("%", "%25").replace("@", "%40")
         # MySQL 8.0のcaching_sha2_password認証に対応するため、allowPublicKeyRetrieval=trueを追加
-        url = f"mysql+pymysql://{self.db_user}:{password}@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4&allowPublicKeyRetrieval=true"
+        url = f"mysql+pymysql://{self.db_user}:{password}@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4"
         
         # デバッグ情報（本番環境でのトラブルシューティング用）
         # パスワードをマスクしたURLをログ出力
-        masked_url = f"mysql+pymysql://{self.db_user}:***@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4&allowPublicKeyRetrieval=true"
+        masked_url = f"mysql+pymysql://{self.db_user}:***@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4"
         print(f"[DEBUG] Database connection URL: {masked_url}")
         print(f"[DEBUG] DB_HOST: {self.db_host}, DB_PORT: {self.db_port}, DB_USER: {self.db_user}, DB_NAME: {self.db_name}")
         
