@@ -20,6 +20,7 @@ def wait_for_database(max_retries=30, retry_interval=1):
     """データベースが準備できるまで待機"""
     print("Waiting for database to be ready...")
     
+    engine = None
     for attempt in range(max_retries):
         try:
             engine = create_engine(
@@ -30,8 +31,15 @@ def wait_for_database(max_retries=30, retry_interval=1):
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
             print("Database is ready!")
+            # 成功した場合はエンジンを破棄してから返す
+            engine.dispose()
             return True
         except Exception as e:
+            # エンジンを確実に破棄
+            if engine is not None:
+                engine.dispose()
+                engine = None
+            
             if attempt < max_retries - 1:
                 print(f"Database is unavailable (attempt {attempt + 1}/{max_retries}) - sleeping...")
                 time.sleep(retry_interval)

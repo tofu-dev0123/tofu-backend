@@ -14,8 +14,6 @@ def test_db(db: Session = Depends(get_db)):
     # データベース接続のテスト
     try:
         result = db.execute(text("SELECT 1"))
-        db.commit()
         return {"status": "connected", "message": "データベース接続成功"}
     except Exception as e:
-        db.rollback()
         return {"status": "error", "message": str(e)}
