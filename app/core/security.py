@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 import bcrypt
-from jose import jwt
+from jose import jwt, JWTError
 from app.core.config import settings
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/auth/login")
 
 
 def create_access_token(user_id: int, username: str) -> str:
@@ -51,6 +54,50 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         plain_password.encode('utf-8'),
         hashed_password.encode('utf-8')
     )
+
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                message="認証に失敗しました",
+                error="AUTHENTICATION_ERROR",
+                details=[]
+            ).dict()
+        )
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    payload = verify_token(token)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                message="認証に失敗しました",
+                error="AUTHENTICATION_ERROR",
+                details=[]
+            ).dict()
+        )
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ErrorResponse(
+                message="認証に失敗しました",
+                error="AUTHENTICATION_ERROR",
+                details=[]
+            ).dict()
+        )
+    
+    return user
 
 
 class LoginFailError(Exception):
