@@ -1,5 +1,6 @@
 from typing import List
-from app.schemas.auth import LoginRequest, ErrorDetail
+from app.schemas.auth import LoginRequest
+from app.schemas.errors import ErrorDetail
 
 
 class ValidationError(Exception):

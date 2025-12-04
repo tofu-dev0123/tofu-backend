@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.auth import LoginRequest, LoginResponse, ErrorResponse
+from app.schemas.auth import LoginRequest, LoginResponse
+from app.schemas.errors import ErrorResponse
 from app.core.security import create_access_token, verify_password, LoginFailError
 from app.core.validation import validate_login_request, ValidationError
 
