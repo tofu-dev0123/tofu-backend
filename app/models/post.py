@@ -2,7 +2,7 @@ from sqlalchemy import Column, BigInteger, String, DateTime, Enum, ForeignKey, f
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import relationship
 import enum
-from app.db.database import Base
+from app.db.base_class import Base
 
 
 class PostStatus(enum.Enum):

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, BigInteger, ForeignKey, PrimaryKeyConstraint
-from app.db.database import Base
+from app.db.base_class import Base
 
 
 class PostTag(Base):
