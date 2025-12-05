@@ -98,7 +98,7 @@ def create_initial_data():
     db: Session = SessionLocal()
     try:
         # adminユーザーが既に存在するか確認
-        existing_user = db.query(User).filter(User.username == "admin").first()
+        existing_user = db.query(User).filter(User.username == "admin@example.com").first()
         if existing_user:
             print("Admin user already exists, skipping initial data creation.")
             return
@@ -112,7 +112,7 @@ def create_initial_data():
         
         # adminユーザーを作成
         admin_user = User(
-            username="admin",
+            username="admin@example.com",
             password=hashed_password,
             account_name="testuser"
         )

@@ -4,7 +4,6 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
-from app.core.message import ErrorMessage
 from app.core.errorcode import ErrorCode
 
 def register_exception_handlers(app: FastAPI):
