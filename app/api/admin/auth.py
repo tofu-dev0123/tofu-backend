@@ -6,7 +6,7 @@ from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse
 from app.schemas.errors import ErrorResponse
 from app.core.security import create_access_token, verify_password, LoginFailError
-from app.core.validation import validate_login_request, ValidationError
+from app.core.message import Message, ErrorMessage
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ async def login(
     db: Session = Depends(get_db)
 ):
     """
-    ログインエンドポイント
+    ログインエンドポイント1
     
     1. 入力値をチェックする
     2. usersテーブルからusernameをキーにユーザー情報を取得する
@@ -25,10 +25,7 @@ async def login(
     4. JWTトークンを生成する
     5. 200でレスポンスを返却する
     """
-    try:
-        # 1. 入力値バリデーション
-        validate_login_request(request)
-        
+    try:       
         # 2. ユーザー情報を取得
         try:
             user = db.query(User).filter(User.username == request.username).first()
@@ -36,7 +33,7 @@ async def login(
             # DB起因のエラー
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="データベースエラーが発生しました"
+                detail=ErrorMessage.INTERNAL_SERVER_ERROR
             )
         
         # ユーザーが存在しない場合
@@ -52,19 +49,8 @@ async def login(
         
         # 5. 200でレスポンスを返却
         return LoginResponse(
-            message="ログインに成功しました",
+            message=Message.LOGIN_SUCCESS,
             token=token
-        )
-    
-    except ValidationError as e:
-        # 400（バリデーションエラー）
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                message=e.message,
-                error="VALIDATION_ERROR",
-                details=e.details
-            ).dict()
         )
     
     except LoginFailError as e:
@@ -78,14 +64,10 @@ async def login(
             ).dict()
         )
     
-    except HTTPException:
-        # 既にHTTPExceptionの場合はそのまま再発生
-        raise
-    
     except Exception as e:
         # その他の予期しないエラー（500エラー）
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="内部サーバーエラーが発生しました"
+            detail=ErrorMessage.INTERNAL_SERVER_ERROR
         )
 

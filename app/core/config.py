@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     DB_NAME: Optional[str] = None
     
     # JWT設定
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    ALGORITHM = os.getenv("ALGORITHM")
+    SECRET_KEY: str = os.getenv("SECRET_KEY")
+    ALGORITHM: str = os.getenv("ALGORITHM")
     
     @property
     def db_host(self) -> str:

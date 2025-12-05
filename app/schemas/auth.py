@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 
 class LoginRequest(BaseModel):
     """ログインリクエストスキーマ"""
-    username: str = Field(..., description="ユーザーネーム")
-    password: str = Field(..., description="パスワード")
+    username: str = Field(..., description="ユーザーネーム", max_length=50)
+    password: str = Field(..., description="パスワード", min_length=8, max_length=100)
 
 
 class LoginResponse(BaseModel):
