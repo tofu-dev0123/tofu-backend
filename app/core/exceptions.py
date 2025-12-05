@@ -2,9 +2,11 @@ from fastapi import Request
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from app.core.security import LoginFailError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
 from app.core.errorcode import ErrorCode
+from app.core.message import ErrorMessage
 
 def register_exception_handlers(app: FastAPI):
 
@@ -32,4 +34,17 @@ def register_exception_handlers(app: FastAPI):
         details=errors
       ).dict()
     )
+  
+  @app.exception_handler(LoginFailError)
+  async def login_fail_handler(request: Request, exc: LoginFailError):  
+    return JSONResponse(
+      status_code=400,
+      content=ErrorResponse(
+        message=ErrorMessage.LOGIN_FAIL,
+        error=ErrorCode.LOGIN_FAIL,
+        details=[]
+      ).dict()
+    )
+    
+    
 

@@ -10,6 +10,9 @@ class ErrorMessage:
   USERNAME_FORMAT_EMAIL = "ユーザーネームはメールアドレス形式で入力してください"
   PASSWORD_MIN_LENGTH = "パスワードは8文字以上で入力してください"
   PASSWORD_MAX_LENGTH = "パスワードは50文字以内で入力してください"
+  
+  # ログイン関連
+  LOGIN_FAIL = "ユーザー名またはパスワードが間違っています"
 
   # INTERNAL_SERVER_ERROR関連
   INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"
