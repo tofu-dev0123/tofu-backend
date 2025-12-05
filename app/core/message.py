@@ -1,0 +1,9 @@
+class ErrorMessage:
+  # バリデーションエラー関連
+  VALIDATION_ERROR = "バリデーションエラーが発生しました"
+  USERNAME_REQUIRED = "ユーザーネームは必須項目です"
+  PASSWORD_REQUIRED = "パスワードは必須項目です"
+  USERNAME_MAX_LENGTH = "ユーザーネームは50文字以内で入力してください"
+  USERNAME_FORMAT_EMAIL = "ユーザーネームはメールアドレス形式で入力してください"
+  PASSWORD_MIN_LENGTH = "パスワードは8文字以上で入力してください"
+  PASSWORD_MAX_LENGTH = "パスワードは50文字以内で入力してください"
