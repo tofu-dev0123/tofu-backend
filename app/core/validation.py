@@ -1,8 +1,10 @@
+from app.core.message import ErrorMessage
+
 VALIDATION_MESSAGES = {
-    ("username", "missing"): "ユーザー名は必須項目です",
-    ("password", "missing"): "パスワードは必須項目です",
-    ("username", "string_too_long"): "ユーザー名は50文字以内で入力してください",
-    ("password", "string_too_short"): "パスワードは8文字以上で入力してください",
-    ("password", "string_too_long"): "パスワードは50文字以内で入力してください",
-    ("username", "value_error"): "ユーザー名はメールアドレス形式で入力してください",
+    ("username", "missing"): ErrorMessage.USERNAME_REQUIRED,
+    ("password", "missing"): ErrorMessage.PASSWORD_REQUIRED,
+    ("username", "too_long"): ErrorMessage.USERNAME_MAX_LENGTH,
+    ("password", "string_too_short"): ErrorMessage.PASSWORD_MIN_LENGTH,
+    ("password", "string_too_long"): ErrorMessage.PASSWORD_MAX_LENGTH,
+    ("username", "value_error"): ErrorMessage.USERNAME_FORMAT_EMAIL,
 }
