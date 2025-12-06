@@ -9,3 +9,6 @@ pydantic-settings
 alembic
 bcrypt
 python-jose[cryptography]
+email-validator
+pytest
+httpx

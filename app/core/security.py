@@ -3,6 +3,11 @@ import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException, status, Depends
+from app.schemas.errors import ErrorResponse
+from app.models.user import User
+from app.db.database import SessionLocal, get_db
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/admin/auth/login")
 
@@ -73,7 +78,7 @@ def verify_token(token: str):
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: SessionLocal = Depends(get_db)
 ):
     payload = verify_token(token)
     user_id = payload.get("sub")

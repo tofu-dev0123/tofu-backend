@@ -1,12 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from app.db.database import get_db
-from app.models.user import User
+from app.services.auth_service import login_service
 from app.schemas.auth import LoginRequest, LoginResponse
-from app.schemas.errors import ErrorResponse
-from app.core.security import create_access_token, verify_password, LoginFailError
-from app.core.validation import validate_login_request, ValidationError
+from app.core.security import LoginFailError
+from app.core.message import Message, ErrorMessage
 
 router = APIRouter()
 
@@ -16,76 +14,23 @@ async def login(
     request: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    """
-    ログインエンドポイント
-    
-    1. 入力値をチェックする
-    2. usersテーブルからusernameをキーにユーザー情報を取得する
-    3. パスワードを照合する
-    4. JWTトークンを生成する
-    5. 200でレスポンスを返却する
-    """
     try:
-        # 1. 入力値バリデーション
-        validate_login_request(request)
-        
-        # 2. ユーザー情報を取得
-        try:
-            user = db.query(User).filter(User.username == request.username).first()
-        except SQLAlchemyError as e:
-            # DB起因のエラー
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="データベースエラーが発生しました"
-            )
-        
-        # ユーザーが存在しない場合
-        if not user:
-            raise LoginFailError()
-        
-        # 3. パスワードを照合
-        if not verify_password(request.password, user.password):
-            raise LoginFailError()
-        
-        # 4. JWTトークンを生成
-        token = create_access_token(user.user_id, user.username)
-        
-        # 5. 200でレスポンスを返却
+        # 認証処理を行いtokenを取得する
+        token = login_service(request.username, request.password, db)
+
         return LoginResponse(
-            message="ログインに成功しました",
+            message=Message.LOGIN_SUCCESS,
             token=token
         )
     
-    except ValidationError as e:
-        # 400（バリデーションエラー）
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                message=e.message,
-                error="VALIDATION_ERROR",
-                details=e.details
-            ).dict()
-        )
-    
-    except LoginFailError as e:
-        # 400（ログインエラー）
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                message=e.message,
-                error="LOGIN_FAIL",
-                details=[]
-            ).dict()
-        )
-    
-    except HTTPException:
-        # 既にHTTPExceptionの場合はそのまま再発生
+    except LoginFailError:
+        # カスタムハンドラーへバトン渡し
         raise
     
-    except Exception as e:
+    except Exception:
         # その他の予期しないエラー（500エラー）
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="内部サーバーエラーが発生しました"
+            detail=ErrorMessage.INTERNAL_SERVER_ERROR
         )
 

@@ -1,0 +1,129 @@
+import pytest
+from unittest.mock import patch
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core.security import LoginFailError
+from app.core.errorcode import ErrorCode
+from app.core.message import Message, ErrorMessage
+
+client = TestClient(app)
+
+# 正常系
+def test_login_success():
+  with patch("app.api.admin.auth.login_service", return_value="fake_token"):
+    response = client.post(
+      "/admin/auth/login",
+      json={"username": "admin@example.com", "password": "correctpass"}
+    )
+
+  assert response.status_code == 200
+
+  data = response.json()
+  assert data["message"] == Message.LOGIN_SUCCESS
+  assert data["token"] == "fake_token"
+
+
+# 必須項目バリデーション
+def test_validation_error_missing():
+  response = client.post(
+    "/admin/auth/login",
+    json={}
+  )
+
+  assert response.status_code == 400
+
+  data = response.json()
+  messages = [item["message"] for item in data["details"]]
+  
+  assert data["error"] == ErrorCode.VALIDATION_ERROR
+  assert ErrorMessage.USERNAME_REQUIRED in messages
+  assert ErrorMessage.PASSWORD_REQUIRED in messages
+  
+
+# 最大文字数バリデーション
+def test_validation_error_max_length():
+  longtext = "a"*51
+  username = f"{longtext}@example.com"
+  request = {
+    "username": username,
+    "password": longtext
+  }
+  response = client.post(
+    "/admin/auth/login",
+    json=request
+  )
+
+  assert response.status_code == 400
+
+  data = response.json()
+  messages = [item["message"] for item in data["details"]]
+  
+  assert data["error"] == ErrorCode.VALIDATION_ERROR
+  assert ErrorMessage.USERNAME_MAX_LENGTH in messages
+  assert ErrorMessage.PASSWORD_MAX_LENGTH in messages
+  
+
+# 最小文字数バリデーション
+def test_validation_error_min_length():
+  shorttext = "a"*7
+  username = "admin@example.com"
+  request = {
+    "username": username,
+    "password": shorttext
+  }
+  response = client.post(
+    "/admin/auth/login",
+    json=request
+  )
+
+  assert response.status_code == 400
+
+  data = response.json()
+  messages = [item["message"] for item in data["details"]]
+  
+  assert data["error"] == ErrorCode.VALIDATION_ERROR
+  assert ErrorMessage.PASSWORD_MIN_LENGTH in messages
+
+
+# メールアドレス形式バリデーション
+def test_validation_error_email_format():
+  username = "admin"
+  password = "password"
+  request = {
+    "username": username,
+    "password": password
+  }
+  response = client.post(
+    "/admin/auth/login",
+    json=request
+  )
+
+  assert response.status_code == 400
+
+  data = response.json()
+  messages = [item["message"] for item in data["details"]]
+  
+  assert data["error"] == ErrorCode.VALIDATION_ERROR
+  assert ErrorMessage.USERNAME_FORMAT_EMAIL in messages
+
+
+# ログインエラー
+def test_login_fail_no_exist_username():
+  username = "error@example.com"
+  password = "password"
+  request = {
+    "username": username,
+    "password": password
+  }
+  with patch("app.api.admin.auth.login_service", side_effect=LoginFailError):
+    response = client.post(
+      "/admin/auth/login",
+      json=request
+    )
+
+  assert response.status_code == 400
+
+  data = response.json()
+  
+  assert data["message"] == ErrorMessage.LOGIN_FAIL
+  assert data["error"] == ErrorCode.LOGIN_FAIL
