@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.services.auth_service import login_service
-from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse
+from app.services.auth_service import login_service, build_me_response
+from app.models.user import User
+from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
 from app.core.security import LoginFailError, get_current_user
 from app.core.message import Message, ErrorMessage
 
@@ -15,8 +16,6 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
         # 認証処理を行いtokenを取得する
         token = login_service(request.username, request.password, db)
 
-        return LoginResponse(message=Message.LOGIN_SUCCESS, token=token)
-
     except LoginFailError:
         # カスタムハンドラーへバトン渡し
         raise
@@ -28,7 +27,16 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail=ErrorMessage.INTERNAL_SERVER_ERROR,
         )
 
+    return LoginResponse(message=Message.LOGIN_SUCCESS, token=token)
+
 
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(current_user=Depends(get_current_user)):
     return LogoutResponse(message=Message.LOGOUT_SUCCESS)
+
+
+@router.post("/me", response_model=MeResponse)
+async def me(current_user: User = Depends(get_current_user)):
+    return MeResponse(
+        userId=current_user.user_id, username=current_user.username, accountName=current_user.account_name
+    )

@@ -74,7 +74,7 @@ def verify_token(token: str):
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: SessionLocal = Depends(get_db),
-):
+) -> User:
     token = credentials.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
