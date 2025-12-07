@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.db.database import get_db
 from app.api.admin import auth
-from app.core.exceptions import register_exception_handlers 
+from app.core.exceptions import register_exception_handlers
 
 app = FastAPI()
 register_exception_handlers(app)
@@ -11,9 +11,11 @@ register_exception_handlers(app)
 # ルーターの登録
 app.include_router(auth.router, prefix="/admin/auth", tags=["admin"])
 
+
 @app.get("/")
 def health_check():
     return {"message": "Hello Railway!"}
+
 
 @app.get("/db-test")
 def test_db(db: Session = Depends(get_db)):
