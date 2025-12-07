@@ -1,5 +1,6 @@
 class Message:
     LOGIN_SUCCESS = "ログインに成功しました"
+    LOGOUT_SUCCESS = "ログアウトに成功しました"
 
 
 class ErrorMessage:
@@ -11,6 +12,10 @@ class ErrorMessage:
     USERNAME_FORMAT_EMAIL = "ユーザー名はメールアドレス形式で入力してください"
     PASSWORD_MIN_LENGTH = "パスワードは8文字以上で入力してください"
     PASSWORD_MAX_LENGTH = "パスワードは50文字以内で入力してください"
+
+    # 認証エラー
+    TOKEN_REQUIRED = "認証トークンが必要です"
+    AUTHENTICATION_ERROR = "認証に失敗しました"
 
     # ログイン関連
     LOGIN_FAIL = "ユーザー名またはパスワードが間違っています"

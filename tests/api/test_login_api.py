@@ -1,16 +1,12 @@
 import pytest
 from unittest.mock import patch
-from fastapi.testclient import TestClient
-from app.main import app
 from app.core.security import LoginFailError
 from app.core.errorcode import ErrorCode
 from app.core.message import Message, ErrorMessage
 
-client = TestClient(app)
-
 
 # 正常系
-def test_login_success():
+def test_login_success(client):
     with patch("app.api.admin.auth.login_service", return_value="fake_token"):
         response = client.post(
             "/admin/auth/login",
@@ -25,7 +21,7 @@ def test_login_success():
 
 
 # 必須項目バリデーション
-def test_validation_error_missing():
+def test_validation_error_missing(client):
     response = client.post("/admin/auth/login", json={})
 
     assert response.status_code == 400
@@ -39,7 +35,7 @@ def test_validation_error_missing():
 
 
 # 最大文字数バリデーション
-def test_validation_error_max_length():
+def test_validation_error_max_length(client):
     longtext = "a" * 51
     username = f"{longtext}@example.com"
     request = {"username": username, "password": longtext}
@@ -56,7 +52,7 @@ def test_validation_error_max_length():
 
 
 # 最小文字数バリデーション
-def test_validation_error_min_length():
+def test_validation_error_min_length(client):
     shorttext = "a" * 7
     username = "admin@example.com"
     request = {"username": username, "password": shorttext}
@@ -72,7 +68,7 @@ def test_validation_error_min_length():
 
 
 # メールアドレス形式バリデーション
-def test_validation_error_email_format():
+def test_validation_error_email_format(client):
     username = "admin"
     password = "password"
     request = {"username": username, "password": password}
@@ -88,7 +84,7 @@ def test_validation_error_email_format():
 
 
 # ログインエラー
-def test_login_fail_no_exist_username():
+def test_login_fail_no_exist_username(client):
     username = "error@example.com"
     password = "password"
     request = {"username": username, "password": password}
