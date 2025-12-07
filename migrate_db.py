@@ -142,17 +142,15 @@ def create_initial_data():
         db.close()
 
 
+# ---- migrate_db.py (修正版) ----
+
 if __name__ == "__main__":
-    # データベースが準備できるまで待機
     if not wait_for_database():
-        print("Exiting due to database connection failure")
         sys.exit(1)
 
-    # 初期マイグレーションファイルを確認・作成
-    check_and_create_initial_migration()
+    print("Running alembic upgrade...")
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
 
-    # マイグレーションを実行
-    run_migrations()
-
-    # 初期データを作成
+    print("Inserting seed data...")
     create_initial_data()
