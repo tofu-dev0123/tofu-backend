@@ -8,17 +8,18 @@ from app.schemas.errors import ErrorResponse
 from app.core.errorcode import ErrorCode
 from app.core.message import ErrorMessage
 
+
 def register_exception_handlers(app: FastAPI):
 
-  @app.exception_handler(RequestValidationError)
-  async def validation_error_handler(request: Request, exc: RequestValidationError):
-    errors = []
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        errors = []
 
-    for error in exc.errors():
-      value = error.get("loc")[-1]
-      type = error.get("type")
-      print(value)
-      print(type)
+        for error in exc.errors():
+            value = error.get("loc")[-1]
+            type = error.get("type")
+            print(value)
+            print(type)
 
       msg = VALIDATION_MESSAGES.get((value, type)) or error.get("msg")
       errors.append({

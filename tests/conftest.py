@@ -27,6 +27,7 @@ engine = create_engine(TEST_DATABASE_URL)
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 @pytest.fixture
 def client():
     return TestClient(app)

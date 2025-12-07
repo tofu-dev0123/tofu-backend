@@ -19,8 +19,10 @@ def test_login_success(db):
 
     with patch("app.services.auth_service.find_by_username", return_value=mock_user):
         with patch("app.services.auth_service.verify_password", return_value=True):
-            with patch("app.services.auth_service.create_access_token",
-                       return_value="fake_token") as mock_token:
+            with patch(
+                "app.services.auth_service.create_access_token",
+                return_value="fake_token",
+            ) as mock_token:
 
                 token = login_service("testuser", "correct_password", db)
 

@@ -10,30 +10,23 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(
-    request: LoginRequest,
-    db: Session = Depends(get_db)
-):
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
     try:
         # 認証処理を行いtokenを取得する
         token = login_service(request.username, request.password, db)
 
-        return LoginResponse(
-            message=Message.LOGIN_SUCCESS,
-            token=token
-        )
-    
+        return LoginResponse(message=Message.LOGIN_SUCCESS, token=token)
+
     except LoginFailError:
         # カスタムハンドラーへバトン渡し
         raise
-    
+
     except Exception:
         # その他の予期しないエラー（500エラー）
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ErrorMessage.INTERNAL_SERVER_ERROR
+            detail=ErrorMessage.INTERNAL_SERVER_ERROR,
         )
-
 
 @router.post("/logout", response_model = LogoutResponse)
 async def logout(current_user = Depends(get_current_user)):

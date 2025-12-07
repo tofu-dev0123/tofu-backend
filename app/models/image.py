@@ -14,4 +14,3 @@ class Image(Base):
 
     # リレーションシップ
     post = relationship("Post", back_populates="images")
-
