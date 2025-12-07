@@ -1,7 +1,4 @@
 import pytest
-from unittest.mock import patch
-from app.core.security import LoginFailError
-from app.core.errorcode import ErrorCode
 from app.core.message import Message, ErrorMessage
 
 
