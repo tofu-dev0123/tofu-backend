@@ -8,7 +8,4 @@ class PostTag(Base):
     post_id = Column(BigInteger, ForeignKey("posts.post_id"), nullable=False)
     tag_id = Column(BigInteger, ForeignKey("tags.tag_id"), nullable=False)
 
-    __table_args__ = (
-        PrimaryKeyConstraint("post_id", "tag_id"),
-    )
-
+    __table_args__ = (PrimaryKeyConstraint("post_id", "tag_id"),)

@@ -12,9 +12,4 @@ class Tag(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
     # リレーションシップ
-    posts = relationship(
-        "Post",
-        secondary="post_tags",
-        back_populates="tags"
-    )
-
+    posts = relationship("Post", secondary="post_tags", back_populates="tags")
