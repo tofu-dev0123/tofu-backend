@@ -42,7 +42,6 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(HTTPException)
     async def no_token_handler(request, exc):
-        print("処理に入ってます")
         if exc.status_code == 401 and exc.detail == "Not authenticated":
             return JSONResponse(
                 status_code=401,

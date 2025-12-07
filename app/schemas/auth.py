@@ -19,3 +19,11 @@ class LogoutResponse(BaseModel):
     """ログアウト成功レスポンススキーマ"""
 
     message: str = Field(..., description="メッセージ")
+
+
+class MeResponse(BaseModel):
+    """ユーザー情報取得成功レスポンススキーマ"""
+
+    userId: int = Field(..., description="ユーザーID")
+    username: str = Field(..., description="メッセージ")
+    accountName: str = Field(..., description="メッセージ")
