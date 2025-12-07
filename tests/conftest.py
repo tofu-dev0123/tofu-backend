@@ -12,6 +12,7 @@ from app.models.post import Post
 from app.models.tag import Tag
 from app.models.post_tag import PostTag
 from app.models.image import Image
+from app.db.database import get_db
 
 
 # ユーザーのモデルが Base を含んでる
@@ -31,6 +32,18 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+# ---- FastAPI の get_db をテスト用 DB に置き換える ----
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = override_get_db  # ★ これが必須
 
 
 @pytest.fixture
