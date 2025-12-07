@@ -28,8 +28,7 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail=ErrorMessage.INTERNAL_SERVER_ERROR,
         )
 
-@router.post("/logout", response_model = LogoutResponse)
-async def logout(current_user = Depends(get_current_user)):
-    return LogoutResponse(
-        message=Message.LOGOUT_SUCCESS
-    )
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(current_user=Depends(get_current_user)):
+    return LogoutResponse(message=Message.LOGOUT_SUCCESS)

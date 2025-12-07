@@ -14,6 +14,8 @@ class LoginResponse(BaseModel):
     message: str = Field(..., description="メッセージ")
     token: str = Field(..., description="JWTトークン")
 
+
 class LogoutResponse(BaseModel):
     """ログアウト成功レスポンススキーマ"""
+
     message: str = Field(..., description="メッセージ")

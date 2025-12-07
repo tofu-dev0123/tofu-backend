@@ -22,7 +22,7 @@ TEST_DATABASE_URL = "mysql+pymysql://root:password@db:3306/test_db"
 # データベースがなければ作成
 if not database_exists(TEST_DATABASE_URL):
     create_database(TEST_DATABASE_URL)
-    
+
 engine = create_engine(TEST_DATABASE_URL)
 
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -31,6 +31,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture
 def client():
     return TestClient(app)
+
 
 @pytest.fixture
 def db():
@@ -47,7 +48,7 @@ def test_user(db):
         user_id=1,
         username="test@example.com",
         password="password",
-        account_name="testuser"
+        account_name="testuser",
     )
     db.add(user)
     db.commit()
@@ -57,8 +58,5 @@ def test_user(db):
 
 @pytest.fixture
 def valid_token(test_user):
-    token = create_access_token(
-        user_id=test_user.user_id,
-        username=test_user.username
-    )
+    token = create_access_token(user_id=test_user.user_id, username=test_user.username)
     return token

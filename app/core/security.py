@@ -11,6 +11,7 @@ from app.db.database import SessionLocal, get_db
 
 security = HTTPBearer()
 
+
 def create_access_token(user_id: int, username: str) -> str:
     """
     JWTトークンを生成する
@@ -71,19 +72,20 @@ def verify_token(token: str):
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security), db: SessionLocal = Depends(get_db)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: SessionLocal = Depends(get_db),
 ):
     token = credentials.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
-    
+
     if not user_id:
         raise AuthenticationError
-    
+
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise AuthenticationError
-    
+
     return user
 
 
@@ -93,8 +95,11 @@ class LoginFailError(Exception):
     def __init__(self, message: str = "ユーザー名またはパスワードが間違っています"):
         self.message = message
         super().__init__(self.message)
+
+
 class AuthenticationError(Exception):
     """ログイン失敗エラー（ユーザー不存在、パスワード不一致）"""
+
     def __init__(self, message: str = "ユーザー名またはパスワードが間違っています"):
         self.message = message
         super().__init__(self.message)
