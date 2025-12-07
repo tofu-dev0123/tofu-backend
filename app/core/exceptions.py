@@ -21,8 +21,8 @@ def register_exception_handlers(app: FastAPI):
             print(value)
             print(type)
 
-        msg = VALIDATION_MESSAGES.get((value, type)) or error.get("msg")
-        errors.append({"value": str(value), "message": msg})
+            msg = VALIDATION_MESSAGES.get((value, type)) or error.get("msg")
+            errors.append({"value": str(value), "message": msg})
 
         return JSONResponse(
             status_code=400,
