@@ -14,7 +14,7 @@ class ErrorMessage:
     PASSWORD_REQUIRED = "パスワードは必須項目です"
     PASSWORD_MIN_LENGTH = "パスワードは8文字以上で入力してください"
     PASSWORD_MAX_LENGTH = "パスワードは50文字以内で入力してください"
-    
+
     # 記事関連
     TITLE_REQUIRED = "タイトルは必須項目です"
     TITLE_MAX_LENGTH = "タイトルは255文字以内で入力してください"
@@ -29,14 +29,12 @@ class ErrorMessage:
     TAGS_ARRAY = "タグは配列で入力してください"
     TAGS_ARRAY_MAX_LENGTH = "タグの個数は20個以内にしてください"
     TAGS_MAX_LENGTH = "タグは30文字以内で入力してください"
-    
-    
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
     AUTHENTICATION_ERROR = "認証に失敗しました"
     LOGIN_FAIL = "ユーザー名またはパスワードが間違っています"
-    
+
     # 記事関連
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
 

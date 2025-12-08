@@ -64,7 +64,7 @@ def register_exception_handlers(app: FastAPI):
                 details=[],
             ).dict(),
         )
-    
+
     @app.exception_handler(ImageNotExistError)
     async def image_not_found_error_handler(request: Request, exc: AuthenticationError):
         return JSONResponse(

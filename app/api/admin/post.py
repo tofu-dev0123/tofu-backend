@@ -8,13 +8,20 @@ from app.services.post_service import check_image_list
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
+
 @router.post("/", response_model=PostsPostResponse)
-async def create_posts(request: PostsPostRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    # 画像IDの存在チェック
+async def create_posts(
+    request: PostsPostRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    images = request.images
     try:
-        check_image_list(request.images)
-    
+        # 画像IDの存在チェック
+        if len(images) > 0:
+            check_image_list(images, db)
+
     except ImageNotExistError:
         raise
-    
+
     return PostsPostResponse(message="", post_id=0)

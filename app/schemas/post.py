@@ -3,18 +3,21 @@ from fastapi.exceptions import RequestValidationError
 from typing import List, Literal
 from app.common.constant import MAX_CONTENT_HTML_SIZE
 
+
 class PostsPostRequest(BaseModel):
     """記事作成リクエストスキーマ"""
-    
-    title: str = Field(...,  max_length=255, description="タイトル")
+
+    title: str = Field(..., max_length=255, description="タイトル")
     content_md: str = Field(..., description="マークダウン本文")
     content_html: str = Field(..., description="HTML本文")
-    thumbnail_url: str | None = Field(None, max_length=500, description="サムネイル画像URL")
+    thumbnail_url: str | None = Field(
+        None, max_length=500, description="サムネイル画像URL"
+    )
     status: Literal["DRAFT", "PUBLISHED"] = Field(..., description="公開ステータス")
     images: List[int] = Field(default_factory=list, description="画像IDの配列")
     tags: List[str] = Field(default_factory=list, description="タグの配列")
-    
-     # --- Validators ---
+
+    # --- Validators ---
 
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
@@ -37,7 +40,7 @@ class PostsPostRequest(BaseModel):
         if v == "":
             return None
         return v
-    
+
     @field_validator("tags")
     def validate_tags(cls, v: List[str]) -> List[str]:
         # 個数制限（最大20件）
@@ -57,16 +60,17 @@ class PostsPostRequest(BaseModel):
         for tag in v:
             if len(tag) > 30:
                 raise RequestValidationError(
-                [
-                    {
-                        "type": "string_too_long",
-                        "loc": ("body", "tags"),
-                        "msg": "",
-                        "input": v,
-                    }
-                ]
-            )
+                    [
+                        {
+                            "type": "string_too_long",
+                            "loc": ("body", "tags"),
+                            "msg": "",
+                            "input": v,
+                        }
+                    ]
+                )
         return v
+
 
 class PostsPostResponse(BaseModel):
     """記事作成成功レスポンススキーマ"""
