@@ -1,10 +1,26 @@
-from app.core.message import ErrorMessage
+from app.common.message import ErrorMessage
 
 VALIDATION_MESSAGES = {
+    # 認証関連
     ("username", "missing"): ErrorMessage.USERNAME_REQUIRED,
     ("password", "missing"): ErrorMessage.PASSWORD_REQUIRED,
     ("username", "too_long"): ErrorMessage.USERNAME_MAX_LENGTH,
     ("password", "string_too_short"): ErrorMessage.PASSWORD_MIN_LENGTH,
     ("password", "string_too_long"): ErrorMessage.PASSWORD_MAX_LENGTH,
     ("username", "value_error"): ErrorMessage.USERNAME_FORMAT_EMAIL,
+    
+    # 記事関連
+    ("title", "missing"): ErrorMessage.TITLE_REQUIRED,
+    ("title", "string_too_long"): ErrorMessage.TITLE_MAX_LENGTH,
+    ("content_md", "missing"): ErrorMessage.CONTENT_MARKDOWN_REQUIRED,
+    ("content_md", "size_over"): ErrorMessage.CONTENT_MARKDOWN_SIZE_OVER,
+    ("content_html", "missing"): ErrorMessage.CONTENT_HTML_REQUIRED,
+    ("thumbnail_url", "string_too_long"): ErrorMessage.THUMBNAIL_URL_MAX_LENGTH,
+    ("status", "missing"): ErrorMessage.STATUS_REQUIRED,
+    ("status", "literal_error"): ErrorMessage.STATUS_ENUM,
+    ("images", "list_type"): ErrorMessage.IMAGES_ARRAY,
+    ("images", "int_parsing"): ErrorMessage.IMAGES_VALUE,
+    ("tags", "list_type"): ErrorMessage.TAGS_ARRAY,
+    ("tags", "list_too_long"): ErrorMessage.TAGS_ARRAY_MAX_LENGTH,
+    ("tags", "string_too_long"): ErrorMessage.TAGS_MAX_LENGTH,
 }

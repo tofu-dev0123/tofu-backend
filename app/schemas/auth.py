@@ -24,6 +24,6 @@ class LogoutResponse(BaseModel):
 class MeResponse(BaseModel):
     """ユーザー情報取得成功レスポンススキーマ"""
 
-    userId: int = Field(..., description="ユーザーID")
+    user_id: int = Field(..., description="ユーザーID")
     username: str = Field(..., description="メッセージ")
-    accountName: str = Field(..., description="メッセージ")
+    account_name: str = Field(..., description="メッセージ")

@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch
 from app.core.security import LoginFailError
-from app.core.errorcode import ErrorCode
-from app.core.message import Message, ErrorMessage
+from app.common.errorcode import ErrorCode
+from app.common.message import Message, ErrorMessage
 
 
 # 正常系

@@ -5,8 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from app.core.security import LoginFailError, AuthenticationError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
-from app.core.errorcode import ErrorCode
-from app.core.message import ErrorMessage
+from app.common.errorcode import ErrorCode
+from app.common.message import ErrorMessage
 
 
 def register_exception_handlers(app: FastAPI):
@@ -16,9 +16,9 @@ def register_exception_handlers(app: FastAPI):
         errors = []
 
         for error in exc.errors():
-            value = error.get("loc")[-1]
+            value = error.get("loc")[1]
             type = error.get("type")
-            print(value)
+            print(error.get("loc"))
             print(type)
 
             msg = VALIDATION_MESSAGES.get((value, type)) or error.get("msg")
