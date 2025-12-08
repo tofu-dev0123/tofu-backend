@@ -2,9 +2,9 @@ import re
 from deep_translator import GoogleTranslator
 from slugify import slugify
 from sqlalchemy.orm import Session
-from app.core.mecab import tagger
-from app.repositories.post_repository import find_slugs_like
 from typing import List
+from app.common.constant import MAX_SLUG_LENGTH
+from app.repositories.post_repository import find_slugs_like
 from app.repositories.image_repository import find_by_image_id
 from app.core.exceptions.post_exceptions import ImageNotExistError
 
@@ -39,10 +39,14 @@ def generate_unique_slug(title: str, db: Session) -> str:
     
     # ベーススラグ生成
     base_slug = slugify(translated)
+    
+    # スラグが最大文字数を超えた場合は切り取る
+    if len(base_slug) > MAX_SLUG_LENGTH:
+        base_slug = base_slug[:MAX_SLUG_LENGTH]
 
     # DBから同一prefixのスラグ取得
     existing_slugs = find_slugs_like(db, base_slug)
-
+    
     # 同じものがなければそのまま返す
     if base_slug not in existing_slugs:
         return base_slug
