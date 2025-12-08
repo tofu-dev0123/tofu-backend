@@ -4,7 +4,8 @@ from app.db.database import get_db
 from app.services.auth_service import login_service
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
-from app.core.security import LoginFailError, get_current_user
+from app.core.security import get_current_user
+from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.message import Message, ErrorMessage
 
 router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])

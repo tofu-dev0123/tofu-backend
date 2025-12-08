@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.db.database import get_db
 from app.api.router import api_router
-from app.core.exceptions import register_exception_handlers
+from app.core.exceptions.handlers import register_exception_handlers
 
 app = FastAPI()
 register_exception_handlers(app)

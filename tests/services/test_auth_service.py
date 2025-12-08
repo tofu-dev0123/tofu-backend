@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
 from app.services.auth_service import login_service
-from app.core.exceptions import LoginFailError
+from app.core.exceptions.auth_exceptions import LoginFailError
 
 
 @pytest.fixture

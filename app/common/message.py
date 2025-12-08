@@ -35,9 +35,10 @@ class ErrorMessage:
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
     AUTHENTICATION_ERROR = "認証に失敗しました"
-
-    # ログイン関連
     LOGIN_FAIL = "ユーザー名またはパスワードが間違っています"
+    
+    # 記事関連
+    IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
 
     # INTERNAL_SERVER_ERROR関連
     INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from app.core.exceptions.auth_exceptions import LoginFailError
 from app.repositories.user_repository import find_by_username
-from app.core.security import create_access_token, verify_password, LoginFailError
+from app.core.security import create_access_token, verify_password
 
 
 def login_service(username: str, password: str, db: Session) -> str:
