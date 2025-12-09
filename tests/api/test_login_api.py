@@ -7,7 +7,7 @@ from app.common.message import Message, ErrorMessage
 
 # 正常系
 def test_login_success(client):
-    with patch("app.api.admin.auth.login_service", return_value="fake_token"):
+    with patch("app.services.auth_service.AuthService.login", return_value="fake_token"):
         response = client.post(
             "/admin/auth/login",
             json={"username": "admin@example.com", "password": "correctpass"},
@@ -88,7 +88,7 @@ def test_login_fail_no_exist_username(client):
     username = "error@example.com"
     password = "password"
     request = {"username": username, "password": password}
-    with patch("app.api.admin.auth.login_service", side_effect=LoginFailError):
+    with patch("app.services.auth_service.AuthService.login", side_effect=LoginFailError):
         response = client.post("/admin/auth/login", json=request)
 
     assert response.status_code == 400

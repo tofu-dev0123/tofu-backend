@@ -17,11 +17,11 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
     
     try:
         # 認証処理を行いtokenを取得する
-        token = service.login_service(request.username, request.password, db)
+        token = service.login(request.username, request.password)
 
-    except LoginFailError:
+    except LoginFailError as e:
         # カスタムハンドラーへバトン渡し
-        raise
+        raise e
 
     except Exception:
         # その他の予期しないエラー（500エラー）

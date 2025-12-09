@@ -9,17 +9,17 @@ class AuthService:
         self.db = db
         self.user_repo = UserRepository(db)
 
-    def login_service(self, username: str, password: str, db: Session) -> str:
+    def login(self, username: str, password: str) -> str:
         # ユーザー情報を取得
-        user = self.user_repo.find_by_username(db, username)
+        user = self.user_repo.find_by_username(username)
 
         # ユーザーが存在しない場合
         if not user:
-            raise LoginFailError()
+            raise LoginFailError(message="")
 
         # 3. パスワードを照合
         if not verify_password(password, user.password):
-            raise LoginFailError()
+            raise LoginFailError(message="")
 
         # 4. JWTトークンを生成
         token = create_access_token(user.user_id, user.username)

@@ -23,10 +23,10 @@ async def create_posts(
     try:
         # 画像IDの存在チェック
         if request.images:
-            service.check_image_list(request.images, db)
+            service.check_image_list(request.images)
             
         # タイトルからスラグを生成
-        unique_slug = service.generate_unique_slug(request.title, db)
+        unique_slug = service.generate_slug_of_title(request.title)
         
         # タグからスラグを生成し登録するIDを取得
         tag_id_list = []
@@ -45,8 +45,15 @@ async def create_posts(
         # Imageテーブルに記事IDを登録
         if request.images:
             service.attach_post_id_to_image(request.images, new_post_id)
+        
+        db.commit()
 
     except ImageNotExistError:
         raise
+    
+    except:
+        db.rollback()
+        raise
+    
 
     return PostsPostResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
