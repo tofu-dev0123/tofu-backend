@@ -4,7 +4,7 @@ from app.db.database import get_db
 from app.core.security import get_current_user
 from app.core.exceptions.post_exceptions import ImageNotExistError
 from app.schemas.post import PostsPostRequest, PostsPostResponse
-from app.services.post_service import check_image_list, generate_unique_slug
+from app.services.post_service import PostService
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
@@ -15,14 +15,18 @@ async def create_posts(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    service = PostService(db)
+    
     try:
         # 画像IDの存在チェック
         if len(request.images) > 0:
-            check_image_list(request.images, db)
+            service.check_image_list(request.images, db)
             
         # タイトルからスラグを生成
-        unique_slug = generate_unique_slug(request.title, db)
+        unique_slug = service.generate_unique_slug(request.title, db)
         print(unique_slug)
+        
+        # タグからスラグを生成
 
     except ImageNotExistError:
         raise

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.services.auth_service import login_service
+from app.services.auth_service import AuthService
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
 from app.core.security import get_current_user
@@ -13,9 +13,11 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+    
     try:
         # 認証処理を行いtokenを取得する
-        token = login_service(request.username, request.password, db)
+        token = service.login_service(request.username, request.password, db)
 
     except LoginFailError:
         # カスタムハンドラーへバトン渡し

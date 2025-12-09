@@ -1,64 +1,80 @@
-import re
-from deep_translator import GoogleTranslator
-from slugify import slugify
 from sqlalchemy.orm import Session
 from typing import List
-from app.common.constant import MAX_SLUG_LENGTH
-from app.repositories.post_repository import find_slugs_like
-from app.repositories.image_repository import find_by_image_id
+from app.repositories.post_repository import PostRepository
+from app.repositories.tag_repository import TagRepository
+from app.repositories.image_repository import ImageRepository
 from app.core.exceptions.post_exceptions import ImageNotExistError
+from app.utils.slug_utils import generate_slug, increment_slug_suffix
+
+class PostService:
+
+    def __init__(self, db: Session):
+        self.db = db
+        self.post_repo = PostRepository(db)
+        self.tag_repo = TagRepository(db)
+        self.image_repo = ImageRepository(db)
+
+    """
+    画像IDがImageテーブルに登録されているをチェックする
+    """
+    def check_image_list(self, images: List[int]):
+        for id in images:
+            image_data = self.image_repo.find_by_image_id(self, id)
+
+            if image_data is None:
+                raise ImageNotExistError(message="")
 
 
-"""
-リクエストされた画像IDがImageテーブルに登録されているをチェックする
-"""
-def check_image_list(images: List[int], db: Session):
-    for id in images:
-        image_data = find_by_image_id(db, id)
+    """
+    タイトルからスラグを生成する
+    """
+    def generate_slug_of_title(self, title: str) -> str:
+        # ベーススラグの生成
+        base_slug = generate_slug(title)
 
-        if image_data is None:
-            raise ImageNotExistError(message="")
+        # DBから同一prefixのスラグ取得
+        existing_slugs = self.post_repo.find_slugs_like(self, base_slug)
         
+        # 同じものがなければそのまま返す
+        if base_slug not in existing_slugs:
+            return base_slug
 
-"""
-翻訳を行う
-"""
-def translate_to_english(text: str) -> str:
-    try:
-        return GoogleTranslator(source="auto", target="en").translate(text)
-    except Exception:
-        return text  # 翻訳に失敗したら元の日本語でslugify
+        # 重複がある場合はインクリメントする
+        title_slug = increment_slug_suffix(base_slug, existing_slugs)
+        
+        return title_slug
 
+    """
+    タグからスラグを生成してtag_idを取得する
+    """
+    def generate_slug_of_tag_and_get_id(self, tags: List[str]) -> List[int]:
+        slug_list = []
+        
+        if not tags:
+            return slug_list
+        
+        for tag_name in tags:
+            id = self.tag_repo.find_id_by_name(self, tag_name)
+            
+            # DBからidを取得できたらそのidを使う
+            if id is not None:
+                slug_list.append(id)
+                continue
+            
+            # ベーススラグの生成
+            base_slug = generate_slug(tag_name)
+            
+            existing_slugs = self.tag_repo.find_slugs_starting_with(self,base_slug)
+            
+            # 同じものがなければそのまま返す
+            if base_slug not in existing_slugs:
+                return base_slug
+            
+            tag_slug = increment_slug_suffix(base_slug, existing_slugs)
+            
+            new_id = self.tag_repo.create(tag_name, tag_slug)
+            
+            slug_list.append(new_id)
 
-"""
-リクエストされたタイトルからユニークなスラグを生成する
-"""
-def generate_unique_slug(title: str, db: Session) -> str:
-    # 英語翻訳
-    translated = translate_to_english(title)
-    
-    # ベーススラグ生成
-    base_slug = slugify(translated)
-    
-    # スラグが最大文字数を超えた場合は切り取る
-    if len(base_slug) > MAX_SLUG_LENGTH:
-        base_slug = base_slug[:MAX_SLUG_LENGTH]
-
-    # DBから同一prefixのスラグ取得
-    existing_slugs = find_slugs_like(db, base_slug)
-    
-    # 同じものがなければそのまま返す
-    if base_slug not in existing_slugs:
-        return base_slug
-
-    # 末尾の数字を解析
-    max_number = 0
-    pattern = re.compile(rf"^{base_slug}-(\d+)$")
-
-    for slug in existing_slugs:
-        match = pattern.match(slug)
-        if match:
-            number = int(match.group(1))
-            max_number = max(max_number, number)
-
-    return f"{base_slug}-{max_number + 1}"
+        
+        return slug_list
