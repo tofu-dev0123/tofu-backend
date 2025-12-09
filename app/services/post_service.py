@@ -1,7 +1,12 @@
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime
+from app.schemas.post import PostsPostRequest
+from app.models.post import Post, PostStatus
+from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
 from app.repositories.tag_repository import TagRepository
+from app.repositories.post_tag_repository import PostTagRepository
 from app.repositories.image_repository import ImageRepository
 from app.core.exceptions.post_exceptions import ImageNotExistError
 from app.utils.slug_utils import generate_slug, increment_slug_suffix
@@ -12,6 +17,7 @@ class PostService:
         self.db = db
         self.post_repo = PostRepository(db)
         self.tag_repo = TagRepository(db)
+        self.post_tag_repo = PostTagRepository(db)
         self.image_repo = ImageRepository(db)
 
     """
@@ -57,7 +63,7 @@ class PostService:
             id = self.tag_repo.find_id_by_name(self, tag_name)
             
             # DBからidを取得できたらそのidを使う
-            if id is not None:
+            if id:
                 slug_list.append(id)
                 continue
             
@@ -76,5 +82,47 @@ class PostService:
             
             slug_list.append(new_id)
 
-        
         return slug_list
+    
+    """
+    公開ステータスの値をチェックして日時を返す
+    """
+    def check_status_and_setting_date(status: str) -> datetime | None:
+        if status == PostStatus.PUBLISHED.value:
+            return datetime.now()
+        return None
+    
+    
+    """
+    Postテーブルに登録する  
+    """
+    def create_post(self, request: PostsPostRequest, id: int, slug: str, date: datetime) -> int:
+        post = Post(
+            user_id=id,
+            title=request.title,
+            slug=slug,
+            content_md=request.content_md,
+            content_html=request.content_html,
+            thumbnail_url=request.thumbnail_url,
+            status=request.status,
+            published_date=date
+        )
+        
+        post_id = self.post_repo.create(post)
+        
+        return post_id
+    
+    """
+    PostTagテーブルに登録する  
+    """
+    def create_post_tag(self, tag_id_list: List[int], post_id):
+        for id in tag_id_list:
+            post_tag = PostTag(post_id=post_id, tag_id=id)
+            self.post_tag_repo.create(post_tag)
+    
+    """
+    画像テーブルに記事IDを登録する 
+    """
+    def attach_post_id_to_image(self, images: List[int], post_id: int):
+        for id in images:
+            self.image_repo.update_post_id(id, post_id)
