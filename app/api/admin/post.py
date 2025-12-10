@@ -21,38 +21,12 @@ async def create_posts(
     service = PostService(db)
     
     try:
-        # 画像IDの存在チェック
-        if request.images:
-            service.check_image_list(request.images)
-            
-        # タイトルからスラグを生成
-        unique_slug = service.generate_slug_of_title(request.title)
-        
-        # タグからスラグを生成し登録するIDを取得
-        tag_id_list = []
-        if request.tags:
-            tag_id_list.extend(service.generate_slug_of_tag_and_get_id(request.tags))
-            
-        # 公開ステータスの値をチェックして登録する日時を設定
-        published_date = service.check_status_and_setting_date(request.status)
-        
-        # Postテーブルにインサートして新規記事IDを取得する
-        new_post_id = service.create_post(request, current_user.user_id, unique_slug, published_date)
-        
-        # PostTagsの中間テーブルにIDを登録
-        service.create_post_tag(tag_id_list, new_post_id)
-        
-        # Imageテーブルに記事IDを登録
-        if request.images:
-            service.attach_post_id_to_image(request.images, new_post_id)
-        
-        db.commit()
+        new_post_id = service.create_all(request, current_user.user_id)
 
-    except ImageNotExistError:
-        raise
+    except ImageNotExistError as e:
+        raise e
     
     except:
-        db.rollback()
         raise
     
 

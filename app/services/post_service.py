@@ -128,3 +128,44 @@ class PostService:
     def attach_post_id_to_image(self, images: List[int], post_id: int):
         for id in images:
             self.image_repo.update_post_id(id, post_id)
+    
+    """
+    記事の登録処理をする
+    """
+    def create_all(self, request: PostsPostRequest, user_id: int) -> int:
+        try:
+            # 画像IDの存在チェック
+            if request.images:
+                self.check_image_list(request.images)
+                
+            # タイトルからスラグを生成
+            unique_slug = self.generate_slug_of_title(request.title)
+            
+            # タグからスラグを生成し登録するIDを取得
+            tag_id_list = []
+            if request.tags:
+                tag_id_list.extend(self.generate_slug_of_tag_and_get_id(request.tags))
+                
+            # 公開ステータスの値をチェックして登録する日時を設定
+            published_date = self.check_status_and_setting_date(request.status)
+            
+            # Postテーブルにインサートして新規記事IDを取得する
+            new_post_id = self.create_post(request, user_id, unique_slug, published_date)
+            
+            # PostTagsの中間テーブルにIDを登録
+            self.create_post_tag(tag_id_list, new_post_id)
+            
+            # Imageテーブルに記事IDを登録
+            if request.images:
+                self.attach_post_id_to_image(request.images, new_post_id)
+            
+            self.db.commit()
+            
+            return new_post_id
+            
+        except ImageNotExistError as e:
+            raise e
+       
+        except:
+            self.db.rollback()
+            raise
