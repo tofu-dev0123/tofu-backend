@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
     service = AuthService(db)
-    
+
     try:
         # 認証処理を行いtokenを取得する
         token = service.login(request.username, request.password)

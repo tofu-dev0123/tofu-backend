@@ -19,15 +19,14 @@ async def create_posts(
     current_user: User = Depends(get_current_user),
 ):
     service = PostService(db)
-    
+
     try:
         new_post_id = service.create_all(request, current_user.user_id)
 
     except ImageNotExistError as e:
         raise e
-    
+
     except:
         raise
-    
 
     return PostsPostResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)

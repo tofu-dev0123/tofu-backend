@@ -8,31 +8,39 @@ from deep_translator import GoogleTranslator
 """
 翻訳を行う
 """
+
+
 def translate_to_english(text: str) -> str:
     try:
         return GoogleTranslator(source="auto", target="en").translate(text)
     except Exception:
         return text  # 翻訳に失敗したら元の日本語でslugify
 
+
 """
 テキストを翻訳してスラグを生成する
 """
+
+
 def generate_slug(text: str) -> str:
     # 英語翻訳
     translated = translate_to_english(text)
-    
+
     # ベーススラグ生成
     slug = slugify(translated)
-    
+
     # スラグが最大文字数を超えた場合は切り取る
     if len(slug) > MAX_SLUG_LENGTH:
         slug = slug[:MAX_SLUG_LENGTH]
-        
+
     return slug
-  
+
+
 """
 重複したスラグをインクリメントする
 """
+
+
 def increment_slug_suffix(base_slug: str, existing_slugs: List[str]):
     # 末尾の数字を解析
     max_number = 0

@@ -11,19 +11,11 @@ class TagRepository:
         self.db = db
 
     def find_id_by_name(self, name: str) -> int | None:
-        result = (
-            self.db.query(Tag.tag_id)
-            .filter(Tag.name == name)
-            .first()
-        )
+        result = self.db.query(Tag.tag_id).filter(Tag.name == name).first()
         return result[0] if result else None
 
     def find_slugs_starting_with(self, slug_base: str) -> list[str]:
-        result = (
-            self.db.query(Tag.slug)
-            .filter(Tag.slug.like(f"{slug_base}%"))
-            .all()
-        )
+        result = self.db.query(Tag.slug).filter(Tag.slug.like(f"{slug_base}%")).all()
         return [row[0] for row in result]
 
     def create(self, name: str, slug: str) -> int:

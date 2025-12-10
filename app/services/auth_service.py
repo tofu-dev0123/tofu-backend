@@ -3,6 +3,7 @@ from app.core.exceptions.auth_exceptions import LoginFailError
 from app.repositories.user_repository import UserRepository
 from app.core.security import create_access_token, verify_password
 
+
 class AuthService:
 
     def __init__(self, db: Session):
