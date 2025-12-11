@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field, EmailStr
+from app.common.constant import Constant
 
 
 class LoginRequest(BaseModel):
     """ログインリクエストスキーマ"""
 
-    username: EmailStr = Field(..., description="ユーザーネーム", max_length=50)
-    password: str = Field(..., description="パスワード", min_length=8, max_length=50)
+    username: EmailStr = Field(..., description="ユーザーネーム", max_length=Constant.MAX_USERNAME_LENGTH)
+    password: str = Field(..., description="パスワード", min_length=Constant.MIN_PASSWORD_LENGTH, max_length=Constant.MAX_PASSWORD_LENGTH)
 
 
 class LoginResponse(BaseModel):

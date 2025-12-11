@@ -3,6 +3,7 @@ from unittest.mock import patch
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
+from app.common.constant import Constant
 
 
 # 正常系
@@ -38,9 +39,10 @@ def test_validation_error_missing(client):
 
 # 最大文字数バリデーション
 def test_validation_error_max_length(client):
-    longtext = "a" * 51
-    username = f"{longtext}@example.com"
-    request = {"username": username, "password": longtext}
+    big_username = "a" * (Constant.MAX_USERNAME_LENGTH + 1)
+    big_password = "a" * (Constant.MAX_PASSWORD_LENGTH + 1)
+    username = f"{big_username}@example.com"
+    request = {"username": username, "password": big_password}
     response = client.post("/admin/auth/login", json=request)
 
     assert response.status_code == 400
@@ -55,9 +57,9 @@ def test_validation_error_max_length(client):
 
 # 最小文字数バリデーション
 def test_validation_error_min_length(client):
-    shorttext = "a" * 7
+    small_password = "a" * (Constant.MIN_PASSWORD_LENGTH - 1)
     username = "admin@example.com"
-    request = {"username": username, "password": shorttext}
+    request = {"username": username, "password": small_password}
     response = client.post("/admin/auth/login", json=request)
 
     assert response.status_code == 400

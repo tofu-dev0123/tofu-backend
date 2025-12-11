@@ -2,7 +2,7 @@ import re
 from slugify import slugify
 from sqlalchemy.orm import Session
 from typing import List
-from app.common.constant import MAX_SLUG_LENGTH
+from app.common.constant import Constant
 from deep_translator import GoogleTranslator
 
 """
@@ -30,8 +30,8 @@ def generate_slug(text: str) -> str:
     slug = slugify(translated)
 
     # スラグが最大文字数を超えた場合は切り取る
-    if len(slug) > MAX_SLUG_LENGTH:
-        slug = slug[:MAX_SLUG_LENGTH]
+    if len(slug) > Constant.MAX_SLUG_LENGTH:
+        slug = slug[:Constant.MAX_SLUG_LENGTH]
 
     return slug
 
