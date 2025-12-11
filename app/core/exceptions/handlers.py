@@ -2,11 +2,12 @@ from fastapi import Request
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.core.security import LoginFailError, AuthenticationError
+from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
+from app.core.exceptions.post_exceptions import ImageNotExistError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
-from app.core.errorcode import ErrorCode
-from app.core.message import ErrorMessage
+from app.common.errorcode import ErrorCode
+from app.common.message import ErrorMessage
 
 
 def register_exception_handlers(app: FastAPI):
@@ -16,9 +17,9 @@ def register_exception_handlers(app: FastAPI):
         errors = []
 
         for error in exc.errors():
-            value = error.get("loc")[-1]
+            value = error.get("loc")[1]
             type = error.get("type")
-            print(value)
+            print(error.get("loc"))
             print(type)
 
             msg = VALIDATION_MESSAGES.get((value, type)) or error.get("msg")
@@ -60,6 +61,17 @@ def register_exception_handlers(app: FastAPI):
             content=ErrorResponse(
                 message=ErrorMessage.AUTHENTICATION_ERROR,
                 error=ErrorCode.AUTHENTICATION_ERROR,
+                details=[],
+            ).dict(),
+        )
+
+    @app.exception_handler(ImageNotExistError)
+    async def image_not_found_error_handler(request: Request, exc: AuthenticationError):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=ErrorMessage.IMAGE_NOT_EXIST,
+                error=ErrorCode.NOT_EXIST,
                 details=[],
             ).dict(),
         )

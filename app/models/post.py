@@ -6,8 +6,8 @@ from app.db.base_class import Base
 
 
 class PostStatus(enum.Enum):
-    DRAFT = "draft"
-    PUBLISHED = "published"
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
 
 
 class Post(Base):

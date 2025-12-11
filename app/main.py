@@ -2,14 +2,14 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.db.database import get_db
-from app.api.admin import auth
-from app.core.exceptions import register_exception_handlers
+from app.api.router import api_router
+from app.core.exceptions.handlers import register_exception_handlers
 
 app = FastAPI()
 register_exception_handlers(app)
 
 # ルーターの登録
-app.include_router(auth.router, prefix="/admin/auth", tags=["admin"])
+app.include_router(api_router)
 
 
 @app.get("/")

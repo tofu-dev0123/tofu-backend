@@ -1,5 +1,5 @@
 import pytest
-from app.core.message import Message, ErrorMessage
+from app.common.message import Message, ErrorMessage
 
 
 # 正常系

@@ -7,6 +7,7 @@ from fastapi import HTTPException, status, Depends
 from app.schemas.errors import ErrorResponse
 from app.models.user import User
 from app.db.database import SessionLocal, get_db
+from app.core.exceptions.auth_exceptions import AuthenticationError
 
 
 security = HTTPBearer()
@@ -87,19 +88,3 @@ def get_current_user(
         raise AuthenticationError
 
     return user
-
-
-class LoginFailError(Exception):
-    """ログイン失敗エラー（ユーザー不存在、パスワード不一致）"""
-
-    def __init__(self, message: str = "ユーザー名またはパスワードが間違っています"):
-        self.message = message
-        super().__init__(self.message)
-
-
-class AuthenticationError(Exception):
-    """ログイン失敗エラー（ユーザー不存在、パスワード不一致）"""
-
-    def __init__(self, message: str = "ユーザー名またはパスワードが間違っています"):
-        self.message = message
-        super().__init__(self.message)

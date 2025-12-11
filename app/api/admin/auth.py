@@ -1,24 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.services.auth_service import login_service
+from app.services.auth_service import AuthService
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
-from app.core.security import LoginFailError, get_current_user
-from app.core.message import Message, ErrorMessage
+from app.core.security import get_current_user
+from app.core.exceptions.auth_exceptions import LoginFailError
+from app.common.message import Message, ErrorMessage
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
+    service = AuthService(db)
+
     try:
         # 認証処理を行いtokenを取得する
-        token = login_service(request.username, request.password, db)
+        token = service.login(request.username, request.password)
 
-    except LoginFailError:
+    except LoginFailError as e:
         # カスタムハンドラーへバトン渡し
-        raise
+        raise e
 
     except Exception:
         # その他の予期しないエラー（500エラー）
@@ -38,7 +41,7 @@ async def logout(current_user=Depends(get_current_user)):
 @router.post("/me", response_model=MeResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return MeResponse(
-        userId=current_user.user_id,
+        user_id=current_user.user_id,
         username=current_user.username,
-        accountName=current_user.account_name,
+        account_name=current_user.account_name,
     )

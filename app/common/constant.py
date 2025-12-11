@@ -1,0 +1,14 @@
+class Constant:
+    
+    # 認証関連
+    MAX_USERNAME_LENGTH = 50
+    MAX_PASSWORD_LENGTH = 50
+    MIN_PASSWORD_LENGTH = 8
+
+    # 記事関連
+    MAX_CONTENT_MARKDOWN_SIZE = 1 * 1024 * 1024  # 1MB
+    MAX_SLUG_LENGTH = 50
+    MAX_TITLE_LENGTH = 255
+    MAX_THUMBNAIL_URL = 500
+    MAX_TAGS = 20
+    MAX_TAG_LENGTH = 30
