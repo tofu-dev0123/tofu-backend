@@ -2,12 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.core.security import get_current_user
-from app.core.exceptions.post_exceptions import ImageNotExistError
 from app.common.message import Message
 from app.schemas.post import PostsPostRequest, PostsPostResponse
 from app.services.post_service import PostService
 from app.models.user import User
-from app.models.post import Post
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
