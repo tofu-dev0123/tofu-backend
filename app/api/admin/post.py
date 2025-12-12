@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.common.message import Message
-from app.schemas.post import Post, PostsGetResponse, PostsPostRequest, PostsPostResponse
+from app.schemas.post import PostsGetResponse, PostsPostRequest, PostsPostResponse
 from app.services.post_service import PostService
 from app.models.user import User
 from app.models.post import PostStatus
@@ -25,9 +24,9 @@ async def get_posts(
 ):
     service = PostService(db)
     user_id = current_user.user_id
-    
+
     result = service.get_posts(user_id, offset, limit, keyword, status)
-    
+
     return result
 
 

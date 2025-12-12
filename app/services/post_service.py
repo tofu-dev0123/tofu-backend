@@ -35,17 +35,13 @@ class PostService:
         status: PostStatus | None,
     ):
         posts: List[PostSchema] = self.post_repo.find_posts_by_user(
-            user_id,
-            offset,
-            limit,
-            keyword,
-            status
+            user_id, offset, limit, keyword, status
         )
-        
+
         total_count = len(posts)
         total_pages = math.ceil(total_count / limit)
         posts_list = []
-        
+
         for post in posts:
             posts_list.append(
                 PostSchema(
@@ -60,11 +56,9 @@ class PostService:
                     updatedAt=post.updated_at,
                 )
             )
-        
+
         return PostsGetResponse(
-            total_count=total_count,
-            total_pages=total_pages,
-            posts=posts_list
+            total_count=total_count, total_pages=total_pages, posts=posts_list
         )
 
     """

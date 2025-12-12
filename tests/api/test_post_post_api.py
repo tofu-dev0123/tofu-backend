@@ -1,7 +1,5 @@
 import pytest
-from app.schemas.post import PostsPostRequest
 from unittest.mock import patch
-from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant

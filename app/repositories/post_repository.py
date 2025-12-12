@@ -21,7 +21,7 @@ class PostRepository:
         # keyword がある場合だけ LIKE 条件を追加
         if keyword:
             statement = statement.where(Post.title.like(f"%{keyword}%"))
-            
+
         if status:
             statement = statement.where(Post.status == status)
 

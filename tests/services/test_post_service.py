@@ -5,6 +5,21 @@ from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
 
+# 一覧取得正常系
+def test_get_posts_success(post_service):
+    mock_posts = Mock()
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.get_posts.return_value = mock_posts
+
+    user_id = 1
+    offset = 0
+    limit = 1
+
+    post_service.post_repo.get_posts(user_id, offset, limit)
+
+    post_service.post_repo.get_posts.assert_called_once
+
+
 # 画像の存在チェック正常系
 def test_check_image_list_success(post_service):
     mock_image = Mock()
