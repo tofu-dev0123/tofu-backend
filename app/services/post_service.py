@@ -1,8 +1,9 @@
+import math
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from app.schemas.post import PostsPostRequest
-from app.models.post import Post, PostStatus
+from app.schemas.post import Post as PostSchema, PostsPostRequest, PostsGetResponse
+from app.models.post import Post as PostModel, PostStatus
 from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
 from app.repositories.tag_repository import TagRepository
@@ -20,6 +21,45 @@ class PostService:
         self.tag_repo = TagRepository(db)
         self.post_tag_repo = PostTagRepository(db)
         self.image_repo = ImageRepository(db)
+
+    """
+    Postsテーブルから記事一覧を取得する
+    """
+
+    def get_posts(
+        self,
+        user_id: int,
+        offset: int,
+        limit: int,
+        keyword: str | None,
+        status: PostStatus | None,
+    ):
+        posts: List[PostSchema] = self.post_repo.find_posts_by_user(
+            user_id, offset, limit, keyword, status
+        )
+
+        total_count = len(posts)
+        total_pages = math.ceil(total_count / limit)
+        posts_list = []
+
+        for post in posts:
+            posts_list.append(
+                PostSchema(
+                    post_id=post.post_id,
+                    user_id=post.user_id,
+                    title=post.title,
+                    slug=post.slug,
+                    thumbnail_url=post.thumbnail_url,
+                    status=post.status,
+                    publishedAt=post.published_at,
+                    createdAt=post.created_at,
+                    updatedAt=post.updated_at,
+                )
+            )
+
+        return PostsGetResponse(
+            total_count=total_count, total_pages=total_pages, posts=posts_list
+        )
 
     """
     画像IDがImageテーブルに登録されているをチェックする
@@ -105,7 +145,7 @@ class PostService:
     def create_post(
         self, request: PostsPostRequest, id: int, slug: str, date: datetime
     ) -> int:
-        post = Post(
+        post = PostModel(
             user_id=id,
             title=request.title,
             slug=slug,

@@ -22,4 +22,8 @@ VALIDATION_MESSAGES = {
     ("tags", "list_type"): ErrorMessage.TAGS_ARRAY,
     ("tags", "list_too_long"): ErrorMessage.TAGS_ARRAY_MAX_LENGTH,
     ("tags", "string_too_long"): ErrorMessage.TAGS_MAX_LENGTH,
+    ("keyword", "string_too_long"): ErrorMessage.KEYWORD_MAX_LENGTH,
+    ("offset", "greater_than_equal"): ErrorMessage.MIN_OFFSET,
+    ("limit", "greater_than_equal"): ErrorMessage.MIN_LIMIT,
+    ("limit", "less_than_equal"): ErrorMessage.MAX_LIMIT,
 }

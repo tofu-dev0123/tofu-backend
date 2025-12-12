@@ -1,5 +1,5 @@
 class Constant:
-    
+
     # 認証関連
     MAX_USERNAME_LENGTH = 50
     MAX_PASSWORD_LENGTH = 50
@@ -12,3 +12,7 @@ class Constant:
     MAX_THUMBNAIL_URL = 500
     MAX_TAGS = 20
     MAX_TAG_LENGTH = 30
+    MAX_KEYWORD_LENGTH = 1000
+    MIN_OFFSET = 0
+    MIN_LIMIT = 1
+    MAX_LIMIT = 30
