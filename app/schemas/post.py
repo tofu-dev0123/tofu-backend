@@ -1,7 +1,28 @@
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core import PydanticCustomError
 from typing import List, Literal
+from datetime import datetime
 from app.common.constant import Constant
+
+
+class Post(BaseModel):
+    post_id: int = Field(..., description="記事ID")
+    user_id: int = Field(..., description="ユーザーID")
+    title: str = Field(..., description="タイトル")
+    slug: str = Field(..., description="スラグ")
+    thumbnail_url: str | None = Field(None, description="サムネイルURL")
+    status: Literal["DRAFT", "PUBLISHED"] = Field(..., description="公開ステータス")
+    publishedAt: datetime | None = Field(None, description="投稿日時")
+    createdAt: datetime = Field(..., description="作成日時")
+    updatedAt: datetime = Field(..., description="更新日時")
+
+class PostsGetResponse(BaseModel):
+    """記事取得成功レスポンススキーマ"""
+    
+    total_count: int = Field(..., description="総件数")
+    total_pages:int = Field(..., description="総ページ数")
+    posts: List[Post] = Field(default_factory=list, description="記事一覧")
+    
 
 
 class PostsPostRequest(BaseModel):
