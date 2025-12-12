@@ -1,15 +1,13 @@
 services:
   api:
     build: .
+    env_file:
+      - .env.local
     container_name: blog-api
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: password
-      DB_NAME: blog_db
+      ENV_FILE: .env.local
     depends_on:
       db:
         condition: service_healthy

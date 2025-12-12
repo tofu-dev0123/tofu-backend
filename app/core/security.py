@@ -35,7 +35,7 @@ def create_access_token(user_id: int, username: str) -> str:
     }
 
     # JWTトークンを生成
-    token = jwt.encode(payload, settings.secret_key, algorithm=settings.ALGORITHM)
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     return token
 
@@ -60,7 +60,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def verify_token(token: str):
     try:
         payload = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
     except JWTError:
