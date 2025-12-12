@@ -147,6 +147,8 @@ def create_initial_data():
 if __name__ == "__main__":
     if not wait_for_database():
         sys.exit(1)
+    
+    check_and_create_initial_migration()
 
     print("Running alembic upgrade...")
     alembic_cfg = Config("alembic.ini")
