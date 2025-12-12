@@ -25,5 +25,5 @@ VALIDATION_MESSAGES = {
     ("keyword", "string_too_long"): ErrorMessage.KEYWORD_MAX_LENGTH,
     ("offset", "greater_than_equal"): ErrorMessage.MIN_OFFSET,
     ("limit", "greater_than_equal"): ErrorMessage.MIN_LIMIT,
-    ("limit", "less_than_equal"): ErrorMessage.MAX_LIMIT
+    ("limit", "less_than_equal"): ErrorMessage.MAX_LIMIT,
 }

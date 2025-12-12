@@ -8,6 +8,8 @@ from app.common.message import Message
 from app.schemas.post import Post, PostsGetResponse, PostsPostRequest, PostsPostResponse
 from app.services.post_service import PostService
 from app.models.user import User
+from app.models.post import PostStatus
+
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
@@ -15,27 +17,18 @@ router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 @router.get("/", response_model=PostsGetResponse)
 async def get_posts(
     keyword: Optional[str] = Query(None, max_length=1000),
+    status: Optional[PostStatus] = Query(None),
     offset: Optional[int] = Query(0, ge=0),
     limit: Optional[int] = Query(10, ge=1, le=30),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return PostsGetResponse(
-        total_count=1,
-        total_pages=1,
-        posts=[
-            Post(
-                post_id=1,
-                user_id=1,
-                title="タイトル",
-                slug="slug",
-                thumbnail_url="http://test.com",
-                status="DRAFT",
-                publishedAt=datetime.now(),
-                createdAt=datetime.now(),
-                updatedAt=datetime.now(),
-            )
-        ]
-    )
+    service = PostService(db)
+    user_id = current_user.user_id
+    
+    result = service.get_posts(user_id, offset, limit, keyword, status)
+    
+    return result
 
 
 @router.post("/", response_model=PostsPostResponse)

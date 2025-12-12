@@ -31,7 +31,7 @@ def generate_slug(text: str) -> str:
 
     # スラグが最大文字数を超えた場合は切り取る
     if len(slug) > Constant.MAX_SLUG_LENGTH:
-        slug = slug[:Constant.MAX_SLUG_LENGTH]
+        slug = slug[: Constant.MAX_SLUG_LENGTH]
 
     return slug
 

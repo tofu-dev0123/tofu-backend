@@ -1,5 +1,5 @@
 class Constant:
-    
+
     # 認証関連
     MAX_USERNAME_LENGTH = 50
     MAX_PASSWORD_LENGTH = 50

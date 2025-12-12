@@ -18,7 +18,7 @@ def test_login_success(mock_create_all, client, valid_token):
         "thumbnail_url": "test_thumb",
         "status": "PUBLISHED",
         "tags": ["python", "fastapi"],
-        "images": [1, 2]
+        "images": [1, 2],
     }
     response = client.post(
         "/admin/posts",
@@ -36,9 +36,7 @@ def test_login_success(mock_create_all, client, valid_token):
 # 必須項目バリデーションエラー
 def test_validation_error_missing(client, valid_token):
     response = client.post(
-        "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
-        json={}
+        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json={}
     )
 
     assert response.status_code == 400
@@ -66,12 +64,10 @@ def test_validation_error_max_length(client, valid_token):
         "content_html": "test_html",
         "thumbnail_url": big_url,
         "status": "PUBLISHED",
-        "tags": big_tags
+        "tags": big_tags,
     }
     response = client.post(
-        "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
-        json=req
+        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json=req
     )
 
     assert response.status_code == 400
@@ -85,6 +81,7 @@ def test_validation_error_max_length(client, valid_token):
     assert ErrorMessage.CONTENT_MARKDOWN_SIZE_OVER in messages
     assert ErrorMessage.TAGS_MAX_LENGTH in messages
 
+
 # 配列最大個数バリデーションエラー
 def test_validation_error_max_array(client, valid_token):
     big_tags = ["a"] * (Constant.MAX_TAGS + 1)
@@ -94,12 +91,10 @@ def test_validation_error_max_array(client, valid_token):
         "content_html": "test_html",
         "thumbnail_url": "test_thumb",
         "status": "PUBLISHED",
-        "tags": big_tags
+        "tags": big_tags,
     }
     response = client.post(
-        "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
-        json=req
+        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json=req
     )
 
     assert response.status_code == 400

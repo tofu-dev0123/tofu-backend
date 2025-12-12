@@ -3,6 +3,7 @@ from pydantic_core import PydanticCustomError
 from typing import List, Literal
 from datetime import datetime
 from app.common.constant import Constant
+from app.models.post import PostStatus
 
 
 class Post(BaseModel):
@@ -11,24 +12,26 @@ class Post(BaseModel):
     title: str = Field(..., description="タイトル")
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
-    status: Literal["DRAFT", "PUBLISHED"] = Field(..., description="公開ステータス")
+    status: PostStatus = Field(..., description="公開ステータス")
     publishedAt: datetime | None = Field(None, description="投稿日時")
     createdAt: datetime = Field(..., description="作成日時")
     updatedAt: datetime = Field(..., description="更新日時")
 
+
 class PostsGetResponse(BaseModel):
     """記事取得成功レスポンススキーマ"""
-    
+
     total_count: int = Field(..., description="総件数")
-    total_pages:int = Field(..., description="総ページ数")
+    total_pages: int = Field(..., description="総ページ数")
     posts: List[Post] = Field(default_factory=list, description="記事一覧")
-    
 
 
 class PostsPostRequest(BaseModel):
     """記事作成リクエストスキーマ"""
 
-    title: str = Field(..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル")
+    title: str = Field(
+        ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
+    )
     content_md: str = Field(..., description="マークダウン本文")
     content_html: str = Field(..., description="HTML本文")
     thumbnail_url: str | None = Field(
@@ -37,7 +40,6 @@ class PostsPostRequest(BaseModel):
     status: Literal["DRAFT", "PUBLISHED"] = Field(..., description="公開ステータス")
     images: List[int] = Field(default_factory=list, description="画像IDの配列")
     tags: List[str] = Field(default_factory=list, description="タグの配列")
-
 
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
