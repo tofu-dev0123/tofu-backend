@@ -30,6 +30,7 @@ def run_migration():
 
 def run_app():
     app_env = os.getenv("APP_ENV", "local")
+    print(f"[BOOT] APP_ENV = {app_env}")
 
     command = [
         "uvicorn",
