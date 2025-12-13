@@ -24,6 +24,14 @@ class PostsGetResponse(BaseModel):
     total_count: int = Field(..., description="総件数")
     total_pages: int = Field(..., description="総ページ数")
     posts: List[Post] = Field(default_factory=list, description="記事一覧")
+    
+
+class PostsSummaryResponse(BaseModel):
+    """記事件数取得成功レスポンススキーマ"""
+
+    total_count: int = Field(..., description="総件数")
+    published_count: int = Field(..., description="公開済件数")
+    draft_count: int = Field(..., description="下書き件数")
 
 
 class PostsPostRequest(BaseModel):
