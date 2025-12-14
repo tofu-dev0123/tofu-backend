@@ -16,3 +16,4 @@ class Constant:
     MIN_OFFSET = 0
     MIN_LIMIT = 1
     MAX_LIMIT = 30
+    MIN_POST_ID = 1

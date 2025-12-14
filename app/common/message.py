@@ -48,6 +48,8 @@ class ErrorMessage:
     MIN_OFFSET = f"オフセット値は{Constant.MIN_OFFSET}以上の整数で指定してください"
     MIN_LIMIT = f"リミット値は{Constant.MIN_LIMIT}以上の整数で指定してください"
     MAX_LIMIT = f"リミット値は{Constant.MAX_LIMIT}以下の整数で指定してください"
+    POST_ID_REQUIRED = "記事IDは必須項目です"
+    MIN_POST_ID = f"記事IDは{Constant.MIN_POST_ID}以上の整数で指定してください"
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"

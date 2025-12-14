@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Path
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.db.database import get_db
@@ -68,7 +68,7 @@ async def get_summary(
 
 @router.get("/{post_id}", response_model=PostGetResponse)
 async def get_post(
-    post_id: int,
+    post_id: int = Path(..., ge=1, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
