@@ -1,6 +1,8 @@
 import pytest
-from app.schemas.post import PostsPostRequest
+from app.schemas.post import PostsPostRequest, PostGetResponse
+from app.models.post import PostStatus
 from app.core.exceptions.post_exceptions import ImageNotExistError
+from tests.mock_data.post_detail import DummyPostDetail
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
@@ -18,7 +20,49 @@ def test_get_posts_success(post_service):
     post_service.post_repo.get_posts(user_id, offset, limit)
 
     post_service.post_repo.get_posts.assert_called_once
+    
+# 記事詳細取得正常系
+def test_get_post_detail(post_service):
+    mock_post = DummyPostDetail()
+    post_service.query_repo = MagicMock()
+    post_service.query_repo.find_by_post_id.return_value = mock_post
+    
+    post_id = 1
+    
+    result = post_service.get_post_detail(post_id)
+    
+    assert isinstance(result, PostGetResponse)
+    assert result.post_id == 1
+    assert result.title == "テストタイトル"
+    assert result.slug == "test-slug"
+    assert result.content_md == "markdown"
+    assert result.content_html == "<p>html</p>"
+    assert result.thumbnail_url == "https://example.com/thumb.png"
+    assert result.status == PostStatus.PUBLISHED
+    assert len(result.images) == 2
+    assert result.images[0].image_id == 1
+    assert result.images[0].url == "https://example.com/img1.png"
+    assert result.images[0].alt_text == "alt1"
+    assert len(result.tags) == 2
+    assert result.tags[0].tag_id == 10
+    assert result.tags[0].name == "Python"
+    assert result.tags[0].slug == "python"
+    post_service.query_repo.find_by_post_id.assert_called_once_with(1)
+    
+# 記事詳細取得正常系
+def test_get_post_detail_no_images_no_tags(post_service):
+    mock_post = DummyPostDetail()
+    mock_post.images = None
+    mock_post.tags = None
+    post_service.query_repo = MagicMock()
+    post_service.query_repo.find_by_post_id.return_value = mock_post
+    
+    post_id = 1
 
+    result = post_service.get_post_detail(post_id)
+
+    assert result.images == []
+    assert result.tags == []
 
 # 画像の存在チェック正常系
 def test_check_image_list_success(post_service):
@@ -209,7 +253,7 @@ def test_create_all_success_with_tags_and_images(
     post_service.generate_slug_of_tag_and_get_id.assert_called_once_with(
         ["python", "fastapi"]
     )
-    post_service.check_status_and_setting_date.assert_called_once_with("PUBLISHED")
+    post_service.check_status_and_setting_date.assert_called_once_with(PostStatus.PUBLISHED)
     post_service.create_post.assert_called_once()
     post_service.create_post_tag.assert_called_once_with([10, 20], 999)
     post_service.attach_post_id_to_image.assert_called_once_with([1, 2], 999)
