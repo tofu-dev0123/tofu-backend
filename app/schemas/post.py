@@ -26,7 +26,7 @@ class PostsListGetResponse(BaseModel):
     total_count: int = Field(..., description="総件数")
     total_pages: int = Field(..., description="総ページ数")
     posts: List[Post] = Field(default_factory=list, description="記事一覧")
-    
+
 
 class PostsSummaryResponse(BaseModel):
     """記事件数取得成功レスポンススキーマ"""
@@ -38,7 +38,7 @@ class PostsSummaryResponse(BaseModel):
 
 class PostGetResponse(BaseModel):
     """記事取得成功レスポンススキーマ"""
-    
+
     post_id: int = Field(..., description="記事ID")
     title: str = Field(..., description="タイトル")
     slug: str = Field(..., description="スラグ")

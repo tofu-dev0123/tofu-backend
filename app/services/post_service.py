@@ -2,7 +2,12 @@ import math
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from app.schemas.post import Post as PostSchema, PostsPostRequest, PostsListGetResponse, PostGetResponse
+from app.schemas.post import (
+    Post as PostSchema,
+    PostsPostRequest,
+    PostsListGetResponse,
+    PostGetResponse,
+)
 from app.schemas.image import Image
 from app.schemas.tag import Tag
 from app.models.post import Post as PostModel, PostStatus
@@ -63,15 +68,15 @@ class PostService:
 
         return PostsListGetResponse(
             total_count=total_count, total_pages=total_pages, posts=posts_list
-        )     
-    
+        )
+
     """
     記事のサマリを取得する
     """
 
     def get_summary(self):
         summary = self.post_repo.get_post_counts()
-        
+
         return summary
 
     """
@@ -101,7 +106,7 @@ class PostService:
                 )
                 for t in (tag.split("|") for tag in data.tags.split(","))
             ]
-        
+
         result = PostGetResponse(
             post_id=post_id,
             title=data.title,
@@ -114,11 +119,10 @@ class PostService:
             tags=tags,
             published_at=data.published_at,
             created_at=data.created_at,
-            updated_at=data.updated_at
+            updated_at=data.updated_at,
         )
-        
-        return result
 
+        return result
 
     """
     画像IDがImageテーブルに登録されているをチェックする

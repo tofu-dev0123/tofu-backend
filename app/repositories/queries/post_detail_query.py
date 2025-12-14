@@ -24,21 +24,13 @@ class PostDetailQueryRepository:
                 Post.published_at,
                 Post.created_at,
                 Post.updated_at,
-
                 func.group_concat(
                     func.distinct(
-                        func.concat(
-                            Image.image_id, "|", Image.url, "|", Image.alt_text
-                        )
+                        func.concat(Image.image_id, "|", Image.url, "|", Image.alt_text)
                     )
                 ).label("images"),
-
                 func.group_concat(
-                    func.distinct(
-                        func.concat(
-                            Tag.tag_id, "|", Tag.name, "|", Tag.slug
-                        )
-                    )
+                    func.distinct(func.concat(Tag.tag_id, "|", Tag.name, "|", Tag.slug))
                 ).label("tags"),
             )
             .join(Image, Image.post_id == Post.post_id, isouter=True)

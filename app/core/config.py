@@ -7,7 +7,7 @@ import os
 class Settings(BaseSettings):
     # ===== 環境 =====
     APP_ENV: str = Field("local")
-    
+
     # ===== Railway MySQL =====
     MYSQLHOST: Optional[str] = None
     MYSQLPORT: Optional[int] = None
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
         if not self.is_local:
             return self.MYSQLHOST
         return self.DB_HOST or "localhost"
-    
+
     @property
     def db_port(self) -> int:
         if not self.is_local:

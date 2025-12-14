@@ -20,6 +20,7 @@ import os
 #     print("Starting application...")
 #     subprocess.run(["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"])
 
+
 def run_migration():
     print("Running database migrations...")
     result = subprocess.run([sys.executable, "migrate_db.py"])

@@ -4,13 +4,20 @@ from typing import Optional
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.common.message import Message
-from app.schemas.post import PostsListGetResponse, PostsSummaryResponse, PostsPostRequest, PostsPostResponse, PostGetResponse
+from app.schemas.post import (
+    PostsListGetResponse,
+    PostsSummaryResponse,
+    PostsPostRequest,
+    PostsPostResponse,
+    PostGetResponse,
+)
 from app.services.post_service import PostService
 from app.models.user import User
 from app.models.post import PostStatus
 
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
+
 
 def get_post_service(
     db: Session = Depends(get_db),
@@ -52,19 +59,19 @@ async def create_posts(
 @router.get("/summary", response_model=PostsSummaryResponse)
 async def get_summary(
     service: PostService = Depends(get_post_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     summary = service.get_summary()
-    
+
     return PostsSummaryResponse(**summary._mapping)
 
 
-@router.get("/{post_id}", response_model = PostGetResponse)
+@router.get("/{post_id}", response_model=PostGetResponse)
 async def get_post(
     post_id: int,
     service: PostService = Depends(get_post_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     data = service.get_post_detail(post_id)
-    
+
     return data

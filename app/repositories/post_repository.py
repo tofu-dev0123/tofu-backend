@@ -30,34 +30,23 @@ class PostRepository:
         )
 
         return self.db.execute(statement).scalars().all()
-    
+
     def get_post_counts(self):
         stmt = select(
             func.count(Post.post_id).label("total_count"),
             func.coalesce(
-                func.sum(
-                    case(
-                        (Post.status == PostStatus.PUBLISHED, 1),
-                        else_=0
-                    )
-                ),
+                func.sum(case((Post.status == PostStatus.PUBLISHED, 1), else_=0)),
                 0,
             ).label("published_count"),
             func.coalesce(
-                func.sum(
-                    case(
-                        (Post.status == PostStatus.DRAFT, 1),
-                        else_=0
-                    )
-                ),
+                func.sum(case((Post.status == PostStatus.DRAFT, 1), else_=0)),
                 0,
             ).label("draft_count"),
         )
 
         result = self.db.execute(stmt).one()
-        
-        return result
 
+        return result
 
     def find_slugs_like(self, slug: str) -> list[str]:
         result = self.db.query(Post.slug).filter(Post.slug.like(f"{slug}%")).all()
