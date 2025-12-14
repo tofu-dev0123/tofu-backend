@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Path
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.common.message import Message
-from app.schemas.post import PostsGetResponse, PostsSummaryResponse, PostsPostRequest, PostsPostResponse
+from app.schemas.post import (
+    PostsListGetResponse,
+    PostsSummaryResponse,
+    PostsPostRequest,
+    PostsPostResponse,
+    PostGetResponse,
+)
 from app.services.post_service import PostService
 from app.models.user import User
 from app.models.post import PostStatus
@@ -12,13 +18,14 @@ from app.models.post import PostStatus
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
+
 def get_post_service(
     db: Session = Depends(get_db),
 ) -> PostService:
     return PostService(db)
 
 
-@router.get("/", response_model=PostsGetResponse)
+@router.get("/", response_model=PostsListGetResponse)
 async def get_posts(
     keyword: Optional[str] = Query(None, max_length=1000),
     status: Optional[PostStatus] = Query(None),
@@ -34,16 +41,6 @@ async def get_posts(
     return result
 
 
-@router.get("/summary", response_model=PostsSummaryResponse)
-async def get_summary(
-    service: PostService = Depends(get_post_service),
-    current_user: User = Depends(get_current_user)
-):
-    summary = service.get_summary()
-    
-    return PostsSummaryResponse(**summary._mapping)
-
-
 @router.post("/", response_model=PostsPostResponse)
 async def create_posts(
     request: PostsPostRequest,
@@ -57,3 +54,24 @@ async def create_posts(
         raise
 
     return PostsPostResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
+
+
+@router.get("/summary", response_model=PostsSummaryResponse)
+async def get_summary(
+    service: PostService = Depends(get_post_service),
+    current_user: User = Depends(get_current_user),
+):
+    summary = service.get_summary()
+
+    return PostsSummaryResponse(**summary._mapping)
+
+
+@router.get("/{post_id}", response_model=PostGetResponse)
+async def get_post(
+    post_id: int = Path(..., ge=1, description="記事ID"),
+    service: PostService = Depends(get_post_service),
+    current_user: User = Depends(get_current_user),
+):
+    data = service.get_post_detail(post_id)
+
+    return data

@@ -26,4 +26,6 @@ VALIDATION_MESSAGES = {
     ("offset", "greater_than_equal"): ErrorMessage.MIN_OFFSET,
     ("limit", "greater_than_equal"): ErrorMessage.MIN_LIMIT,
     ("limit", "less_than_equal"): ErrorMessage.MAX_LIMIT,
+    ("post_id", "missing"): ErrorMessage.POST_ID_REQUIRED,
+    ("post_id", "greater_than_equal"): ErrorMessage.MIN_POST_ID,
 }

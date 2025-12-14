@@ -2,13 +2,21 @@ import math
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
-from app.schemas.post import Post as PostSchema, PostsPostRequest, PostsGetResponse, PostsSummaryResponse
+from app.schemas.post import (
+    Post as PostSchema,
+    PostsPostRequest,
+    PostsListGetResponse,
+    PostGetResponse,
+)
+from app.schemas.image import Image
+from app.schemas.tag import Tag
 from app.models.post import Post as PostModel, PostStatus
 from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
 from app.repositories.tag_repository import TagRepository
 from app.repositories.post_tag_repository import PostTagRepository
 from app.repositories.image_repository import ImageRepository
+from app.repositories.queries.post_detail_query import PostDetailQueryRepository
 from app.core.exceptions.post_exceptions import ImageNotExistError
 from app.utils.slug_utils import generate_slug, increment_slug_suffix
 
@@ -21,6 +29,7 @@ class PostService:
         self.tag_repo = TagRepository(db)
         self.post_tag_repo = PostTagRepository(db)
         self.image_repo = ImageRepository(db)
+        self.query_repo = PostDetailQueryRepository(db)
 
     """
     Postsテーブルから記事一覧を取得する
@@ -57,18 +66,63 @@ class PostService:
                 )
             )
 
-        return PostsGetResponse(
+        return PostsListGetResponse(
             total_count=total_count, total_pages=total_pages, posts=posts_list
-        )     
-    
+        )
+
     """
     記事のサマリを取得する
     """
 
     def get_summary(self):
         summary = self.post_repo.get_post_counts()
-        
+
         return summary
+
+    """
+    記事詳細を取得する
+    """
+
+    def get_post_detail(self, post_id: int) -> PostGetResponse:
+        data = self.query_repo.find_by_post_id(post_id)
+        images = []
+        tags = []
+        if data.images:
+            images = [
+                Image(
+                    image_id=int(i[0]),
+                    url=i[1],
+                    alt_text=i[2],
+                )
+                for i in (img.split("|") for img in data.images.split(","))
+            ]
+
+        if data.tags:
+            tags = [
+                Tag(
+                    tag_id=int(t[0]),
+                    name=t[1],
+                    slug=t[2],
+                )
+                for t in (tag.split("|") for tag in data.tags.split(","))
+            ]
+
+        result = PostGetResponse(
+            post_id=post_id,
+            title=data.title,
+            slug=data.slug,
+            content_md=data.content_md,
+            content_html=data.content_html,
+            thumbnail_url=data.thumbnail_url,
+            status=data.status,
+            images=images,
+            tags=tags,
+            published_at=data.published_at,
+            created_at=data.created_at,
+            updated_at=data.updated_at,
+        )
+
+        return result
 
     """
     画像IDがImageテーブルに登録されているをチェックする
