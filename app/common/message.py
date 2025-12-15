@@ -5,6 +5,7 @@ class Message:
     LOGIN_SUCCESS = "ログインに成功しました"
     LOGOUT_SUCCESS = "ログアウトに成功しました"
     POST_CREATE_SUCCESS = "記事を作成しました"
+    POST_UPDATE_SUCCESS = "記事を更新しました"
 
 
 class ErrorMessage:

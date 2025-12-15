@@ -5,6 +5,7 @@ from datetime import datetime
 from app.schemas.post import (
     Post as PostSchema,
     PostsPostRequest,
+    PostsPutRequest,
     PostsListGetResponse,
     PostGetResponse,
 )
@@ -283,3 +284,11 @@ class PostService:
         except:
             self.db.rollback()
             raise
+        
+    
+    """
+    記事の更新処理をする
+    """
+
+    def update_all(self, request: PostsPutRequest, post_id: int):
+        return
