@@ -17,3 +17,8 @@ class Constant:
     MIN_LIMIT = 1
     MAX_LIMIT = 30
     MIN_POST_ID = 1
+    
+    # 画像関連
+    MAX_FILE_SIZE = 5 * 1024 * 1024 # 5MB
+    ALLOWED_EXTENSIONS = [".jpeg", ".jpg", ".png", ".heic"]
+    MAX_ALT_TEXT_LENGTH = 255

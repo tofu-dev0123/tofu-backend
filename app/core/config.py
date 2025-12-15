@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from pydantic import Field
 import os
@@ -9,11 +9,11 @@ class Settings(BaseSettings):
     APP_ENV: str = Field("local")
     
     # ===== AWS =====
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_DEFAULT_REGION: str
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
+    AWS_DEFAULT_REGION: str | None = None
 
-    S3_BUCKET_NAME: str
+    S3_BUCKET_NAME: str | None = None
     S3_ENDPOINT_URL: str | None = None
     CLOUDFRONT_DOMAIN: str | None = None
 
@@ -32,7 +32,13 @@ class Settings(BaseSettings):
     DB_NAME: Optional[str] = None
 
     SECRET_KEY: str
-    ALGORITHM: str = os.getenv("ALGORITHM")
+    ALGORITHM: str
+    
+    model_config = SettingsConfigDict(
+        env_file=os.getenv("ENV_FILE", ".env.local"),
+        case_sensitive=True,
+        extra="forbid",
+    )
 
     # ===== 環境判別 =====
     @property
@@ -80,10 +86,5 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
             "?charset=utf8mb4"
         )
-
-    class Config:
-        env_file = os.getenv("ENV_FILE", ".env.local")
-        case_sensitive = True
-
 
 settings = Settings()
