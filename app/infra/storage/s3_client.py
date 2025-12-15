@@ -1,13 +1,11 @@
 import boto3
-import os
+from app.core.config import settings
 
 def get_s3_client():
-    endpoint_url = os.getenv("S3_ENDPOINT_URL")
-
     return boto3.client(
         "s3",
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-        region_name=os.getenv("AWS_DEFAULT_REGION"),
-        endpoint_url=endpoint_url if endpoint_url else None,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_DEFAULT_REGION,
+        endpoint_url=settings.S3_ENDPOINT_URL,
     )
