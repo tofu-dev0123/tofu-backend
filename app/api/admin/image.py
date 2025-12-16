@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.schemas.image import ImageUploadResponse
-from app.core.security import get_current_user
-from app.common.message import Message, ErrorMessage
 from app.services.image_service import ImageService
 from app.models.user import User
 
@@ -19,14 +17,15 @@ def get_image_service(
 async def upload(
     image_file: UploadFile = File(...),
     alt_text: str | None = Form(None),
-    db: Session = Depends(get_db),
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        await service.validate(image_file, alt_text)
+        service.validate(image_file, alt_text)
+        
+        result = service.upload_file(image_file, alt_text)
     
     except:
         raise
     
-    return ImageUploadResponse(image_id=1, url="test", alt_text=alt_text)
+    return result
