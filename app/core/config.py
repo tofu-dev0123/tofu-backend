@@ -7,7 +7,7 @@ import os
 class Settings(BaseSettings):
     # ===== 環境 =====
     APP_ENV: str = Field("local")
-    
+
     # ===== AWS =====
     AWS_ACCESS_KEY_ID: str | None = None
     AWS_SECRET_ACCESS_KEY: str | None = None
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str
     ALGORITHM: str
-    
+
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env.local"),
         case_sensitive=True,
@@ -86,5 +86,6 @@ class Settings(BaseSettings):
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
             "?charset=utf8mb4"
         )
+
 
 settings = Settings()

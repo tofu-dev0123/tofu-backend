@@ -8,10 +8,12 @@ from app.models.user import User
 
 router = APIRouter(prefix="/image", tags=["Image 画像関連"])
 
+
 def get_image_service(
     db: Session = Depends(get_db),
 ) -> ImageService:
     return ImageService(db)
+
 
 @router.post("/upload", response_model=ImageUploadResponse)
 async def upload(
@@ -22,10 +24,10 @@ async def upload(
 ):
     try:
         service.validate(image_file, alt_text)
-        
+
         result = service.upload_file(image_file, alt_text)
-    
+
     except:
         raise
-    
+
     return result

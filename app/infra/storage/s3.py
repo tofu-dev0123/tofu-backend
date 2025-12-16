@@ -4,8 +4,9 @@ from datetime import datetime
 from app.core.config import settings
 from botocore.exceptions import ClientError
 
+
 class S3:
-    
+
     def __init__(self):
         self.env = settings.APP_ENV
         self.ACCESS_KEY_ID = settings.AWS_ACCESS_KEY_ID
@@ -23,8 +24,6 @@ class S3:
             region_name=self.REGION_NAME,
             endpoint_url=self.ENDPOINT_URL,
         )
-        
-    
 
     def upload_fileobj(self, fileobj, key: str, content_type: str):
         s3 = self.get_s3_client()
@@ -43,14 +42,13 @@ class S3:
             print("S3 upload failed:", e)
             raise
 
-
     def delete_object(self, key: str):
         s3 = self.get_s3_client()
         s3.delete_object(
             Bucket=self.BUCKET_NAME,
             Key=key,
         )
-    
+
     def build_unique_key(self, filename: str) -> str:
         today = datetime.now()
         ext = filename.split(".")[-1].lower()
@@ -58,7 +56,7 @@ class S3:
         object_key = f"images/{today:%Y}/{today:%m}/{today:%d}/{file_name}"
 
         return f"{object_key}"
-    
+
     def build_public_url(self, key: str) -> str:
         if self.env == "local":
             return f"http://localhost:4566/{self.BUCKET_NAME}/{key}"

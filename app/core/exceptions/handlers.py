@@ -3,7 +3,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
-from app.core.exceptions.image_exceptions import ImageNotExistError, ImageUploadValidationError
+from app.core.exceptions.image_exceptions import (
+    ImageNotExistError,
+    ImageUploadValidationError,
+)
+from app.core.exceptions.s3_exceptions import S3FileUploadError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
 from app.common.errorcode import ErrorCode
@@ -56,8 +60,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(AuthenticationError)
     async def authentication_error_handler(request: Request, exc: AuthenticationError):
-        
-        
+
         return JSONResponse(
             status_code=401,
             content=ErrorResponse(
@@ -77,13 +80,27 @@ def register_exception_handlers(app: FastAPI):
                 details=[],
             ).dict(),
         )
-    
+
     @app.exception_handler(ImageUploadValidationError)
-    async def image_upload_validation_error_handler(request: Request, exc: ImageUploadValidationError):
+    async def image_upload_validation_error_handler(
+        request: Request, exc: ImageUploadValidationError
+    ):
 
         return JSONResponse(
             status_code=400,
             content=ErrorResponse(
                 message="", error=ErrorCode.VALIDATION_ERROR, details=exc.errors
+            ).dict(),
+        )
+
+    @app.exception_handler(S3FileUploadError)
+    async def s3_error_handler(request: Request, exc: S3FileUploadError):
+
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=exc.message,
+                error=ErrorCode.S3_ERROR,
+                details=[],
             ).dict(),
         )
