@@ -17,13 +17,18 @@ class S3:
         self.CLOUDFRONT_DOMAIN = settings.CLOUDFRONT_DOMAIN
 
     def get_s3_client(self):
-        return boto3.client(
-            "s3",
-            aws_access_key_id=self.ACCESS_KEY_ID,
-            aws_secret_access_key=self.SECRET_ACCESS_KEY,
-            region_name=self.REGION_NAME,
-            endpoint_url=self.ENDPOINT_URL,
-        )
+        kwargs = {
+            "service_name": "s3",
+            "aws_access_key_id": self.ACCESS_KEY_ID,
+            "aws_secret_access_key": self.SECRET_ACCESS_KEY,
+            "region_name": self.REGION_NAME,
+        }
+
+        # LocalStack は local 環境のみ
+        if self.env == "local" and self.ENDPOINT_URL:
+            kwargs["endpoint_url"] = self.ENDPOINT_URL
+
+        return boto3.client(**kwargs)
 
     def upload_fileobj(self, fileobj, key: str, content_type: str):
         s3 = self.get_s3_client()
