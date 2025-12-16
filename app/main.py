@@ -4,6 +4,13 @@ from sqlalchemy import text
 from app.db.database import get_db
 from app.api.router import api_router
 from app.core.exceptions.handlers import register_exception_handlers
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+
 
 app = FastAPI()
 register_exception_handlers(app)
