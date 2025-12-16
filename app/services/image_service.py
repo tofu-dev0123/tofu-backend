@@ -59,6 +59,8 @@ class ImageService:
 
         # s3アップロード処理
         try:
+            logger.info("upload start")
+            logger.info(f"filename={image_file.filename}")
             self.s3.upload_fileobj(image_file.file, unique_key, image_file.content_type)
 
             url = self.s3.build_public_url(unique_key)
