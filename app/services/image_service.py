@@ -95,6 +95,7 @@ class ImageService:
             self.db.rollback()
             raise S3FileUploadError()
 
-        except:
+        except Exception:
             self.db.rollback()
+            logger.exception("Unexpected error during image upload")
             raise
