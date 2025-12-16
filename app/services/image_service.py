@@ -79,9 +79,20 @@ class ImageService:
                 image_id=new_image_id, url=url, alt_text=alt_text
             )
 
-        except (ClientError, BotoCoreError) as e:
-            print("キャッチしました")
-            logger.error(e.response)
+        except ClientError as e:
+            logger.error(
+                "S3 ClientError",
+                extra={
+                    "error": e.response,
+                    "key": unique_key,
+                },
+            )
+            self.db.rollback()
+            raise S3FileUploadError()
+
+        except BotoCoreError as e:
+            logger.exception("S3 BotoCoreError")
+            self.db.rollback()
             raise S3FileUploadError()
 
         except:
