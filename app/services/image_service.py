@@ -80,6 +80,7 @@ class ImageService:
             )
 
         except (ClientError, BotoCoreError) as e:
+            print("キャッチしました")
             logger.error(e.response)
             raise S3FileUploadError()
 
