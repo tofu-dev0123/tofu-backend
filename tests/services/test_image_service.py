@@ -35,7 +35,7 @@ def test_validate_extension_error(image_service):
 
     with pytest.raises(ImageUploadValidationError):
         image_service.validate(file, None)
-        
+
 
 def test_validate_alt_text_length_error(image_service, upload_file):
     alt_text = "a" * (Constant.MAX_ALT_TEXT_LENGTH + 1)

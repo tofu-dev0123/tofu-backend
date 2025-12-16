@@ -6,7 +6,7 @@ from app.schemas.image import ImageUploadResponse
 from app.services.image_service import ImageService
 from app.models.user import User
 
-router = APIRouter(prefix="/image", tags=["Image 画像関連"])
+router = APIRouter(prefix="/images", tags=["Image 画像関連"])
 
 
 def get_image_service(

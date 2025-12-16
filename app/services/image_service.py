@@ -60,7 +60,7 @@ class ImageService:
             self.s3.upload_fileobj(image_file.file, unique_key, image_file.content_type)
 
             url = self.s3.build_public_url(unique_key)
-            
+
             alt_text = alt_text if alt_text else ""
 
             image = Image(
