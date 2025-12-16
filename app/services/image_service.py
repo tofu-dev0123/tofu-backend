@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
+import logging
 from typing import List
 from app.core.exceptions.image_exceptions import ImageUploadValidationError
 from app.core.exceptions.s3_exceptions import S3FileUploadError
@@ -14,6 +15,7 @@ from botocore.exceptions import (
     BotoCoreError,
 )
 
+logger = logging.getLogger(__name__)
 
 class ImageService:
     def __init__(self, db: Session):
@@ -77,7 +79,8 @@ class ImageService:
                 image_id=new_image_id, url=url, alt_text=alt_text
             )
 
-        except (ClientError, BotoCoreError):
+        except (ClientError, BotoCoreError) as e:
+            logger.error(e.response)
             raise S3FileUploadError()
 
         except:
