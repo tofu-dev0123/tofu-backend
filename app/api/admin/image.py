@@ -17,12 +17,16 @@ def get_image_service(
 
 @router.post("/upload", response_model=ImageUploadResponse)
 async def upload(
-    image_file: UploadFile = File(..., description=""),
+    image_file: UploadFile = File(...),
     alt_text: str | None = Form(None),
     db: Session = Depends(get_db),
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
-    service.validate(image_file, alt_text)
+    try:
+        await service.validate(image_file, alt_text)
+    
+    except:
+        raise
     
     return ImageUploadResponse(image_id=1, url="test", alt_text=alt_text)

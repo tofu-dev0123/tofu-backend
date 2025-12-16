@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session
-from pydantic_core import PydanticCustomError
 from fastapi import UploadFile
+from typing import List
+from app.core.exceptions.image_exceptions import ImageUploadValidationError
 from app.repositories.image_repository import ImageRepository
 from app.common.constant import Constant
+from app.common.message import ErrorMessage
 
 
 class ImageService:
@@ -12,22 +14,22 @@ class ImageService:
     
     
     async def validate(self, image_file: UploadFile, alt_text: str | None):
+        VALUE = "image_file"
         errors = []
         
-        if not image_file:
-            errors.append(("missing", ""))
-        
+        # ファイルサイズチェック
         content = await image_file.read()
-        if content.size > Constant.MAX_FILE_SIZE:
-            errors.append(("size_over", ""))
-        image_file.file.seek(0)
+        if len(content) > Constant.MAX_FILE_SIZE:
+            errors.append({"value": VALUE, "message":ErrorMessage.MAX_FILE_SIZE})
         
+        # 拡張子チェック
         extension = image_file.filename.split(".")[-1].lower()
         if extension not in Constant.ALLOWED_EXTENSIONS:
-            errors.append(("not_allowed", ""))
+            errors.append({"value": VALUE, "message":ErrorMessage.ALLOWED_EXTENSIONS})
         
-        if alt_text and len(alt_text) > 255:
-            errors.append(("string_too_long", ""))
+        # 代替テキストサイズチェック
+        if alt_text and len(alt_text) > Constant.MAX_ALT_TEXT_LENGTH:
+            errors.append({"value": VALUE, "message":ErrorMessage.MAX_ALT_TEXT_LENGTH})
             
         if errors:
-            raise PydanticCustomError(errors)
+            raise ImageUploadValidationError(errors)

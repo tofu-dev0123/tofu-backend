@@ -1,4 +1,5 @@
 from app.common.constant import Constant
+from app.utils.format_utils import extension_formatter
 
 
 class Message:
@@ -7,7 +8,7 @@ class Message:
     POST_CREATE_SUCCESS = "記事を作成しました"
 
 
-class ErrorMessage:
+class ErrorMessage:    
     # バリデーションエラー
     # 認証関連
     VALIDATION_ERROR = "バリデーションエラーが発生しました"
@@ -50,6 +51,12 @@ class ErrorMessage:
     MAX_LIMIT = f"リミット値は{Constant.MAX_LIMIT}以下の整数で指定してください"
     POST_ID_REQUIRED = "記事IDは必須項目です"
     MIN_POST_ID = f"記事IDは{Constant.MIN_POST_ID}以上の整数で指定してください"
+    
+    # 画像関連
+    MAX_FILE_SIZE = f"アップロードできる画像ファイルは{Constant.MAX_FILE_SIZE / (1024 * 1024)}MBまでです"
+    ALLOWED_EXTENSIONS = f"アップロードできる画像ファイルの拡張子は{extension_formatter(Constant.ALLOWED_EXTENSIONS)}です"
+    MAX_ALT_TEXT_LENGTH = f"代替テキストは{Constant.MAX_ALT_TEXT_LENGTH}文字以内で入力してください"
+
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
@@ -61,3 +68,4 @@ class ErrorMessage:
 
     # INTERNAL_SERVER_ERROR関連
     INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"
+    
