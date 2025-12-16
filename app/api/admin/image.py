@@ -29,8 +29,7 @@ async def upload(
 
         result = service.upload_file(image_file, alt_text)
 
-    except Exception as e:
-        logger.error(e.response)
+    except:
         raise
 
     return result
