@@ -15,3 +15,8 @@ class ImageRepository:
         if image:
             image.post_id = post_id
             self.db.commit()
+
+    def create(self, image: Image) -> int:
+        self.db.add(image)
+        self.db.flush()
+        return image.image_id

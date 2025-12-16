@@ -17,7 +17,7 @@ from app.repositories.tag_repository import TagRepository
 from app.repositories.post_tag_repository import PostTagRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.queries.post_detail_query import PostDetailQueryRepository
-from app.core.exceptions.post_exceptions import ImageNotExistError
+from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.utils.slug_utils import generate_slug, increment_slug_suffix
 
 
