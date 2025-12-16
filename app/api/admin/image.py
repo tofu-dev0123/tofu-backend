@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form
+import logging
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.core.security import get_current_user
@@ -7,6 +8,7 @@ from app.services.image_service import ImageService
 from app.models.user import User
 
 router = APIRouter(prefix="/images", tags=["Image 画像関連"])
+logger = logging.getLogger(__name__)
 
 
 def get_image_service(
@@ -27,7 +29,8 @@ async def upload(
 
         result = service.upload_file(image_file, alt_text)
 
-    except:
+    except Exception as e:
+        logger.error(e.response)
         raise
 
     return result
