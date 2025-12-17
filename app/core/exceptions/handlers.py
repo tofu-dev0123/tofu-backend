@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
 from app.core.exceptions.image_exceptions import (
     ImageNotExistError,
+    ImageNotExistOnStorageError,
     ImageUploadValidationError,
 )
 from app.core.exceptions.s3_exceptions import S3FileUploadError
@@ -75,8 +76,21 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=400,
             content=ErrorResponse(
-                message="",
+                message=exc.message,
                 error=ErrorCode.NOT_EXIST,
+                details=[],
+            ).dict(),
+        )
+
+    @app.exception_handler(ImageNotExistOnStorageError)
+    async def not_exist_on_storage_error_handler(
+        request: Request, exc: ImageNotExistOnStorageError
+    ):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=exc.message,
+                error=ErrorCode.NOT_EXIST_ON_STORAGE,
                 details=[],
             ).dict(),
         )

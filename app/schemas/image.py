@@ -13,3 +13,9 @@ class ImageUploadResponse(BaseModel):
     image_id: int = Field(..., description="画像ID")
     url: str = Field(..., description="画像URL")
     alt_text: str = Field(..., description="代替テキスト")
+
+
+class ImageDeleteResponse(BaseModel):
+    """画像削除成功レスポンススキーマ"""
+
+    message: str = Field(..., description="メッセージ")
