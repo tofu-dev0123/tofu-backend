@@ -42,6 +42,10 @@ async def delete(
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
+    try:
+        service.delete_image(image_id)
 
+    except:
+        raise
 
     return ImageDeleteResponse(message=Message.IMAGE_DELETE_SUCCESS)

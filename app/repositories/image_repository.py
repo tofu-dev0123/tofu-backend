@@ -1,3 +1,4 @@
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 from app.models.image import Image
 
@@ -20,3 +21,7 @@ class ImageRepository:
         self.db.add(image)
         self.db.flush()
         return image.image_id
+
+    def delete(self, image_id: int):
+        stmt = delete(Image).where(Image.image_id == image_id)
+        self.db.execute(stmt)

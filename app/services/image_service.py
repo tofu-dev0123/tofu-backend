@@ -2,7 +2,11 @@ from sqlalchemy.orm import Session
 from fastapi import UploadFile
 import logging
 from typing import List
-from app.core.exceptions.image_exceptions import ImageUploadValidationError
+from app.core.exceptions.image_exceptions import (
+    ImageUploadValidationError,
+    ImageNotExistError,
+    ImageNotExistOnStorageError,
+)
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 from app.repositories.image_repository import ImageRepository
 from app.common.constant import Constant
@@ -16,6 +20,7 @@ from botocore.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 class ImageService:
     def __init__(self, db: Session):
@@ -100,4 +105,38 @@ class ImageService:
         except Exception:
             self.db.rollback()
             logger.exception("Unexpected error during image upload")
+            raise
+
+    def check_exist_image(self, image_id: int) -> Image:
+        image = self.image_repo.find_by_image_id(image_id)
+
+        if not image:
+            raise ImageNotExistError
+        return image
+
+    def validate_image_exists(self, image_url: str):
+        if not self.s3.exists_by_url(image_url):
+            raise ImageNotExistOnStorageError
+
+    def delete_image(self, image_id: int):
+        try:
+            # 画像データがDBに登録されているかチェック
+            image = self.check_exist_image(image_id)
+            url = image.url
+
+            # レコードからデータを削除
+            self.image_repo.delete(image_id)
+
+            # 取得したURLからオブジェクトキーを取得
+            object_key = self.s3.extract_key_from_url(url)
+
+            # ストレージに保存されていることを確認後ストレージから画像を削除
+            if self.s3.exists(object_key):
+                self.s3.delete_object(object_key)
+
+            # ストレージから正常に削除できた場合にデータコミット
+            self.db.commit()
+
+        except:
+            self.db.rollback()
             raise
