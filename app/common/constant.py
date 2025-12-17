@@ -22,3 +22,4 @@ class Constant:
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
     ALLOWED_EXTENSIONS = {"jpeg", "jpg", "png", "heic"}
     MAX_ALT_TEXT_LENGTH = 255
+    MIN_IMAGE_ID = 1

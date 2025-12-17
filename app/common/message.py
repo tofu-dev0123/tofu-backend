@@ -6,6 +6,7 @@ class Message:
     LOGIN_SUCCESS = "ログインに成功しました"
     LOGOUT_SUCCESS = "ログアウトに成功しました"
     POST_CREATE_SUCCESS = "記事を作成しました"
+    IMAGE_DELETE_SUCCESS = "画像を削除しました"
 
 
 class ErrorMessage:
@@ -58,6 +59,8 @@ class ErrorMessage:
     MAX_ALT_TEXT_LENGTH = (
         f"代替テキストは{Constant.MAX_ALT_TEXT_LENGTH}文字以内で入力してください"
     )
+    IMAGE_ID_REQUIRED = "画像IDは必須項目です"
+    MIN_IMAGE_ID = f"画像IDは{Constant.MIN_IMAGE_ID}以上の整数で指定してください"
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
@@ -66,6 +69,7 @@ class ErrorMessage:
 
     # 記事関連
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
+    NOT_EXIST_ON_STORAGE = "ストレージに対象ファイルが存在しません"
 
     # s3関連
     S3_FILE_UPLOAD_ERROR = "s3へのファイルアップロードに失敗しました"
