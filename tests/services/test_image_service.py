@@ -5,7 +5,11 @@ from starlette.datastructures import Headers
 from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
 from app.services.image_service import ImageService
-from app.core.exceptions.image_exceptions import ImageUploadValidationError
+from app.core.exceptions.image_exceptions import (
+    ImageUploadValidationError,
+    ImageNotExistError,
+    ImageNotExistOnStorageError,
+)
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 from app.schemas.image import ImageUploadResponse
 from app.common.constant import Constant
@@ -42,6 +46,43 @@ def test_validate_alt_text_length_error(image_service, upload_file):
 
     with pytest.raises(ImageUploadValidationError):
         image_service.validate(upload_file, alt_text)
+
+
+def test_check_exist_image_success(image_service):
+    image = MagicMock()
+    image.url = "https://cdn.example.com/path/to/image.png"
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = image
+
+    result = image_service.check_exist_image(1)
+
+    assert result is image
+    image_service.image_repo.find_by_image_id.assert_called_once_with(1)
+
+
+def test_check_exist_image_not_found(image_service):
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = None
+
+    with pytest.raises(ImageNotExistError):
+        image_service.check_exist_image(1)
+
+
+def test_validate_image_exists_success(image_service):
+    image_service.s3 = MagicMock()
+    image_service.s3.exists_by_url.return_value = True
+
+    image_service.validate_image_exists("https://cdn.example.com/img.png")
+
+    image_service.s3.exists_by_url.assert_called_once_with("https://cdn.example.com/img.png")
+
+
+def test_validate_image_exists_not_found(image_service):
+    image_service.s3 = MagicMock()
+    image_service.s3.exists_by_url.return_value = False
+
+    with pytest.raises(ImageNotExistOnStorageError):
+        image_service.validate_image_exists("https://cdn.example.com/img.png")
 
 
 def test_upload_file_success(image_service, upload_file):
@@ -87,3 +128,71 @@ def test_upload_file_db_error(image_service, upload_file):
         image_service.upload_file(upload_file, None)
 
     image_service.db.rollback.assert_called_once()
+
+
+def test_delete_image_success(image_service):
+    image = MagicMock()
+    image.url = "https://cdn.example.com/images/2025/01/test.png"
+
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = image
+
+    image_service.s3 = MagicMock()
+    image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
+    image_service.s3.exists.return_value = True
+
+    image_service.delete_image(1)
+
+    image_service.image_repo.find_by_image_id.assert_called_once_with(1)
+    image_service.image_repo.delete.assert_called_once_with(1)
+    image_service.s3.extract_key_from_url.assert_called_once_with(image.url)
+    image_service.s3.exists.assert_called_once_with("images/2025/01/test.png")
+    image_service.s3.delete_object.assert_called_once_with("images/2025/01/test.png")
+    image_service.db.commit.assert_called_once()
+
+
+def test_delete_image_success_when_not_exists_in_s3(image_service):
+    image = MagicMock()
+    image.url = "https://cdn.example.com/images/2025/01/test.png"
+
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = image
+
+    image_service.s3 = MagicMock()
+    image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
+    image_service.s3.exists.return_value = False
+
+    image_service.delete_image(1)
+
+    image_service.s3.delete_object.assert_not_called()
+    image_service.db.commit.assert_called_once()
+
+
+def test_delete_image_not_found(image_service):
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = None
+
+    with pytest.raises(ImageNotExistError):
+        image_service.delete_image(1)
+
+    image_service.db.rollback.assert_called_once()
+    image_service.db.commit.assert_not_called()
+
+
+def test_delete_image_s3_delete_error(image_service):
+    image = MagicMock()
+    image.url = "https://cdn.example.com/images/2025/01/test.png"
+
+    image_service.image_repo = MagicMock()
+    image_service.image_repo.find_by_image_id.return_value = image
+
+    image_service.s3 = MagicMock()
+    image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
+    image_service.s3.exists.return_value = True
+    image_service.s3.delete_object.side_effect = Exception("s3 error")
+
+    with pytest.raises(Exception):
+        image_service.delete_image(1)
+
+    image_service.db.rollback.assert_called_once()
+    image_service.db.commit.assert_not_called()
