@@ -28,4 +28,6 @@ VALIDATION_MESSAGES = {
     ("limit", "less_than_equal"): ErrorMessage.MAX_LIMIT,
     ("post_id", "missing"): ErrorMessage.POST_ID_REQUIRED,
     ("post_id", "greater_than_equal"): ErrorMessage.MIN_POST_ID,
+    ("image_id", "missing"): ErrorMessage.IMAGE_ID_REQUIRED,
+    ("image_id", "greater_than_equal"): ErrorMessage.MIN_IMAGE_ID,
 }

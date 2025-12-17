@@ -1,4 +1,5 @@
 from app.common.constant import Constant
+from app.utils.format_utils import extension_formatter
 
 
 class Message:
@@ -6,6 +7,7 @@ class Message:
     LOGOUT_SUCCESS = "ログアウトに成功しました"
     POST_CREATE_SUCCESS = "記事を作成しました"
     POST_UPDATE_SUCCESS = "記事を更新しました"
+    IMAGE_DELETE_SUCCESS = "画像を削除しました"
 
 
 class ErrorMessage:
@@ -52,6 +54,15 @@ class ErrorMessage:
     POST_ID_REQUIRED = "記事IDは必須項目です"
     MIN_POST_ID = f"記事IDは{Constant.MIN_POST_ID}以上の整数で指定してください"
 
+    # 画像関連
+    MAX_FILE_SIZE = f"アップロードできる画像ファイルは{Constant.MAX_FILE_SIZE / (1024 * 1024)}MBまでです"
+    ALLOWED_EXTENSIONS = f"アップロードできる画像ファイルの拡張子は{extension_formatter(Constant.ALLOWED_EXTENSIONS)}です"
+    MAX_ALT_TEXT_LENGTH = (
+        f"代替テキストは{Constant.MAX_ALT_TEXT_LENGTH}文字以内で入力してください"
+    )
+    IMAGE_ID_REQUIRED = "画像IDは必須項目です"
+    MIN_IMAGE_ID = f"画像IDは{Constant.MIN_IMAGE_ID}以上の整数で指定してください"
+
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
     AUTHENTICATION_ERROR = "認証に失敗しました"
@@ -59,6 +70,10 @@ class ErrorMessage:
 
     # 記事関連
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
+    NOT_EXIST_ON_STORAGE = "ストレージに対象ファイルが存在しません"
+
+    # s3関連
+    S3_FILE_UPLOAD_ERROR = "s3へのファイルアップロードに失敗しました"
 
     # INTERNAL_SERVER_ERROR関連
     INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"

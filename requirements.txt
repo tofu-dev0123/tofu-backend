@@ -17,3 +17,5 @@ httpx
 sqlalchemy-utils
 python-slugify
 deep-translator
+python-multipart
+boto3

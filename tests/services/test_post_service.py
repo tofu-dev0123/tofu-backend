@@ -1,7 +1,7 @@
 import pytest
 from app.schemas.post import PostsPostRequest, PostGetResponse
 from app.models.post import PostStatus
-from app.core.exceptions.post_exceptions import ImageNotExistError
+from app.core.exceptions.image_exceptions import ImageNotExistError
 from tests.mock_data.post_detail import DummyPostDetail
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
