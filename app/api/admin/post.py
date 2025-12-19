@@ -86,4 +86,5 @@ async def update_post(
     current_user: User = Depends(get_current_user),
 ):
     service.update_all(request, post_id)
+    
     return PostsResponse(message=Message.POST_UPDATE_SUCCESS, post_id=post_id)
