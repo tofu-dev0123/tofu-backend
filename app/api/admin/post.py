@@ -12,6 +12,8 @@ from app.schemas.post import (
     PostsResponse,
     PostGetResponse,
     PostsDeleteResponse,
+    PostsPatchRequest,
+    PostsPatchResponse
 )
 from app.services.post_service import PostService
 from app.models.user import User
@@ -100,3 +102,15 @@ async def delete_post(
     service.delete_all(post_id)
 
     return PostsDeleteResponse(message=Message.POST_DELETE_SUCCESS)
+
+
+@router.patch("/{post_id}", response_model=PostsPatchResponse)
+async def patch_status(
+    request: PostsPatchRequest,
+    post_id: int = Path(..., ge=1, description="記事ID"),
+    service: PostService = Depends(get_post_service),
+    current_user: User = Depends(get_current_user),
+):
+    service.patch_status(request.status, post_id)
+
+    return PostsPatchResponse(message=Message.POST_PATCH_SUCCESS.format(status=request.status.value))
