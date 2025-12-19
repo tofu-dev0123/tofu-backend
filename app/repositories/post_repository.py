@@ -1,12 +1,17 @@
-from sqlalchemy import select, func, case
+from sqlalchemy import select, func, case, update, exists
 from sqlalchemy.orm import Session
 from app.models.post import Post, PostStatus
+from datetime import datetime
 
 
 class PostRepository:
 
     def __init__(self, db: Session):
         self.db = db
+    
+    def exist_check_by_post_id(self, post_id) -> bool:
+        stmt = select(exists().where(Post.post_id == post_id))
+        return self.db.execute(stmt).scalar()
 
     def find_posts_by_user(
         self,
@@ -56,3 +61,34 @@ class PostRepository:
         self.db.add(post)
         self.db.flush()
         return post.post_id
+    
+    def find_by_post_id(self, id: int) -> Post:
+        return self.db.query(Post).filter(Post.post_id == id).first()
+    
+    def find_thumbnail_url_by_post_id(self, id:int) -> str:
+        return self.db.query(Post.thumbnail_url).filter(Post.post_id == id).first()
+    
+    def update_post(
+        self,
+        post_id: int,
+        title: str,
+        content_md: str,
+        content_html: str,
+        status: PostStatus,
+        published_at: datetime | None,
+        thumbnail_url: str | None,
+    ):
+        stmt = (
+            update(Post)
+            .where(Post.post_id == post_id)
+            .values(
+                title=title,
+                content_md=content_md,
+                content_html=content_html,
+                status=status,
+                published_at=published_at,
+                thumbnail_url=thumbnail_url,
+                updated_at=datetime.now(),
+            )
+        )
+        self.db.execute(stmt)

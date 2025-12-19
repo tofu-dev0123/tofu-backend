@@ -6,6 +6,7 @@ class Message:
     LOGIN_SUCCESS = "ログインに成功しました"
     LOGOUT_SUCCESS = "ログアウトに成功しました"
     POST_CREATE_SUCCESS = "記事を作成しました"
+    POST_UPDATE_SUCCESS = "記事を更新しました"
     IMAGE_DELETE_SUCCESS = "画像を削除しました"
 
 
@@ -61,6 +62,7 @@ class ErrorMessage:
     )
     IMAGE_ID_REQUIRED = "画像IDは必須項目です"
     MIN_IMAGE_ID = f"画像IDは{Constant.MIN_IMAGE_ID}以上の整数で指定してください"
+    INVALID_IMAGE_OWNER = "削除対象の画像ID（{image_id}）がこの記事に紐づいていません"
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"
@@ -69,10 +71,13 @@ class ErrorMessage:
 
     # 記事関連
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
+    NOT_EXIST = "指定した記事が存在しません"
     NOT_EXIST_ON_STORAGE = "ストレージに対象ファイルが存在しません"
+    BAD_REQUEST_OF_THUMBNAIL = "新規サムネイルを登録する場合は削除フラグはOFFにしてください"
 
     # s3関連
     S3_FILE_UPLOAD_ERROR = "s3へのファイルアップロードに失敗しました"
+    S3_FILE_DELETE_ERROR = "s3のファイル削除に失敗しました"
 
     # INTERNAL_SERVER_ERROR関連
     INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"

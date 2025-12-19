@@ -8,7 +8,8 @@ from app.schemas.post import (
     PostsListGetResponse,
     PostsSummaryResponse,
     PostsPostRequest,
-    PostsPostResponse,
+    PostsPutRequest,
+    PostsResponse,
     PostGetResponse,
 )
 from app.services.post_service import PostService
@@ -41,7 +42,7 @@ async def get_posts(
     return result
 
 
-@router.post("/", response_model=PostsPostResponse)
+@router.post("/", response_model=PostsResponse)
 async def create_posts(
     request: PostsPostRequest,
     service: PostService = Depends(get_post_service),
@@ -53,7 +54,7 @@ async def create_posts(
     except:
         raise
 
-    return PostsPostResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
+    return PostsResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
 
 
 @router.get("/summary", response_model=PostsSummaryResponse)
@@ -75,3 +76,15 @@ async def get_post(
     data = service.get_post_detail(post_id)
 
     return data
+
+
+@router.put("/{post_id}", response_model=PostsResponse)
+async def update_post(
+    request: PostsPutRequest,
+    post_id: int = Path(..., ge=1, description="記事ID"),
+    service: PostService = Depends(get_post_service),
+    current_user: User = Depends(get_current_user),
+):
+    service.update_all(request, post_id)
+    
+    return PostsResponse(message=Message.POST_UPDATE_SUCCESS, post_id=post_id)

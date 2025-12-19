@@ -90,8 +90,47 @@ class PostsPostRequest(BaseModel):
         return v
 
 
-class PostsPostResponse(BaseModel):
-    """記事作成成功レスポンススキーマ"""
+class PostsPutRequest(BaseModel):
+    """記事更新リクエストスキーマ"""
+    
+    title: str = Field(
+        ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
+    )
+    content_md: str = Field(..., description="マークダウン本文")
+    content_html: str = Field(..., description="HTML本文")
+    thumbnail_url: str | None = Field(
+        None, max_length=Constant.MAX_THUMBNAIL_URL, description="サムネイル画像URL"
+    )
+    thumbnail_delete_flag: bool = Field(..., description="サムネイル削除フラグ")
+    status: PostStatus = Field(..., description="公開ステータス")
+    delete_images: List[int] = Field(default_factory=list, description="削除対象の画像IDの配列")
+    new_images: List[int] = Field(default_factory=list, description="新規登録対象の画像IDの配列")
+    tags: List[str] = Field(default_factory=list, description="タグの配列")
+    
+    @field_validator("content_md")
+    def validate_content_md_size(cls, v):
+        if len(v.encode("utf-8")) > Constant.MAX_CONTENT_MARKDOWN_SIZE:
+            raise PydanticCustomError("size_over", "")
+        return v
+
+    @field_validator("thumbnail_url")
+    def empty_string_to_null(cls, v):
+        return None if v == "" else v
+
+    @field_validator("tags")
+    def validate_tags(cls, v):
+        if len(v) > Constant.MAX_TAGS:
+            raise PydanticCustomError("list_too_long", "")
+
+        for tag in v:
+            if len(tag) > Constant.MAX_TAG_LENGTH:
+                raise PydanticCustomError("string_too_long", "")
+
+        return v
+
+
+class PostsResponse(BaseModel):
+    """記事作成(更新)成功レスポンススキーマ"""
 
     message: str = Field(..., description="メッセージ")
     post_id: int = Field(..., description="記事ID")

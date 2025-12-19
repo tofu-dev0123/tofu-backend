@@ -16,6 +16,15 @@ from app.common.message import ErrorMessage
 
 
 def register_exception_handlers(app: FastAPI):
+    
+    @app.exception_handler(ApplicationError)
+    async def application_error_handler(request: Request, exc: ApplicationError):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=exc.message, error=exc.code, details=[]
+            ).dict(),
+        )
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(request: Request, exc: RequestValidationError):
@@ -118,3 +127,12 @@ def register_exception_handlers(app: FastAPI):
                 details=[],
             ).dict(),
         )
+
+
+class ApplicationError(Exception):
+    """汎用的なエラークラス"""
+    
+    def __init__(self, message, code):
+        self.message = message
+        self.code = code
+        super().__init__(self.message)

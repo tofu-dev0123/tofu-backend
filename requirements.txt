@@ -19,3 +19,4 @@ python-slugify
 deep-translator
 python-multipart
 boto3
+sqlalchemy-utils
