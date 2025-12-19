@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core import PydanticCustomError
-from typing import List
 from datetime import datetime
 from app.common.constant import Constant
 from app.models.post import PostStatus
@@ -25,7 +24,7 @@ class PostsListGetResponse(BaseModel):
 
     total_count: int = Field(..., description="総件数")
     total_pages: int = Field(..., description="総ページ数")
-    posts: List[Post] = Field(default_factory=list, description="記事一覧")
+    posts: list[Post] = Field(default_factory=list, description="記事一覧")
 
 
 class PostsSummaryResponse(BaseModel):
@@ -46,8 +45,8 @@ class PostGetResponse(BaseModel):
     content_html: str = Field(..., description="HTML本文")
     thumbnail_url: str | None = Field(None, description="サムネイル画像URL")
     status: PostStatus = Field(..., description="公開ステータス")
-    images: List[Image] = Field(default_factory=list, description="画像データの配列")
-    tags: List[Tag] = Field(default_factory=list, description="タグデータの配列")
+    images: list[Image] = Field(default_factory=list, description="画像データの配列")
+    tags: list[Tag] = Field(default_factory=list, description="タグデータの配列")
     published_at: datetime | None = Field(None, description="公開日時")
     created_at: datetime = Field(..., description="記事作成日時")
     updated_at: datetime = Field(..., description="記事更新日時")
@@ -65,8 +64,8 @@ class PostsPostRequest(BaseModel):
         None, max_length=Constant.MAX_THUMBNAIL_URL, description="サムネイル画像URL"
     )
     status: PostStatus = Field(..., description="公開ステータス")
-    images: List[int] = Field(default_factory=list, description="画像IDの配列")
-    tags: List[str] = Field(default_factory=list, description="タグの配列")
+    images: list[int] = Field(default_factory=list, description="画像IDの配列")
+    tags: list[str] = Field(default_factory=list, description="タグの配列")
 
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
@@ -103,9 +102,9 @@ class PostsPutRequest(BaseModel):
     )
     thumbnail_delete_flag: bool = Field(..., description="サムネイル削除フラグ")
     status: PostStatus = Field(..., description="公開ステータス")
-    delete_images: List[int] = Field(default_factory=list, description="削除対象の画像IDの配列")
-    new_images: List[int] = Field(default_factory=list, description="新規登録対象の画像IDの配列")
-    tags: List[str] = Field(default_factory=list, description="タグの配列")
+    delete_images: list[int] = Field(default_factory=list, description="削除対象の画像IDの配列")
+    new_images: list[int] = Field(default_factory=list, description="新規登録対象の画像IDの配列")
+    tags: list[str] = Field(default_factory=list, description="タグの配列")
     
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
@@ -134,3 +133,9 @@ class PostsResponse(BaseModel):
 
     message: str = Field(..., description="メッセージ")
     post_id: int = Field(..., description="記事ID")
+
+
+class PostsDeleteResponse(BaseModel):
+    """記事作成(更新)成功レスポンススキーマ"""
+
+    message: str = Field(..., description="メッセージ")

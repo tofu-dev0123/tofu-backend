@@ -1,4 +1,4 @@
-from sqlalchemy import select, func, case, update, exists
+from sqlalchemy import select, func, case, update, exists, delete
 from sqlalchemy.orm import Session
 from app.models.post import Post, PostStatus
 from datetime import datetime
@@ -65,8 +65,9 @@ class PostRepository:
     def find_by_post_id(self, id: int) -> Post:
         return self.db.query(Post).filter(Post.post_id == id).first()
     
-    def find_thumbnail_url_by_post_id(self, id:int) -> str:
-        return self.db.query(Post.thumbnail_url).filter(Post.post_id == id).first()
+    def find_thumbnail_url_by_post_id(self, id: int) -> str | None:
+        stmt = select(Post.thumbnail_url).where(Post.post_id == id)
+        return self.db.execute(stmt).scalar_one_or_none()
     
     def update_post(
         self,
@@ -91,4 +92,8 @@ class PostRepository:
                 updated_at=datetime.now(),
             )
         )
+        self.db.execute(stmt)
+    
+    def delete(self, post_id):
+        stmt = delete(Post).where(Post.post_id == post_id)
         self.db.execute(stmt)
