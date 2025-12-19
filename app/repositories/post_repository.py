@@ -94,6 +94,23 @@ class PostRepository:
         )
         self.db.execute(stmt)
 
+    def update_status_and_published_at(
+        self,
+        post_id: int,
+        status: PostStatus,
+        published_at: datetime | None,
+    ):
+        stmt = (
+            update(Post)
+            .where(Post.post_id == post_id)
+            .values(
+                status=status,
+                published_at=published_at,
+                updated_at=datetime.now(),  # updated_at を管理してるなら
+            )
+        )
+        self.db.execute(stmt)
+
     def delete(self, post_id):
         stmt = delete(Post).where(Post.post_id == post_id)
         self.db.execute(stmt)

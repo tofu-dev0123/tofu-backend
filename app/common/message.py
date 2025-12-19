@@ -8,6 +8,7 @@ class Message:
     POST_CREATE_SUCCESS = "記事を作成しました"
     POST_UPDATE_SUCCESS = "記事を更新しました"
     POST_DELETE_SUCCESS = "記事を削除しました"
+    POST_PATCH_SUCCESS = "公開ステータスを{status}に更新しました"
     IMAGE_DELETE_SUCCESS = "画像を削除しました"
 
 

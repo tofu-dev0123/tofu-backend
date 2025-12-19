@@ -507,3 +507,15 @@ class PostService:
         except:
             self.db.rollback()
             raise
+    
+    def patch_status(self, status: PostStatus, post_id: int):
+        try:
+            # 公開ステータスの値によって投稿日時を更新
+            published_at = self.set_published_at_from_status(post_id, status)
+            
+            self.post_repo.update_status_and_published_at(post_id, status, published_at)
+            
+            self.db.commit()
+        except:
+            self.db.rollback()
+            raise
