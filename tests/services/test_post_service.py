@@ -303,14 +303,14 @@ def test_create_all_image_not_exist_error(
 def test_set_published_at_from_status_draft_to_published(mock_datetime, post_service):
     fixed_time = datetime(2025, 1, 1, 12, 0, 0)
     mock_datetime.now.return_value = fixed_time
-    
+
     mock_post = Mock()
     mock_post.status = PostStatus.DRAFT
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_by_post_id.return_value = mock_post
-    
+
     result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
-    
+
     assert result == fixed_time
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
@@ -321,9 +321,9 @@ def test_set_published_at_from_status_published_to_draft(post_service):
     mock_post.status = PostStatus.PUBLISHED
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_by_post_id.return_value = mock_post
-    
+
     result = post_service.set_published_at_from_status(1, PostStatus.DRAFT)
-    
+
     assert result is None
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
@@ -336,9 +336,9 @@ def test_set_published_at_from_status_published_to_published(post_service):
     mock_post.published_at = existing_published_at
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_by_post_id.return_value = mock_post
-    
+
     result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
-    
+
     assert result == existing_published_at
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
@@ -350,9 +350,9 @@ def test_set_published_at_from_status_draft_to_draft(post_service):
     mock_post.published_at = None
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_by_post_id.return_value = mock_post
-    
+
     result = post_service.set_published_at_from_status(1, PostStatus.DRAFT)
-    
+
     assert result is None
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
@@ -362,11 +362,11 @@ def test_delete_image_from_s3_success(post_service):
     post_service.s3 = MagicMock()
     post_service.s3.extract_key_from_url.return_value = "test-key"
     post_service.s3.delete_object.return_value = None
-    
+
     url = "https://example.com/image.png"
-    
+
     result = post_service.delete_image_from_s3(url)
-    
+
     assert result is None
     post_service.s3.extract_key_from_url.assert_called_once_with(url)
     post_service.s3.delete_object.assert_called_once_with("test-key")
@@ -377,9 +377,9 @@ def test_delete_image_from_s3_client_error(post_service):
     post_service.s3 = MagicMock()
     post_service.s3.extract_key_from_url.return_value = "test-key"
     post_service.s3.delete_object.side_effect = ClientError({}, "DeleteObject")
-    
+
     url = "https://example.com/image.png"
-    
+
     with pytest.raises(S3FileDeleteError):
         post_service.delete_image_from_s3(url)
 
@@ -389,9 +389,9 @@ def test_delete_image_from_s3_boto_core_error(post_service):
     post_service.s3 = MagicMock()
     post_service.s3.extract_key_from_url.return_value = "test-key"
     post_service.s3.delete_object.side_effect = BotoCoreError()
-    
+
     url = "https://example.com/image.png"
-    
+
     with pytest.raises(S3FileDeleteError):
         post_service.delete_image_from_s3(url)
 
@@ -400,10 +400,12 @@ def test_delete_image_from_s3_boto_core_error(post_service):
 @patch("app.services.post_service.PostService.delete_image_from_s3")
 def test_update_thumbnail_delete_flag_true_with_old_url(mock_delete, post_service):
     post_service.post_repo = MagicMock()
-    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = "https://example.com/old.png"
-    
+    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = (
+        "https://example.com/old.png"
+    )
+
     result = post_service.update_thumbnail(1, None, True)
-    
+
     assert result is None
     post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
     mock_delete.assert_called_once_with("https://example.com/old.png")
@@ -413,9 +415,9 @@ def test_update_thumbnail_delete_flag_true_with_old_url(mock_delete, post_servic
 def test_update_thumbnail_delete_flag_true_without_old_url(post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
-    
+
     result = post_service.update_thumbnail(1, None, True)
-    
+
     assert result is None
     post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
 
@@ -424,10 +426,10 @@ def test_update_thumbnail_delete_flag_true_without_old_url(post_service):
 def test_update_thumbnail_delete_flag_true_with_url_error(post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
-    
+
     with pytest.raises(ApplicationError) as exc_info:
         post_service.update_thumbnail(1, "https://example.com/new.png", True)
-    
+
     assert exc_info.value.message == ErrorMessage.BAD_REQUEST_OF_THUMBNAIL
     assert exc_info.value.code == ErrorCode.BAD_REQUEST_OF_THUMBNAIL
 
@@ -437,9 +439,9 @@ def test_update_thumbnail_flag_false_url_none(post_service):
     old_url = "https://example.com/old.png"
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = old_url
-    
+
     result = post_service.update_thumbnail(1, None, False)
-    
+
     assert result == old_url
     post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
 
@@ -450,9 +452,9 @@ def test_update_thumbnail_flag_false_empty_string(mock_delete, post_service):
     old_url = "https://example.com/old.png"
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = old_url
-    
+
     result = post_service.update_thumbnail(1, "", False)
-    
+
     assert result is None
     mock_delete.assert_called_once_with(old_url)
 
@@ -461,9 +463,9 @@ def test_update_thumbnail_flag_false_empty_string(mock_delete, post_service):
 def test_update_thumbnail_flag_false_empty_string_no_old_url(post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
-    
+
     result = post_service.update_thumbnail(1, "", False)
-    
+
     assert result is None
 
 
@@ -474,9 +476,9 @@ def test_update_thumbnail_flag_false_replace(mock_delete, post_service):
     new_url = "https://example.com/new.png"
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = old_url
-    
+
     result = post_service.update_thumbnail(1, new_url, False)
-    
+
     assert result == new_url
     mock_delete.assert_called_once_with(old_url)
 
@@ -486,9 +488,9 @@ def test_update_thumbnail_flag_false_same_url(post_service):
     url = "https://example.com/same.png"
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = url
-    
+
     result = post_service.update_thumbnail(1, url, False)
-    
+
     assert result == url
 
 
@@ -497,9 +499,9 @@ def test_update_thumbnail_flag_false_new_url(post_service):
     new_url = "https://example.com/new.png"
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
-    
+
     result = post_service.update_thumbnail(1, new_url, False)
-    
+
     assert result == new_url
 
 
@@ -512,12 +514,12 @@ def test_extract_delete_images_success(mock_delete, post_service):
     mock_image2 = Mock()
     mock_image2.post_id = 1
     mock_image2.url = "https://example.com/img2.png"
-    
+
     post_service.image_repo = MagicMock()
     post_service.image_repo.find_by_image_id.side_effect = [mock_image1, mock_image2]
-    
+
     result = post_service.extract_delete_images(1, [10, 20])
-    
+
     assert result is None
     assert post_service.image_repo.find_by_image_id.call_count == 2
     assert post_service.image_repo.delete.call_count == 2
@@ -528,7 +530,7 @@ def test_extract_delete_images_success(mock_delete, post_service):
 def test_extract_delete_images_not_exist(post_service):
     post_service.image_repo = MagicMock()
     post_service.image_repo.find_by_image_id.return_value = None
-    
+
     with pytest.raises(ImageNotExistError):
         post_service.extract_delete_images(1, [10])
 
@@ -537,14 +539,16 @@ def test_extract_delete_images_not_exist(post_service):
 def test_extract_delete_images_invalid_owner(post_service):
     mock_image = Mock()
     mock_image.post_id = 999  # 異なるpost_id
-    
+
     post_service.image_repo = MagicMock()
     post_service.image_repo.find_by_image_id.return_value = mock_image
-    
+
     with pytest.raises(ApplicationError) as exc_info:
         post_service.extract_delete_images(1, [10])
-    
-    assert exc_info.value.message == ErrorMessage.INVALID_IMAGE_OWNER.format(image_id=10)
+
+    assert exc_info.value.message == ErrorMessage.INVALID_IMAGE_OWNER.format(
+        image_id=10
+    )
     assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
 
 
@@ -554,9 +558,9 @@ def test_extract_delete_images_invalid_owner(post_service):
 def test_update_tags_success(mock_create_post_tag, mock_generate_slug, post_service):
     post_service.post_tag_repo = MagicMock()
     mock_generate_slug.return_value = [10, 20]
-    
+
     result = post_service.update_tags(["python", "fastapi"], 1)
-    
+
     assert result is None
     mock_generate_slug.assert_called_once_with(["python", "fastapi"])
     post_service.post_tag_repo.delete_post_tags.assert_called_once_with(1)
@@ -581,11 +585,11 @@ def test_update_all_success_full_update(
 ):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = True
-    
+
     fixed_time = datetime(2025, 1, 1, 12, 0, 0)
     mock_set_published_at.return_value = fixed_time
     mock_update_thumbnail.return_value = "https://example.com/new-thumb.png"
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -597,13 +601,15 @@ def test_update_all_success_full_update(
         new_images=[3, 4],
         tags=["python", "django"],
     )
-    
+
     result = post_service.update_all(req, post_id=999)
-    
+
     assert result is None
     post_service.post_repo.exist_check_by_post_id.assert_called_once_with(999)
     mock_set_published_at.assert_called_once_with(999, PostStatus.PUBLISHED)
-    mock_update_thumbnail.assert_called_once_with(999, "https://example.com/new-thumb.png", False)
+    mock_update_thumbnail.assert_called_once_with(
+        999, "https://example.com/new-thumb.png", False
+    )
     mock_extract_delete_images.assert_called_once_with(999, [1, 2])
     mock_update_tags.assert_called_once_with(["python", "django"], 999)
     post_service.post_repo.update_post.assert_called_once_with(
@@ -631,10 +637,10 @@ def test_update_all_success_minimal_update(
 ):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = True
-    
+
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -646,9 +652,9 @@ def test_update_all_success_minimal_update(
         new_images=[],
         tags=[],
     )
-    
+
     result = post_service.update_all(req, post_id=999)
-    
+
     assert result is None
     post_service.post_repo.update_post.assert_called_once()
     post_service.db.commit.assert_called_once()
@@ -659,7 +665,7 @@ def test_update_all_success_minimal_update(
 def test_update_all_post_not_exist(mock_db, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = False
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -671,10 +677,10 @@ def test_update_all_post_not_exist(mock_db, post_service):
         new_images=[],
         tags=[],
     )
-    
+
     with pytest.raises(ApplicationError) as exc_info:
         post_service.update_all(req, post_id=999)
-    
+
     assert exc_info.value.message == ErrorMessage.NOT_EXIST
     assert exc_info.value.code == ErrorCode.NOT_EXIST
     post_service.db.rollback.assert_called_once()
@@ -682,7 +688,10 @@ def test_update_all_post_not_exist(mock_db, post_service):
 
 # update_all: 画像削除でImageNotExistError
 @patch("app.services.post_service.PostService.db", create=True)
-@patch("app.services.post_service.PostService.extract_delete_images", side_effect=ImageNotExistError())
+@patch(
+    "app.services.post_service.PostService.extract_delete_images",
+    side_effect=ImageNotExistError(),
+)
 @patch("app.services.post_service.PostService.update_thumbnail")
 @patch("app.services.post_service.PostService.set_published_at_from_status")
 def test_update_all_image_not_exist_error(
@@ -696,7 +705,7 @@ def test_update_all_image_not_exist_error(
     post_service.post_repo.exist_check_by_post_id.return_value = True
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -708,10 +717,10 @@ def test_update_all_image_not_exist_error(
         new_images=[],
         tags=[],
     )
-    
+
     with pytest.raises(ImageNotExistError):
         post_service.update_all(req, post_id=1)
-    
+
     post_service.db.rollback.assert_called_once()
 
 
@@ -737,7 +746,7 @@ def test_update_all_invalid_image_owner(
     post_service.post_repo.exist_check_by_post_id.return_value = True
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -749,10 +758,10 @@ def test_update_all_invalid_image_owner(
         new_images=[],
         tags=[],
     )
-    
+
     with pytest.raises(ApplicationError) as exc_info:
         post_service.update_all(req, post_id=1)
-    
+
     assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
     post_service.db.rollback.assert_called_once()
 
@@ -776,7 +785,7 @@ def test_update_all_bad_request_of_thumbnail(
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = True
     mock_set_published_at.return_value = None
-    
+
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
@@ -788,9 +797,123 @@ def test_update_all_bad_request_of_thumbnail(
         new_images=[],
         tags=[],
     )
-    
+
     with pytest.raises(ApplicationError) as exc_info:
         post_service.update_all(req, post_id=1)
-    
+
     assert exc_info.value.code == ErrorCode.BAD_REQUEST_OF_THUMBNAIL
+    post_service.db.rollback.assert_called_once()
+
+
+# delete_thumbnail: 正常系（サムネイルが存在する場合）
+@patch("app.services.post_service.PostService.delete_image_from_s3")
+def test_delete_thumbnail_success(mock_delete, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = (
+        "https://example.com/thumbnail.png"
+    )
+
+    result = post_service.delete_thumbnail(1)
+
+    assert result is None
+    post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
+    mock_delete.assert_called_once_with("https://example.com/thumbnail.png")
+
+
+# delete_thumbnail: 正常系（サムネイルが存在しない場合）
+def test_delete_thumbnail_no_thumbnail(post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
+
+    result = post_service.delete_thumbnail(1)
+
+    assert result is None
+    post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
+
+
+# delete_image_from_post_id: 正常系（画像URLが複数ある場合）
+@patch("app.services.post_service.PostService.delete_image_from_s3")
+def test_delete_image_from_post_id_success(mock_delete, post_service):
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_url_by_post_id.return_value = [
+        "https://example.com/img1.png",
+        "https://example.com/img2.png",
+        "https://example.com/img3.png",
+    ]
+
+    result = post_service.delete_image_from_post_id(1)
+
+    assert result is None
+    post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+    assert mock_delete.call_count == 3
+    mock_delete.assert_any_call("https://example.com/img1.png")
+    mock_delete.assert_any_call("https://example.com/img2.png")
+    mock_delete.assert_any_call("https://example.com/img3.png")
+
+
+# delete_image_from_post_id: 正常系（画像URLが空の場合）
+def test_delete_image_from_post_id_empty_list(post_service):
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_url_by_post_id.return_value = []
+
+    result = post_service.delete_image_from_post_id(1)
+
+    assert result is None
+    post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+
+
+# delete_all: 正常系
+@patch("app.services.post_service.PostService.db", create=True)
+@patch("app.services.post_service.PostService.delete_image_from_post_id")
+@patch("app.services.post_service.PostService.delete_thumbnail")
+def test_delete_all_success(
+    mock_delete_thumbnail,
+    mock_delete_image_from_post_id,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_tag_repo = MagicMock()
+    post_service.image_repo = MagicMock()
+
+    result = post_service.delete_all(1)
+
+    assert result is None
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    mock_delete_thumbnail.assert_called_once_with(1)
+    post_service.post_tag_repo.delete_post_tags.assert_called_once_with(1)
+    mock_delete_image_from_post_id.assert_called_once_with(1)
+    post_service.image_repo.delete_from_post_id.assert_called_once_with(1)
+    post_service.post_repo.delete.assert_called_once_with(1)
+    post_service.db.commit.assert_called_once()
+
+
+# delete_all: 記事が存在しない場合
+@patch("app.services.post_service.PostService.db", create=True)
+def test_delete_all_post_not_exist(mock_db, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = False
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.delete_all(1)
+
+    assert exc_info.value.message == ErrorMessage.NOT_EXIST
+    assert exc_info.value.code == ErrorCode.NOT_EXIST
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    post_service.db.rollback.assert_called_once()
+
+
+# delete_all: 例外発生時にrollbackが呼ばれる
+@patch("app.services.post_service.PostService.db", create=True)
+@patch("app.services.post_service.PostService.delete_thumbnail", side_effect=Exception("Error"))
+def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = True
+
+    with pytest.raises(Exception):
+        post_service.delete_all(1)
+
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    mock_delete_thumbnail.assert_called_once_with(1)
     post_service.db.rollback.assert_called_once()

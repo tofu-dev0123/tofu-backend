@@ -74,7 +74,9 @@ def test_validate_image_exists_success(image_service):
 
     image_service.validate_image_exists("https://cdn.example.com/img.png")
 
-    image_service.s3.exists_by_url.assert_called_once_with("https://cdn.example.com/img.png")
+    image_service.s3.exists_by_url.assert_called_once_with(
+        "https://cdn.example.com/img.png"
+    )
 
 
 def test_validate_image_exists_not_found(image_service):

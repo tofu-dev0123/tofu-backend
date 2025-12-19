@@ -1,4 +1,4 @@
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 from app.models.image import Image
 
@@ -10,6 +10,10 @@ class ImageRepository:
 
     def find_by_image_id(self, id: int) -> Image | None:
         return self.db.query(Image).filter(Image.image_id == id).first()
+
+    def find_url_by_post_id(self, id: int) -> list[str]:
+        stmt = select(Image.url).where(Image.post_id == id)
+        return self.db.execute(stmt).scalars().all()
 
     def update_post_id(self, image_id: int, post_id: int):
         image: Image = self.db.query(Image).filter(Image.image_id == image_id).first()
@@ -24,4 +28,8 @@ class ImageRepository:
 
     def delete(self, image_id: int):
         stmt = delete(Image).where(Image.image_id == image_id)
+        self.db.execute(stmt)
+
+    def delete_from_post_id(self, post_id: int):
+        stmt = delete(Image).where(Image.post_id == post_id)
         self.db.execute(stmt)

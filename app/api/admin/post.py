@@ -11,6 +11,7 @@ from app.schemas.post import (
     PostsPutRequest,
     PostsResponse,
     PostGetResponse,
+    PostsDeleteResponse,
 )
 from app.services.post_service import PostService
 from app.models.user import User
@@ -86,5 +87,16 @@ async def update_post(
     current_user: User = Depends(get_current_user),
 ):
     service.update_all(request, post_id)
-    
+
     return PostsResponse(message=Message.POST_UPDATE_SUCCESS, post_id=post_id)
+
+
+@router.delete("/{post_id}", response_model=PostsDeleteResponse)
+async def delete_post(
+    post_id: int = Path(..., ge=1, description="記事ID"),
+    service: PostService = Depends(get_post_service),
+    current_user: User = Depends(get_current_user),
+):
+    service.delete_all(post_id)
+
+    return PostsDeleteResponse(message=Message.POST_DELETE_SUCCESS)

@@ -7,6 +7,7 @@ class Message:
     LOGOUT_SUCCESS = "ログアウトに成功しました"
     POST_CREATE_SUCCESS = "記事を作成しました"
     POST_UPDATE_SUCCESS = "記事を更新しました"
+    POST_DELETE_SUCCESS = "記事を削除しました"
     IMAGE_DELETE_SUCCESS = "画像を削除しました"
 
 
@@ -73,7 +74,9 @@ class ErrorMessage:
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
     NOT_EXIST = "指定した記事が存在しません"
     NOT_EXIST_ON_STORAGE = "ストレージに対象ファイルが存在しません"
-    BAD_REQUEST_OF_THUMBNAIL = "新規サムネイルを登録する場合は削除フラグはOFFにしてください"
+    BAD_REQUEST_OF_THUMBNAIL = (
+        "新規サムネイルを登録する場合は削除フラグはOFFにしてください"
+    )
 
     # s3関連
     S3_FILE_UPLOAD_ERROR = "s3へのファイルアップロードに失敗しました"

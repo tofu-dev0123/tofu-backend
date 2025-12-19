@@ -1,6 +1,5 @@
 import math
 from sqlalchemy.orm import Session
-from typing import List
 import logging
 from datetime import datetime
 from app.schemas.post import (
@@ -58,7 +57,7 @@ class PostService:
         keyword: str | None,
         status: PostStatus | None,
     ):
-        posts: List[PostSchema] = self.post_repo.find_posts_by_user(
+        posts: list[PostSchema] = self.post_repo.find_posts_by_user(
             user_id, offset, limit, keyword, status
         )
 
@@ -143,7 +142,7 @@ class PostService:
     画像IDがImageテーブルに登録されているをチェックする
     """
 
-    def check_image_list(self, images: List[int]):
+    def check_image_list(self, images: list[int]):
         for id in images:
             image_data = self.image_repo.find_by_image_id(id)
 
@@ -174,7 +173,7 @@ class PostService:
     タグからスラグを生成してtag_idを取得する
     """
 
-    def generate_slug_of_tag_and_get_id(self, tags: List[str]) -> List[int]:
+    def generate_slug_of_tag_and_get_id(self, tags: list[str]) -> list[int]:
         slug_list = []
 
         if not tags:
@@ -242,7 +241,7 @@ class PostService:
     PostTagテーブルに登録する  
     """
 
-    def create_post_tag(self, tag_id_list: List[int], post_id: int):
+    def create_post_tag(self, tag_id_list: list[int], post_id: int):
         for id in tag_id_list:
             post_tag = PostTag(post_id=post_id, tag_id=id)
             self.post_tag_repo.create(post_tag)
@@ -251,7 +250,7 @@ class PostService:
     画像テーブルに記事IDを登録する 
     """
 
-    def attach_post_id_to_image(self, images: List[int], post_id: int):
+    def attach_post_id_to_image(self, images: list[int], post_id: int):
         for id in images:
             self.image_repo.update_post_id(id, post_id)
 
@@ -298,12 +297,14 @@ class PostService:
         except:
             self.db.rollback()
             raise
-        
+
     """
     公開ステータスによって投稿日時を設定する
-    """     
-    
-    def set_published_at_from_status(self, post_id: int, new_status: PostStatus) -> datetime | None:
+    """
+
+    def set_published_at_from_status(
+        self, post_id: int, new_status: PostStatus
+    ) -> datetime | None:
         post = self.post_repo.find_by_post_id(post_id)
 
         old_status = post.status
@@ -318,11 +319,11 @@ class PostService:
 
         # PUBLISHED → PUBLISHED / DRAFT → DRAFT
         return post.published_at
-    
+
     """
     画像の削除を行う
-    """     
-    
+    """
+
     def delete_image_from_s3(self, url: str) -> None:
         try:
             object_key = self.s3.extract_key_from_url(url)
@@ -331,11 +332,10 @@ class PostService:
             logger.exception("S3 delete failed")
             raise S3FileDeleteError()
 
-    
     """
     サムネイルの更新処理を行う
-    """     
-    
+    """
+
     def update_thumbnail(self, post_id: int, url: str | None, flag: bool) -> str | None:
         old_url = self.post_repo.find_thumbnail_url_by_post_id(post_id)
 
@@ -372,36 +372,38 @@ class PostService:
     """
     画像の削除処理を行う
     """
-    
-    def extract_delete_images(self, post_id: int, images: List[int]):
+
+    def extract_delete_images(self, post_id: int, images: list[int]):
         for id in images:
             image = self.image_repo.find_by_image_id(id)
-            
+
             if not image:
                 raise ImageNotExistError()
-            
+
             if image.post_id != post_id:
-                raise ApplicationError(message=ErrorMessage.INVALID_IMAGE_OWNER.format(image_id=id), code=ErrorCode.INVALID_IMAGE_OWNER)
-        
+                raise ApplicationError(
+                    message=ErrorMessage.INVALID_IMAGE_OWNER.format(image_id=id),
+                    code=ErrorCode.INVALID_IMAGE_OWNER,
+                )
+
             self.delete_image_from_s3(image.url)
-            
+
             self.image_repo.delete(id)
-    
+
     """
     タグの更新処理をする
     """
-    
-    def update_tags(self, tags: List[str], post_id: int):
+
+    def update_tags(self, tags: list[str], post_id: int):
         # 新規タグIDリストを生成
         tag_id_list = self.generate_slug_of_tag_and_get_id(tags)
-        
+
         # PostTagテーブルからpost_idに紐づく全レコードを削除
         self.post_tag_repo.delete_post_tags(post_id)
-        
+
         # 生成したタグIDを再登録して更新
         self.create_post_tag(tag_id_list, post_id)
 
-    
     """
     記事の更新処理をする
     """
@@ -409,22 +411,28 @@ class PostService:
     def update_all(self, request: PostsPutRequest, post_id: int):
         try:
             if not self.post_repo.exist_check_by_post_id(post_id):
-                raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
-            
+                raise ApplicationError(
+                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
+                )
+
             # ステータスの値によって投稿日時をセット
-            new_published_at = self.set_published_at_from_status(post_id, request.status)
-            
+            new_published_at = self.set_published_at_from_status(
+                post_id, request.status
+            )
+
             # 更新するサムネイルURLをセット
-            update_url = self.update_thumbnail(post_id, request.thumbnail_url, request.thumbnail_delete_flag)
-            
+            update_url = self.update_thumbnail(
+                post_id, request.thumbnail_url, request.thumbnail_delete_flag
+            )
+
             # 削除する画像の処理
             if request.delete_images:
                 self.extract_delete_images(post_id, request.delete_images)
-            
+
             # タグの更新処理
             if request.tags:
                 self.update_tags(request.tags, post_id)
-            
+
             # 更新処理
             self.post_repo.update_post(
                 post_id=post_id,
@@ -435,15 +443,67 @@ class PostService:
                 published_at=new_published_at,
                 thumbnail_url=update_url,
             )
-            
+
             # 新規登録画像に記事IDを登録
             if request.new_images:
                 self.attach_post_id_to_image(request.new_images, post_id)
-            
+
             self.db.commit()
-            
+
         except:
             self.db.rollback()
             raise
-        
+
         return
+
+    """
+    サムネイルの削除処理をする
+    """
+
+    def delete_thumbnail(self, post_id: int):
+        thumbnail = self.post_repo.find_thumbnail_url_by_post_id(post_id)
+
+        if thumbnail:
+            self.delete_image_from_s3(thumbnail)
+
+    """
+    記事IDを参照して画像の削除処理をする
+    """
+
+    def delete_image_from_post_id(self, post_id: int):
+        image_urls = self.image_repo.find_url_by_post_id(post_id)
+
+        for url in image_urls:
+            self.delete_image_from_s3(url)
+
+    """
+    記事の削除処理をする
+    """
+
+    def delete_all(self, post_id: int):
+        try:
+            if not self.post_repo.exist_check_by_post_id(post_id):
+                raise ApplicationError(
+                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
+                )
+
+            #  サムネイルの削除処理
+            self.delete_thumbnail(post_id)
+
+            # 記事とタグの中間テーブルの削除処理
+            self.post_tag_repo.delete_post_tags(post_id)
+
+            # 登録されている画像の削除処理
+            self.delete_image_from_post_id(post_id)
+
+            # 画像レコードの削除処理
+            self.image_repo.delete_from_post_id(post_id)
+
+            # 記事レコードの削除
+            self.post_repo.delete(post_id)
+
+            self.db.commit()
+
+        except:
+            self.db.rollback()
+            raise

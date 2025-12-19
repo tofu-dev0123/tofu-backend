@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from typing import List
 
 
 class ErrorDetail(BaseModel):
@@ -14,4 +13,4 @@ class ErrorResponse(BaseModel):
 
     message: str = Field(..., description="メッセージ")
     error: str = Field(..., description="エラー")
-    details: List[ErrorDetail] = Field(default_factory=list, description="詳細")
+    details: list[ErrorDetail] = Field(default_factory=list, description="詳細")

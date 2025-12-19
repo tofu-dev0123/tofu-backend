@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 import logging
-from typing import List
 from app.core.exceptions.image_exceptions import (
     ImageUploadValidationError,
     ImageNotExistError,
