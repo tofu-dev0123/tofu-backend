@@ -91,7 +91,7 @@ class PostsPostRequest(BaseModel):
 
 class PostsPutRequest(BaseModel):
     """記事更新リクエストスキーマ"""
-    
+
     title: str = Field(
         ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
     )
@@ -102,10 +102,14 @@ class PostsPutRequest(BaseModel):
     )
     thumbnail_delete_flag: bool = Field(..., description="サムネイル削除フラグ")
     status: PostStatus = Field(..., description="公開ステータス")
-    delete_images: list[int] = Field(default_factory=list, description="削除対象の画像IDの配列")
-    new_images: list[int] = Field(default_factory=list, description="新規登録対象の画像IDの配列")
+    delete_images: list[int] = Field(
+        default_factory=list, description="削除対象の画像IDの配列"
+    )
+    new_images: list[int] = Field(
+        default_factory=list, description="新規登録対象の画像IDの配列"
+    )
     tags: list[str] = Field(default_factory=list, description="タグの配列")
-    
+
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
         if len(v.encode("utf-8")) > Constant.MAX_CONTENT_MARKDOWN_SIZE:

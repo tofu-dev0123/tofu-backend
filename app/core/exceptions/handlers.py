@@ -16,7 +16,7 @@ from app.common.message import ErrorMessage
 
 
 def register_exception_handlers(app: FastAPI):
-    
+
     @app.exception_handler(ApplicationError)
     async def application_error_handler(request: Request, exc: ApplicationError):
         return JSONResponse(
@@ -131,7 +131,7 @@ def register_exception_handlers(app: FastAPI):
 
 class ApplicationError(Exception):
     """汎用的なエラークラス"""
-    
+
     def __init__(self, message, code):
         self.message = message
         self.code = code

@@ -44,4 +44,3 @@ def test_image_delete_not_found(
     data = response.json()
     assert data["error"] == ErrorCode.NOT_EXIST
     mock_delete_image.assert_called_once_with(999)
-
