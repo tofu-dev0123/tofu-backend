@@ -917,3 +917,37 @@ def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_serv
     post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
     mock_delete_thumbnail.assert_called_once_with(1)
     post_service.db.rollback.assert_called_once()
+
+
+# patch_status: 正常系
+@patch("app.services.post_service.PostService.db", create=True)
+@patch("app.services.post_service.PostService.set_published_at_from_status")
+def test_patch_status_success(mock_set_published_at, mock_db, post_service):
+    post_service.post_repo = MagicMock()
+    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
+    mock_set_published_at.return_value = fixed_time
+
+    result = post_service.patch_status(PostStatus.PUBLISHED, 1)
+
+    assert result is None
+    mock_set_published_at.assert_called_once_with(1, PostStatus.PUBLISHED)
+    post_service.post_repo.update_status_and_published_at.assert_called_once_with(
+        1, PostStatus.PUBLISHED, fixed_time
+    )
+    post_service.db.commit.assert_called_once()
+
+
+# patch_status: 例外発生時にrollbackが呼ばれる
+@patch("app.services.post_service.PostService.db", create=True)
+@patch(
+    "app.services.post_service.PostService.set_published_at_from_status",
+    side_effect=Exception("Error"),
+)
+def test_patch_status_exception_rollback(mock_set_published_at, mock_db, post_service):
+    post_service.post_repo = MagicMock()
+
+    with pytest.raises(Exception):
+        post_service.patch_status(PostStatus.PUBLISHED, 1)
+
+    mock_set_published_at.assert_called_once_with(1, PostStatus.PUBLISHED)
+    post_service.db.rollback.assert_called_once()
