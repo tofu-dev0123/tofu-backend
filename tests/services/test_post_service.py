@@ -803,3 +803,117 @@ def test_update_all_bad_request_of_thumbnail(
 
     assert exc_info.value.code == ErrorCode.BAD_REQUEST_OF_THUMBNAIL
     post_service.db.rollback.assert_called_once()
+
+
+# delete_thumbnail: 正常系（サムネイルが存在する場合）
+@patch("app.services.post_service.PostService.delete_image_from_s3")
+def test_delete_thumbnail_success(mock_delete, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = (
+        "https://example.com/thumbnail.png"
+    )
+
+    result = post_service.delete_thumbnail(1)
+
+    assert result is None
+    post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
+    mock_delete.assert_called_once_with("https://example.com/thumbnail.png")
+
+
+# delete_thumbnail: 正常系（サムネイルが存在しない場合）
+def test_delete_thumbnail_no_thumbnail(post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.find_thumbnail_url_by_post_id.return_value = None
+
+    result = post_service.delete_thumbnail(1)
+
+    assert result is None
+    post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
+
+
+# delete_image_from_post_id: 正常系（画像URLが複数ある場合）
+@patch("app.services.post_service.PostService.delete_image_from_s3")
+def test_delete_image_from_post_id_success(mock_delete, post_service):
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_url_by_post_id.return_value = [
+        "https://example.com/img1.png",
+        "https://example.com/img2.png",
+        "https://example.com/img3.png",
+    ]
+
+    result = post_service.delete_image_from_post_id(1)
+
+    assert result is None
+    post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+    assert mock_delete.call_count == 3
+    mock_delete.assert_any_call("https://example.com/img1.png")
+    mock_delete.assert_any_call("https://example.com/img2.png")
+    mock_delete.assert_any_call("https://example.com/img3.png")
+
+
+# delete_image_from_post_id: 正常系（画像URLが空の場合）
+def test_delete_image_from_post_id_empty_list(post_service):
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_url_by_post_id.return_value = []
+
+    result = post_service.delete_image_from_post_id(1)
+
+    assert result is None
+    post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+
+
+# delete_all: 正常系
+@patch("app.services.post_service.PostService.db", create=True)
+@patch("app.services.post_service.PostService.delete_image_from_post_id")
+@patch("app.services.post_service.PostService.delete_thumbnail")
+def test_delete_all_success(
+    mock_delete_thumbnail,
+    mock_delete_image_from_post_id,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_tag_repo = MagicMock()
+    post_service.image_repo = MagicMock()
+
+    result = post_service.delete_all(1)
+
+    assert result is None
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    mock_delete_thumbnail.assert_called_once_with(1)
+    post_service.post_tag_repo.delete_post_tags.assert_called_once_with(1)
+    mock_delete_image_from_post_id.assert_called_once_with(1)
+    post_service.image_repo.delete_from_post_id.assert_called_once_with(1)
+    post_service.post_repo.delete.assert_called_once_with(1)
+    post_service.db.commit.assert_called_once()
+
+
+# delete_all: 記事が存在しない場合
+@patch("app.services.post_service.PostService.db", create=True)
+def test_delete_all_post_not_exist(mock_db, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = False
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.delete_all(1)
+
+    assert exc_info.value.message == ErrorMessage.NOT_EXIST
+    assert exc_info.value.code == ErrorCode.NOT_EXIST
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    post_service.db.rollback.assert_called_once()
+
+
+# delete_all: 例外発生時にrollbackが呼ばれる
+@patch("app.services.post_service.PostService.db", create=True)
+@patch("app.services.post_service.PostService.delete_thumbnail", side_effect=Exception("Error"))
+def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_service):
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.exist_check_by_post_id.return_value = True
+
+    with pytest.raises(Exception):
+        post_service.delete_all(1)
+
+    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    mock_delete_thumbnail.assert_called_once_with(1)
+    post_service.db.rollback.assert_called_once()

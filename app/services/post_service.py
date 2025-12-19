@@ -457,7 +457,7 @@ class PostService:
         return
 
     """
-    記事の削除処理をする
+    サムネイルの削除処理をする
     """
 
     def delete_thumbnail(self, post_id: int):
