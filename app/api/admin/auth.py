@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.services.auth_service import AuthService
@@ -12,12 +12,23 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest, db: Session = Depends(get_db)):
+async def login(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
     service = AuthService(db)
 
     try:
         # 認証処理を行いtokenを取得する
         token = service.login(request.username, request.password)
+        
+        # Cookie に JWT をセット
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            secure=False,                # local は False / prod は True
+            samesite="lax",
+            max_age=60 * 60,
+            path="/",
+        )
 
     except LoginFailError as e:
         # カスタムハンドラーへバトン渡し
