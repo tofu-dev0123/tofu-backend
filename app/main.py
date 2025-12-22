@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 from app.db.database import get_db
 from app.api.router import api_router
 from app.core.exceptions.handlers import register_exception_handlers
@@ -17,6 +19,14 @@ register_exception_handlers(app)
 
 # ルーターの登録
 app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ALLOW_ORIGINS,
+    allow_credentials=True,   # Cookie 認証では必須
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")

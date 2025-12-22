@@ -31,8 +31,12 @@ class Settings(BaseSettings):
     DB_PASSWORD: Optional[str] = None
     DB_NAME: Optional[str] = None
 
+    # ===== JWTキー =====
     SECRET_KEY: str
     ALGORITHM: str
+    
+    # ===== CORS設定 =====
+    CORS_ALLOW_ORIGINS: list[str]
 
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env.local"),

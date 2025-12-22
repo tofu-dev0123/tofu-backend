@@ -3,7 +3,7 @@ import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Request
 from app.schemas.errors import ErrorResponse
 from app.models.user import User
 from app.db.database import SessionLocal, get_db
@@ -71,15 +71,31 @@ def verify_token(token: str):
             ).dict(),
         )
 
+def get_token(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> str:
+    # 1. Authorization ヘッダー優先
+    if credentials:
+        return credentials.credentials
+
+    # 2. Cookie fallback
+    token = request.cookies.get("access_token")
+    if token:
+        return token
+
+    raise AuthenticationError
+
+
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     db: SessionLocal = Depends(get_db),
+    token: str = Depends(get_token),
 ) -> User:
-    token = credentials.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
-
+    
     if not user_id:
         raise AuthenticationError
 
