@@ -4,6 +4,7 @@ from app.db.database import get_db
 from app.services.auth_service import AuthService
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
+from app.core.config import Settings
 from app.core.security import get_current_user
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.message import Message, ErrorMessage
@@ -24,8 +25,8 @@ async def login(request: LoginRequest, response: Response, db: Session = Depends
             key="access_token",
             value=token,
             httponly=True,
-            secure=False,                # local は False / prod は True
-            samesite="lax",
+            secure=not Settings.is_local,                # local は False / prod は True
+            samesite="none" if not Settings.is_local else "lax",
             max_age=60 * 60,
             path="/",
         )
