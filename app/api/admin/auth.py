@@ -25,8 +25,8 @@ async def login(request: LoginRequest, response: Response, db: Session = Depends
             key="access_token",
             value=token,
             httponly=True,
-            secure=not Settings.is_local,                # local は False / prod は True
-            samesite="none" if not Settings.is_local else "lax",
+            secure=True,                # local は False / prod は True
+            samesite="none",
             max_age=60 * 60,
             path="/",
         )
