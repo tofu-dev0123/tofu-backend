@@ -906,7 +906,10 @@ def test_delete_all_post_not_exist(mock_db, post_service):
 
 # delete_all: 例外発生時にrollbackが呼ばれる
 @patch("app.services.post_service.PostService.db", create=True)
-@patch("app.services.post_service.PostService.delete_thumbnail", side_effect=Exception("Error"))
+@patch(
+    "app.services.post_service.PostService.delete_thumbnail",
+    side_effect=Exception("Error"),
+)
 def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = True

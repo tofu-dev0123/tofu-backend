@@ -145,13 +145,12 @@ class PostsDeleteResponse(BaseModel):
     message: str = Field(..., description="メッセージ")
 
 
-
 class PostsPatchRequest(BaseModel):
     """公開ステータス更新リクエストスキーマ"""
 
     status: PostStatus = Field(..., description="公開ステータス")
-    
-    
+
+
 class PostsPatchResponse(BaseModel):
     """公開ステータス更新成功レスポンススキーマ"""
 

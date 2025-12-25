@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # ===== JWTキー =====
     SECRET_KEY: str
     ALGORITHM: str
-    
+
     # ===== CORS設定 =====
     CORS_ALLOW_ORIGINS: list[str]
 

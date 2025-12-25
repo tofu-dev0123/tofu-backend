@@ -20,14 +20,6 @@ register_exception_handlers(app)
 # ルーターの登録
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ALLOW_ORIGINS,
-    allow_credentials=True,   # Cookie 認証では必須
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 @app.get("/")
 def health_check():
