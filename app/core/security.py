@@ -10,7 +10,7 @@ from app.db.database import SessionLocal, get_db
 from app.core.exceptions.auth_exceptions import AuthenticationError
 
 
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer()
 
 
 def create_access_token(user_id: int, username: str) -> str:
@@ -71,40 +71,15 @@ def verify_token(token: str):
             ).dict(),
         )
 
-def get_token(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
-) -> str:
-    # デバッグ: リクエスト情報を確認
-    print(f"Authorization header: {request.headers.get('authorization')}")
-    print(f"All cookies: {request.cookies}")
-    print(f"access_token cookie: {request.cookies.get('access_token')}")
-    
-    # 1. Authorization ヘッダー優先
-    if credentials:
-        print("Using Authorization header")
-        return credentials.credentials
-
-    # 2. Cookie fallback
-    token = request.cookies.get("access_token")
-    print(f"Token from cookie: {token}")
-    
-    if token:
-        return token
-
-    print("No token found - raising AuthenticationError")
-    raise AuthenticationError
-
-
 
 def get_current_user(
-    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: SessionLocal = Depends(get_db),
-    token: str = Depends(get_token),
 ) -> User:
+    token = credentials.credentials
     payload = verify_token(token)
     user_id = payload.get("sub")
-    
+
     if not user_id:
         raise AuthenticationError
 

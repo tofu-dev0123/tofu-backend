@@ -57,4 +57,3 @@ def test_delete_post_not_exist(mock_delete_all, client, valid_token):
     assert data["error"] == ErrorCode.NOT_EXIST
     assert data["message"] == ErrorMessage.NOT_EXIST
     mock_delete_all.assert_called_once_with(999)
-

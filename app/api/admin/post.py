@@ -13,7 +13,7 @@ from app.schemas.post import (
     PostGetResponse,
     PostsDeleteResponse,
     PostsPatchRequest,
-    PostsPatchResponse
+    PostsPatchResponse,
 )
 from app.services.post_service import PostService
 from app.models.user import User
@@ -113,4 +113,6 @@ async def patch_status(
 ):
     service.patch_status(request.status, post_id)
 
-    return PostsPatchResponse(message=Message.POST_PATCH_SUCCESS.format(status=request.status.value))
+    return PostsPatchResponse(
+        message=Message.POST_PATCH_SUCCESS.format(status=request.status.value)
+    )

@@ -98,4 +98,3 @@ def test_patch_status_draft_success(mock_patch_status, client, valid_token):
     data = response.json()
     assert data["message"] == Message.POST_PATCH_SUCCESS.format(status="DRAFT")
     mock_patch_status.assert_called_once_with(PostStatus.DRAFT, 999)
-
