@@ -241,7 +241,6 @@ def test_create_all_success_with_tags_and_images(
     req = PostsPostRequest(
         title="Test",
         content_md="test_md",
-        content_html="test_html",
         thumbnail_url="test_thumb",
         status="PUBLISHED",
         tags=["python", "fastapi"],
@@ -285,7 +284,6 @@ def test_create_all_image_not_exist_error(
     req = PostsPostRequest(
         title="Test",
         content_md="test_md",
-        content_html="test_html",
         thumbnail_url="test_thumb",
         status="PUBLISHED",
         tags=["python", "fastapi"],
@@ -593,7 +591,6 @@ def test_update_all_success_full_update(
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url="https://example.com/new-thumb.png",
         thumbnail_delete_flag=False,
         status=PostStatus.PUBLISHED,
@@ -612,15 +609,16 @@ def test_update_all_success_full_update(
     )
     mock_extract_delete_images.assert_called_once_with(999, [1, 2])
     mock_update_tags.assert_called_once_with(["python", "django"], 999)
-    post_service.post_repo.update_post.assert_called_once_with(
-        post_id=999,
-        title="Updated Title",
-        content_md="updated_md",
-        content_html="updated_html",
-        status=PostStatus.PUBLISHED,
-        published_at=fixed_time,
-        thumbnail_url="https://example.com/new-thumb.png",
-    )
+    # update_postの呼び出しを確認（content_htmlはMarkdownから変換されるため、実際の値は確認しない）
+    post_service.post_repo.update_post.assert_called_once()
+    call_args = post_service.post_repo.update_post.call_args
+    assert call_args.kwargs["post_id"] == 999
+    assert call_args.kwargs["title"] == "Updated Title"
+    assert call_args.kwargs["content_md"] == "updated_md"
+    assert "content_html" in call_args.kwargs  # content_htmlが生成されていることを確認
+    assert call_args.kwargs["status"] == PostStatus.PUBLISHED
+    assert call_args.kwargs["published_at"] == fixed_time
+    assert call_args.kwargs["thumbnail_url"] == "https://example.com/new-thumb.png"
     mock_attach_image.assert_called_once_with([3, 4], 999)
     post_service.db.commit.assert_called_once()
 
@@ -644,7 +642,6 @@ def test_update_all_success_minimal_update(
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url=None,
         thumbnail_delete_flag=True,
         status=PostStatus.DRAFT,
@@ -669,7 +666,6 @@ def test_update_all_post_not_exist(mock_db, post_service):
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url=None,
         thumbnail_delete_flag=False,
         status=PostStatus.DRAFT,
