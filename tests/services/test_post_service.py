@@ -206,14 +206,14 @@ def test_check_status_and_setting_date_with_PUBLISHED(mock_datetime, post_servic
     fixed_time = datetime(2025, 1, 1, 12, 0, 0)
     mock_datetime.now.return_value = fixed_time
 
-    result = post_service.check_status_and_setting_date("PUBLISHED")
+    result = post_service.check_status_and_setting_date(PostStatus.PUBLISHED)
 
     assert result == fixed_time
 
 
 # 公開ステータスがDRAFT→None
 def test_check_status_and_setting_date_with_DRAFT(post_service):
-    result = post_service.check_status_and_setting_date("DRAFT")
+    result = post_service.check_status_and_setting_date(PostStatus.DRAFT)
 
     assert result is None
 
@@ -326,7 +326,7 @@ def test_set_published_at_from_status_published_to_draft(post_service):
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
 
-# set_published_at_from_status: PUBLISHED → PUBLISHED
+# set_published_at_from_status: PUBLISHED → PUBLISHED（published_atが設定済み）
 def test_set_published_at_from_status_published_to_published(post_service):
     existing_published_at = datetime(2025, 1, 1, 12, 0, 0)
     mock_post = Mock()
@@ -338,6 +338,26 @@ def test_set_published_at_from_status_published_to_published(post_service):
     result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
 
     assert result == existing_published_at
+    post_service.post_repo.find_by_post_id.assert_called_once_with(1)
+
+
+# set_published_at_from_status: PUBLISHED → PUBLISHED（published_atがNoneの場合）
+@patch("app.services.post_service.datetime")
+def test_set_published_at_from_status_published_to_published_with_none(
+    mock_datetime, post_service
+):
+    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
+    mock_datetime.now.return_value = fixed_time
+
+    mock_post = Mock()
+    mock_post.status = PostStatus.PUBLISHED
+    mock_post.published_at = None
+    post_service.post_repo = MagicMock()
+    post_service.post_repo.find_by_post_id.return_value = mock_post
+
+    result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
+
+    assert result == fixed_time
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
 

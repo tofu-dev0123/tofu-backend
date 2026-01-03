@@ -220,8 +220,8 @@ class PostService:
     公開ステータスの値をチェックして日時を返す
     """
 
-    def check_status_and_setting_date(self, status: str) -> datetime | None:
-        if status == PostStatus.PUBLISHED.value:
+    def check_status_and_setting_date(self, status: PostStatus) -> datetime | None:
+        if status == PostStatus.PUBLISHED:
             return datetime.now()
         return None
 
@@ -330,7 +330,12 @@ class PostService:
         if old_status == PostStatus.PUBLISHED and new_status == PostStatus.DRAFT:
             return None
 
-        # PUBLISHED → PUBLISHED / DRAFT → DRAFT
+        # PUBLISHED → PUBLISHED（既に公開済み）
+        if new_status == PostStatus.PUBLISHED:
+            # published_atが未設定の場合は現在日時を設定（不整合データのフォールバック）
+            return post.published_at if post.published_at is not None else datetime.now()
+
+        # DRAFT → DRAFT
         return post.published_at
 
     """
