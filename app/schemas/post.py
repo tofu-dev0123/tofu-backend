@@ -59,7 +59,6 @@ class PostsPostRequest(BaseModel):
         ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
     )
     content_md: str = Field(..., description="マークダウン本文")
-    content_html: str = Field(..., description="HTML本文")
     thumbnail_url: str | None = Field(
         None, max_length=Constant.MAX_THUMBNAIL_URL, description="サムネイル画像URL"
     )
@@ -96,7 +95,6 @@ class PostsPutRequest(BaseModel):
         ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
     )
     content_md: str = Field(..., description="マークダウン本文")
-    content_html: str = Field(..., description="HTML本文")
     thumbnail_url: str | None = Field(
         None, max_length=Constant.MAX_THUMBNAIL_URL, description="サムネイル画像URL"
     )

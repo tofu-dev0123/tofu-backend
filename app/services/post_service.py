@@ -2,6 +2,7 @@ import math
 from sqlalchemy.orm import Session
 import logging
 from datetime import datetime
+from markdown_it import MarkdownIt
 from app.schemas.post import (
     Post as PostSchema,
     PostsPostRequest,
@@ -44,6 +45,15 @@ class PostService:
         self.post_tag_repo = PostTagRepository(db)
         self.image_repo = ImageRepository(db)
         self.query_repo = PostDetailQueryRepository(db)
+        self.md = MarkdownIt("gfm-like")
+
+    """
+    MarkdownからHTMLへの変換処理
+    """
+
+    def convert_markdown_to_html(self, markdown_text: str) -> str:
+        html = self.md.render(markdown_text)
+        return html
 
     """
     Postsテーブルから記事一覧を取得する
@@ -210,8 +220,8 @@ class PostService:
     公開ステータスの値をチェックして日時を返す
     """
 
-    def check_status_and_setting_date(self, status: str) -> datetime | None:
-        if status == PostStatus.PUBLISHED.value:
+    def check_status_and_setting_date(self, status: PostStatus) -> datetime | None:
+        if status == PostStatus.PUBLISHED:
             return datetime.now()
         return None
 
@@ -222,12 +232,15 @@ class PostService:
     def create_post(
         self, request: PostsPostRequest, id: int, slug: str, date: datetime
     ) -> int:
+        # MarkdownからHTMLへの変換
+        content_html = self.convert_markdown_to_html(request.content_md)
+
         post = PostModel(
             user_id=id,
             title=request.title,
             slug=slug,
             content_md=request.content_md,
-            content_html=request.content_html,
+            content_html=content_html,
             thumbnail_url=request.thumbnail_url,
             status=request.status,
             published_at=date,
@@ -317,7 +330,12 @@ class PostService:
         if old_status == PostStatus.PUBLISHED and new_status == PostStatus.DRAFT:
             return None
 
-        # PUBLISHED → PUBLISHED / DRAFT → DRAFT
+        # PUBLISHED → PUBLISHED（既に公開済み）
+        if new_status == PostStatus.PUBLISHED:
+            # published_atが未設定の場合は現在日時を設定（不整合データのフォールバック）
+            return post.published_at if post.published_at is not None else datetime.now()
+
+        # DRAFT → DRAFT
         return post.published_at
 
     """
@@ -433,12 +451,15 @@ class PostService:
             if request.tags:
                 self.update_tags(request.tags, post_id)
 
+            # MarkdownからHTMLへの変換
+            content_html = self.convert_markdown_to_html(request.content_md)
+
             # 更新処理
             self.post_repo.update_post(
                 post_id=post_id,
                 title=request.title,
                 content_md=request.content_md,
-                content_html=request.content_html,
+                content_html=content_html,
                 status=request.status,
                 published_at=new_published_at,
                 thumbnail_url=update_url,

@@ -12,7 +12,6 @@ def test_login_success(mock_create_all, client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_url": "test_thumb",
         "status": "PUBLISHED",
         "tags": ["python", "fastapi"],
@@ -45,7 +44,6 @@ def test_validation_error_missing(client, valid_token):
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.TITLE_REQUIRED in messages
     assert ErrorMessage.CONTENT_MARKDOWN_REQUIRED in messages
-    assert ErrorMessage.CONTENT_HTML_REQUIRED in messages
     assert ErrorMessage.STATUS_REQUIRED in messages
 
 
@@ -59,7 +57,6 @@ def test_validation_error_max_length(client, valid_token):
     req = {
         "title": big_title,
         "content_md": big_content_md,
-        "content_html": "test_html",
         "thumbnail_url": big_url,
         "status": "PUBLISHED",
         "tags": big_tags,
@@ -86,7 +83,6 @@ def test_validation_error_max_array(client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_url": "test_thumb",
         "status": "PUBLISHED",
         "tags": big_tags,

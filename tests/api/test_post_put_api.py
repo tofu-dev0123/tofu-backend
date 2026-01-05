@@ -14,7 +14,6 @@ def test_update_post_success(mock_update_all, client, valid_token):
     req = {
         "title": "Updated Test",
         "content_md": "updated_md",
-        "content_html": "updated_html",
         "thumbnail_url": "https://example.com/new-thumb.png",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
@@ -52,7 +51,6 @@ def test_validation_error_missing(client, valid_token):
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.TITLE_REQUIRED in messages
     assert ErrorMessage.CONTENT_MARKDOWN_REQUIRED in messages
-    assert ErrorMessage.CONTENT_HTML_REQUIRED in messages
     assert ErrorMessage.STATUS_REQUIRED in messages
 
 
@@ -66,7 +64,6 @@ def test_validation_error_max_length(client, valid_token):
     req = {
         "title": big_title,
         "content_md": big_content_md,
-        "content_html": "test_html",
         "thumbnail_url": big_url,
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
@@ -96,7 +93,6 @@ def test_validation_error_max_array(client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_url": "test_thumb",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
@@ -122,7 +118,6 @@ def test_validation_error_min_post_id(client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
     }
@@ -152,7 +147,6 @@ def test_update_post_not_exist(mock_update_all, client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
     }
@@ -182,7 +176,6 @@ def test_update_post_bad_request_of_thumbnail(mock_update_all, client, valid_tok
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_url": "https://example.com/new.png",
         "thumbnail_delete_flag": True,
         "status": "PUBLISHED",
@@ -213,7 +206,6 @@ def test_update_post_invalid_image_owner(mock_update_all, client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
         "delete_images": [999],
@@ -241,7 +233,6 @@ def test_update_post_image_not_exist(mock_update_all, client, valid_token):
     req = {
         "title": "Test",
         "content_md": "test_md",
-        "content_html": "test_html",
         "thumbnail_delete_flag": False,
         "status": "PUBLISHED",
         "delete_images": [999],
