@@ -45,7 +45,9 @@ class PostGetResponse(BaseModel):
     content_html: str = Field(..., description="HTML本文")
     thumbnail_id: int | None = Field(None, description="サムネイル画像ID")
     thumbnail_url: str | None = Field(None, description="サムネイル画像URL")
-    thumbnail_alt_text: str | None = Field(None, description="サムネイル画像代替テキスト")
+    thumbnail_alt_text: str | None = Field(
+        None, description="サムネイル画像代替テキスト"
+    )
     status: PostStatus = Field(..., description="公開ステータス")
     images: list[Image] = Field(default_factory=list, description="画像データの配列")
     tags: list[Tag] = Field(default_factory=list, description="タグデータの配列")

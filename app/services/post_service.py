@@ -130,12 +130,12 @@ class PostService:
                 )
                 for t in (tag.split("|") for tag in data.tags.split(","))
             ]
-        
+
         #  サムネイルURLが存在する場合はサムネイルを取得する
         if data.thumbnail_url:
             thumbnail = self.image_repo.find_by_url(data.thumbnail_url)
         else:
-            thumbnail_url = None            
+            thumbnail_url = None
 
         result = PostGetResponse(
             post_id=post_id,
@@ -341,7 +341,9 @@ class PostService:
         # PUBLISHED → PUBLISHED（既に公開済み）
         if new_status == PostStatus.PUBLISHED:
             # published_atが未設定の場合は現在日時を設定（不整合データのフォールバック）
-            return post.published_at if post.published_at is not None else datetime.now()
+            return (
+                post.published_at if post.published_at is not None else datetime.now()
+            )
 
         # DRAFT → DRAFT
         return post.published_at
