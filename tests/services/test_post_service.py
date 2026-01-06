@@ -32,6 +32,13 @@ def test_get_post_detail(post_service):
     mock_post = DummyPostDetail()
     post_service.query_repo = MagicMock()
     post_service.query_repo.find_by_post_id.return_value = mock_post
+    
+    # サムネイル画像のモック
+    mock_thumbnail = Mock()
+    mock_thumbnail.image_id = 1
+    mock_thumbnail.alt_text = "thumbnail alt text"
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_by_url.return_value = mock_thumbnail
 
     post_id = 1
 
@@ -63,6 +70,13 @@ def test_get_post_detail_no_images_no_tags(post_service):
     mock_post.tags = None
     post_service.query_repo = MagicMock()
     post_service.query_repo.find_by_post_id.return_value = mock_post
+    
+    # サムネイル画像のモック
+    mock_thumbnail = Mock()
+    mock_thumbnail.image_id = 1
+    mock_thumbnail.alt_text = "thumbnail alt text"
+    post_service.image_repo = MagicMock()
+    post_service.image_repo.find_by_url.return_value = mock_thumbnail
 
     post_id = 1
 
