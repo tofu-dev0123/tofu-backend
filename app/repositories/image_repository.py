@@ -11,6 +11,9 @@ class ImageRepository:
     def find_by_image_id(self, id: int) -> Image | None:
         return self.db.query(Image).filter(Image.image_id == id).first()
 
+    def find_by_url(self, url: str) -> Image | None:
+        return self.db.query(Image).filter(Image.url == url).first()
+
     def find_url_by_post_id(self, id: int) -> list[str]:
         stmt = select(Image.url).where(Image.post_id == id)
         return self.db.execute(stmt).scalars().all()
