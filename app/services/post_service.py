@@ -130,6 +130,12 @@ class PostService:
                 )
                 for t in (tag.split("|") for tag in data.tags.split(","))
             ]
+        
+        #  サムネイルURLが存在する場合はサムネイルを取得する
+        if data.thumbnail_url:
+            thumbnail = self.image_repo.find_by_url(data.thumbnail_url)
+        else:
+            thumbnail_url = None            
 
         result = PostGetResponse(
             post_id=post_id,
@@ -137,7 +143,9 @@ class PostService:
             slug=data.slug,
             content_md=data.content_md,
             content_html=data.content_html,
+            thumbnail_id=thumbnail.image_id,
             thumbnail_url=data.thumbnail_url,
+            thumbnail_alt_text=thumbnail.alt_text,
             status=data.status,
             images=images,
             tags=tags,
