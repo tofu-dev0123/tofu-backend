@@ -4,8 +4,12 @@ from unittest.mock import Mock, MagicMock
 from datetime import datetime
 from app.services.public.post_service import PublicPostService
 from app.models.post import Post, PostStatus
-from app.schemas.post import PostsPublishAtResponse, PostPublishAt
+from app.schemas.post import PostsPublishAtResponse, PostPublishAt, PostPublishAtResponse
+from app.schemas.tag import Tag
 from app.common.constant import Constant
+from app.core.exceptions.handlers import ApplicationError
+from app.common.message import ErrorMessage
+from app.common.errorcode import ErrorCode
 
 
 # 正常系: 記事一覧の取得（キーワードなし）
@@ -182,4 +186,113 @@ def test_get_posts_total_pages_calculation_exact(mock_db):
 
     assert result.total_count == 10
     assert result.total_pages == 1  # 10 / 10 = 1.0 → ceil(1.0) = 1
+
+
+# 正常系: 記事詳細の取得（タグあり）
+def test_get_post_success_with_tags(mock_db):
+    service = PublicPostService(mock_db)
+
+    # モックデータの作成（タグあり）
+    mock_data = Mock()
+    mock_data.post_id = 1
+    mock_data.title = "テストタイトル"
+    mock_data.slug = "test-slug"
+    mock_data.content_html = "<p>テスト本文</p>"
+    mock_data.thumbnail_url = "https://example.com/thumb.png"
+    mock_data.tags = "1|Python|python,2|FastAPI|fastapi"
+    mock_data.published_at = datetime(2025, 1, 1, 12, 0, 0)
+
+    service.query_repo = MagicMock()
+    service.query_repo.find_by_slug.return_value = mock_data
+
+    result = service.get_post("test-slug")
+
+    assert isinstance(result, PostPublishAtResponse)
+    assert result.post_id == 1
+    assert result.title == "テストタイトル"
+    assert result.slug == "test-slug"
+    assert result.content_html == "<p>テスト本文</p>"
+    assert result.thumbnail_url == "https://example.com/thumb.png"
+    assert len(result.tags) == 2
+    assert result.tags[0].tag_id == 1
+    assert result.tags[0].name == "Python"
+    assert result.tags[0].slug == "python"
+    assert result.tags[1].tag_id == 2
+    assert result.tags[1].name == "FastAPI"
+    assert result.tags[1].slug == "fastapi"
+    assert result.published_at == datetime(2025, 1, 1, 12, 0, 0)
+
+    service.query_repo.find_by_slug.assert_called_once_with("test-slug")
+
+
+# 正常系: 記事詳細の取得（タグなし）
+def test_get_post_success_without_tags(mock_db):
+    service = PublicPostService(mock_db)
+
+    # モックデータの作成（タグなし）
+    mock_data = Mock()
+    mock_data.post_id = 1
+    mock_data.title = "テストタイトル"
+    mock_data.slug = "test-slug"
+    mock_data.content_html = "<p>テスト本文</p>"
+    mock_data.thumbnail_url = None
+    mock_data.tags = None
+    mock_data.published_at = datetime(2025, 1, 1, 12, 0, 0)
+
+    service.query_repo = MagicMock()
+    service.query_repo.find_by_slug.return_value = mock_data
+
+    result = service.get_post("test-slug")
+
+    assert isinstance(result, PostPublishAtResponse)
+    assert result.post_id == 1
+    assert result.title == "テストタイトル"
+    assert result.slug == "test-slug"
+    assert result.content_html == "<p>テスト本文</p>"
+    assert result.thumbnail_url is None
+    assert len(result.tags) == 0
+    assert result.published_at == datetime(2025, 1, 1, 12, 0, 0)
+
+    service.query_repo.find_by_slug.assert_called_once_with("test-slug")
+
+
+# 正常系: 記事詳細の取得（空文字列のタグ）
+def test_get_post_success_with_empty_tags_string(mock_db):
+    service = PublicPostService(mock_db)
+
+    # モックデータの作成（タグが空文字列）
+    mock_data = Mock()
+    mock_data.post_id = 1
+    mock_data.title = "テストタイトル"
+    mock_data.slug = "test-slug"
+    mock_data.content_html = "<p>テスト本文</p>"
+    mock_data.thumbnail_url = None
+    mock_data.tags = ""
+    mock_data.published_at = datetime(2025, 1, 1, 12, 0, 0)
+
+    service.query_repo = MagicMock()
+    service.query_repo.find_by_slug.return_value = mock_data
+
+    result = service.get_post("test-slug")
+
+    assert isinstance(result, PostPublishAtResponse)
+    assert result.post_id == 1
+    assert len(result.tags) == 0
+
+    service.query_repo.find_by_slug.assert_called_once_with("test-slug")
+
+
+# 異常系: 記事が存在しない場合
+def test_get_post_not_found(mock_db):
+    service = PublicPostService(mock_db)
+
+    service.query_repo = MagicMock()
+    service.query_repo.find_by_slug.return_value = None
+
+    with pytest.raises(ApplicationError) as exc_info:
+        service.get_post("non-existent-slug")
+
+    assert exc_info.value.message == ErrorMessage.NOT_EXIST
+    assert exc_info.value.code == ErrorCode.NOT_EXIST
+    service.query_repo.find_by_slug.assert_called_once_with("non-existent-slug")
 

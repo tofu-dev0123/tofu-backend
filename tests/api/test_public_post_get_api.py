@@ -4,7 +4,8 @@ from datetime import datetime
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.common.constant import Constant
-from app.schemas.post import PostsPublishAtResponse, PostPublishAt
+from app.schemas.post import PostsPublishAtResponse, PostPublishAt, PostPublishAtResponse
+from app.schemas.tag import Tag
 
 
 # 正常系: 公開記事一覧の取得成功（page=1, keywordなし）
@@ -134,4 +135,86 @@ def test_validation_error_keyword_max_length(client):
 
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.KEYWORD_MAX_LENGTH in messages
+
+
+# 正常系: 公開記事詳細の取得成功（タグあり）
+@patch("app.services.public.post_service.PublicPostService.get_post")
+def test_get_post_success_with_tags(mock_get_post, client):
+    mock_response = PostPublishAtResponse(
+        post_id=1,
+        title="テストタイトル",
+        slug="test-slug",
+        content_html="<p>テスト本文</p>",
+        thumbnail_url="https://example.com/thumb.png",
+        tags=[
+            Tag(tag_id=1, name="Python", slug="python"),
+            Tag(tag_id=2, name="FastAPI", slug="fastapi"),
+        ],
+        published_at=datetime(2025, 1, 1, 12, 0, 0),
+    )
+    mock_get_post.return_value = mock_response
+
+    response = client.get("/posts/test-slug")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["post_id"] == 1
+    assert data["title"] == "テストタイトル"
+    assert data["slug"] == "test-slug"
+    assert data["content_html"] == "<p>テスト本文</p>"
+    assert data["thumbnail_url"] == "https://example.com/thumb.png"
+    assert len(data["tags"]) == 2
+    assert data["tags"][0]["tag_id"] == 1
+    assert data["tags"][0]["name"] == "Python"
+    assert data["tags"][0]["slug"] == "python"
+    assert data["tags"][1]["tag_id"] == 2
+    assert data["tags"][1]["name"] == "FastAPI"
+    assert data["tags"][1]["slug"] == "fastapi"
+    mock_get_post.assert_called_once_with("test-slug")
+
+
+# 正常系: 公開記事詳細の取得成功（タグなし）
+@patch("app.services.public.post_service.PublicPostService.get_post")
+def test_get_post_success_without_tags(mock_get_post, client):
+    mock_response = PostPublishAtResponse(
+        post_id=1,
+        title="テストタイトル",
+        slug="test-slug",
+        content_html="<p>テスト本文</p>",
+        thumbnail_url=None,
+        tags=[],
+        published_at=datetime(2025, 1, 1, 12, 0, 0),
+    )
+    mock_get_post.return_value = mock_response
+
+    response = client.get("/posts/test-slug")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["post_id"] == 1
+    assert data["title"] == "テストタイトル"
+    assert data["slug"] == "test-slug"
+    assert data["content_html"] == "<p>テスト本文</p>"
+    assert data["thumbnail_url"] is None
+    assert len(data["tags"]) == 0
+    mock_get_post.assert_called_once_with("test-slug")
+
+
+# 異常系: 記事が存在しない場合
+@patch("app.services.public.post_service.PublicPostService.get_post")
+def test_get_post_not_found(mock_get_post, client):
+    from app.core.exceptions.handlers import ApplicationError
+
+    mock_get_post.side_effect = ApplicationError(
+        message=ErrorMessage.NOT_EXIST,
+        code=ErrorCode.NOT_EXIST,
+    )
+
+    response = client.get("/posts/non-existent-slug")
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"] == ErrorCode.NOT_EXIST
+    assert data["message"] == ErrorMessage.NOT_EXIST
+    mock_get_post.assert_called_once_with("non-existent-slug")
 
