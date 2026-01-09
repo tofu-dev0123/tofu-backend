@@ -4,7 +4,11 @@ from unittest.mock import Mock, MagicMock
 from datetime import datetime
 from app.services.public.post_service import PublicPostService
 from app.models.post import Post, PostStatus
-from app.schemas.post import PostsPublishAtResponse, PostPublishAt, PostPublishAtResponse
+from app.schemas.post import (
+    PostsPublishAtResponse,
+    PostPublishAt,
+    PostPublishAtResponse,
+)
 from app.schemas.tag import Tag
 from app.common.constant import Constant
 from app.core.exceptions.handlers import ApplicationError
@@ -295,4 +299,3 @@ def test_get_post_not_found(mock_db):
     assert exc_info.value.message == ErrorMessage.NOT_EXIST
     assert exc_info.value.code == ErrorCode.NOT_EXIST
     service.query_repo.find_by_slug.assert_called_once_with("non-existent-slug")
-

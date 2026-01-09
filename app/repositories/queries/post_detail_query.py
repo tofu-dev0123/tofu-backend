@@ -57,7 +57,8 @@ class PostDetailQueryRepository:
             )
             .join(PostTag, PostTag.post_id == Post.post_id, isouter=True)
             .join(Tag, Tag.tag_id == PostTag.tag_id, isouter=True)
-            .where(Post.slug == slug).where(Post.status == PostStatus.PUBLISHED)
+            .where(Post.slug == slug)
+            .where(Post.status == PostStatus.PUBLISHED)
             .group_by(Post.post_id)
         )
 

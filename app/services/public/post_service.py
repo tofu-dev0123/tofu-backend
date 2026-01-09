@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from app.repositories.post_repository import PostRepository
 from app.repositories.queries.post_detail_query import PostDetailQueryRepository
-from app.schemas.post import PostsPublishAtResponse, PostPublishAt, PostPublishAtResponse
+from app.schemas.post import (
+    PostsPublishAtResponse,
+    PostPublishAt,
+    PostPublishAtResponse,
+)
 from app.schemas.tag import Tag
 from app.core.exceptions.handlers import ApplicationError
 from app.common.message import ErrorMessage
@@ -48,7 +52,7 @@ class PublicPostService:
     def get_post(self, slug: str) -> PostPublishAtResponse:
         data = self.query_repo.find_by_slug(slug)
         tags = []
-        
+
         if not data:
             raise ApplicationError(
                 message=ErrorMessage.NOT_EXIST,
