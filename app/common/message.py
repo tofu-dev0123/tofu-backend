@@ -55,6 +55,7 @@ class ErrorMessage:
     MAX_LIMIT = f"リミット値は{Constant.MAX_LIMIT}以下の整数で指定してください"
     POST_ID_REQUIRED = "記事IDは必須項目です"
     MIN_POST_ID = f"記事IDは{Constant.MIN_POST_ID}以上の整数で指定してください"
+    MIN_PAGE = f"ページは{Constant.MIN_PAGE}以上の整数で指定してください"
 
     # 画像関連
     MAX_FILE_SIZE = f"アップロードできる画像ファイルは{Constant.MAX_FILE_SIZE / (1024 * 1024)}MBまでです"

@@ -114,3 +114,15 @@ class PostRepository:
     def delete(self, post_id):
         stmt = delete(Post).where(Post.post_id == post_id)
         self.db.execute(stmt)
+
+    def find_published_posts(self, offset: int, limit: int, keyword: str | None = None):
+        statement = select(Post).where(Post.status == PostStatus.PUBLISHED)
+
+        if keyword:
+            statement = statement.where(Post.title.like(f"%{keyword}%"))
+
+        statement = (
+            statement.order_by(Post.published_at.desc()).offset(offset).limit(limit)
+        )
+
+        return self.db.execute(statement).scalars().all()

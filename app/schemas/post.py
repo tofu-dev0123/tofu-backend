@@ -19,6 +19,14 @@ class Post(BaseModel):
     updatedAt: datetime = Field(..., description="更新日時")
 
 
+class PostPublishAt(BaseModel):
+    post_id: int = Field(..., description="記事ID")
+    title: str = Field(..., description="タイトル")
+    slug: str = Field(..., description="スラグ")
+    thumbnail_url: str | None = Field(None, description="サムネイルURL")
+    published_at: datetime = Field(..., description="公開日時")
+
+
 class PostsListGetResponse(BaseModel):
     """記事一覧取得成功レスポンススキーマ"""
 
@@ -157,3 +165,13 @@ class PostsPatchResponse(BaseModel):
     """公開ステータス更新成功レスポンススキーマ"""
 
     message: str = Field(..., description="メッセージ")
+
+
+class PostsPublishAtResponse(BaseModel):
+    """公開記事取得成功レスポンススキーマ"""
+
+    total_count: int = Field(..., description="総件数")
+    total_pages: int = Field(..., description="総ページ数")
+    page: int = Field(..., description="ページ")
+    limit: int = Field(..., description="リミット")
+    posts: list[PostPublishAt] = Field(default_factory=list, description="記事一覧")
