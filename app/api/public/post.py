@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from app.schemas.post import (
     PostsPublishAtResponse,
+    PostPublishAtResponse,
 )
 from app.services.public.post_service import PublicPostService
 from app.db.database import get_db
@@ -28,4 +29,13 @@ async def get_posts(
         page = 1
 
     result = service.get_posts(page, keyword)
+    return result
+
+
+@router.get("/{slug}", response_model=PostPublishAtResponse)
+async def get_post(
+    slug: str = Path(..., description="スラグ"),
+    service: PublicPostService = Depends(get_post_service),
+):
+    result = service.get_post(slug)
     return result

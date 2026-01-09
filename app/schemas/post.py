@@ -175,3 +175,15 @@ class PostsPublishAtResponse(BaseModel):
     page: int = Field(..., description="ページ")
     limit: int = Field(..., description="リミット")
     posts: list[PostPublishAt] = Field(default_factory=list, description="記事一覧")
+
+
+class PostPublishAtResponse(BaseModel):
+    """公開記事取得成功レスポンススキーマ"""
+
+    post_id: int = Field(..., description="記事ID")
+    title: str = Field(..., description="タイトル")
+    slug: str = Field(..., description="スラグ")
+    content_html: str = Field(..., description="HTML本文")
+    thumbnail_url: str | None = Field(None, description="サムネイルURL")
+    tags: list[Tag] = Field(default_factory=list, description="タグ一覧")
+    published_at: datetime = Field(..., description="公開日時")
