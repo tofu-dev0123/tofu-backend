@@ -30,4 +30,5 @@ VALIDATION_MESSAGES = {
     ("post_id", "greater_than_equal"): ErrorMessage.MIN_POST_ID,
     ("image_id", "missing"): ErrorMessage.IMAGE_ID_REQUIRED,
     ("image_id", "greater_than_equal"): ErrorMessage.MIN_IMAGE_ID,
+    ("page", "greater_than_equal"): ErrorMessage.MIN_PAGE,
 }
