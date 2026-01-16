@@ -1,5 +1,5 @@
 from sqlalchemy import select, func, case, update, exists, delete
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from app.models.post import Post, PostStatus
 from datetime import datetime
 
@@ -116,7 +116,11 @@ class PostRepository:
         self.db.execute(stmt)
 
     def find_published_posts(self, offset: int, limit: int, keyword: str | None = None):
-        statement = select(Post).where(Post.status == PostStatus.PUBLISHED)
+        statement = (
+            select(Post)
+            .options(selectinload(Post.tags))
+            .where(Post.status == PostStatus.PUBLISHED)
+        )
 
         if keyword:
             statement = statement.where(Post.title.like(f"%{keyword}%"))

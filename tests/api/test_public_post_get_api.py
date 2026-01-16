@@ -27,6 +27,7 @@ def test_get_posts_success(mock_get_posts, client):
                 slug="test-slug-1",
                 thumbnail_url="https://example.com/thumb1.png",
                 published_at=datetime(2025, 1, 1, 12, 0, 0),
+                tags=[],
             ),
             PostPublishAt(
                 post_id=2,
@@ -34,6 +35,7 @@ def test_get_posts_success(mock_get_posts, client):
                 slug="test-slug-2",
                 thumbnail_url=None,
                 published_at=datetime(2025, 1, 2, 12, 0, 0),
+                tags=[],
             ),
         ],
     )
@@ -69,6 +71,7 @@ def test_get_posts_with_keyword_success(mock_get_posts, client):
                 slug="python-post",
                 thumbnail_url=None,
                 published_at=datetime(2025, 1, 1, 12, 0, 0),
+                tags=[],
             ),
         ],
     )
@@ -99,6 +102,7 @@ def test_get_posts_pagination_success(mock_get_posts, client):
                 slug="test-slug-11",
                 thumbnail_url=None,
                 published_at=datetime(2025, 1, 11, 12, 0, 0),
+                tags=[],
             ),
         ],
     )
