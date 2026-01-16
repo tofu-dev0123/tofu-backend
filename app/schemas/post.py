@@ -25,6 +25,7 @@ class PostPublishAt(BaseModel):
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
     published_at: datetime = Field(..., description="公開日時")
+    tags: list[Tag] = Field(default_factory=list, description="タグデータの配列")
 
 
 class PostsListGetResponse(BaseModel):

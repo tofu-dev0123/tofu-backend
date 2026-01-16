@@ -31,6 +31,14 @@ class PublicPostService:
 
         posts_list = []
         for post in posts:
+            tags = [
+                Tag(
+                    tag_id=tag.tag_id,
+                    name=tag.name,
+                    slug=tag.slug,
+                )
+                for tag in post.tags
+            ]
             posts_list.append(
                 PostPublishAt(
                     post_id=post.post_id,
@@ -38,6 +46,7 @@ class PublicPostService:
                     slug=post.slug,
                     thumbnail_url=post.thumbnail_url,
                     published_at=post.published_at,
+                    tags=tags,
                 )
             )
 

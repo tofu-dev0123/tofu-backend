@@ -27,6 +27,7 @@ def test_get_posts_success(mock_db):
     mock_post1.slug = "test-slug-1"
     mock_post1.thumbnail_url = "https://example.com/thumb1.png"
     mock_post1.published_at = datetime(2025, 1, 1, 12, 0, 0)
+    mock_post1.tags = []
 
     mock_post2 = Mock(spec=Post)
     mock_post2.post_id = 2
@@ -34,6 +35,7 @@ def test_get_posts_success(mock_db):
     mock_post2.slug = "test-slug-2"
     mock_post2.thumbnail_url = None
     mock_post2.published_at = datetime(2025, 1, 2, 12, 0, 0)
+    mock_post2.tags = []
 
     # リポジトリのモック設定
     service.post_repo = MagicMock()
@@ -71,6 +73,7 @@ def test_get_posts_with_keyword_success(mock_db):
     mock_post.slug = "python-post"
     mock_post.thumbnail_url = None
     mock_post.published_at = datetime(2025, 1, 1, 12, 0, 0)
+    mock_post.tags = []
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = [mock_post]
@@ -99,6 +102,7 @@ def test_get_posts_pagination_success(mock_db):
     mock_post.slug = "test-slug-11"
     mock_post.thumbnail_url = None
     mock_post.published_at = datetime(2025, 1, 11, 12, 0, 0)
+    mock_post.tags = []
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = [mock_post]
@@ -150,6 +154,7 @@ def test_get_posts_total_pages_calculation_with_remainder(mock_db):
         mock_post.slug = f"test-slug-{i + 1}"
         mock_post.thumbnail_url = None
         mock_post.published_at = datetime(2025, 1, i + 1, 12, 0, 0)
+        mock_post.tags = []
         mock_posts.append(mock_post)
 
     service.post_repo = MagicMock()
@@ -181,6 +186,7 @@ def test_get_posts_total_pages_calculation_exact(mock_db):
         mock_post.slug = f"test-slug-{i + 1}"
         mock_post.thumbnail_url = None
         mock_post.published_at = datetime(2025, 1, i + 1, 12, 0, 0)
+        mock_post.tags = []
         mock_posts.append(mock_post)
 
     service.post_repo = MagicMock()
