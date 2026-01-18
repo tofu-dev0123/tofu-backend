@@ -10,16 +10,16 @@
 
 | メソッド | パス                       | 説明               | 認証 |
 | -------- | -------------------------- | ------------------ | ---- |
-| PUT      | /admin/account             | アカウント情報変更 | 必須 |
-| PUT      | /admin/account/password    | パスワード変更     | 必須 |
-| PUT      | /admin/account/email       | メールアドレス変更 | 必須 |
+| PATCH    | /admin/account             | アカウント情報変更 | 必須 |
+| PATCH    | /admin/account/password    | パスワード変更     | 必須 |
+| PATCH    | /admin/account/email       | メールアドレス変更 | 必須 |
 
 ## アカウント情報変更
 
 ### エンドポイント
 
 ```
-PUT /admin/account
+PATCH /admin/account
 ```
 
 ### 説明
@@ -64,14 +64,14 @@ PUT /admin/account
 | ステータス | エラーコード         | 説明                       |
 | ---------- | -------------------- | -------------------------- |
 | 401        | AUTHENTICATION_ERROR | 認証に失敗した             |
-| 422        | VALIDATION_ERROR     | バリデーションエラー       |
+| 400        | VALIDATION_ERROR     | バリデーションエラー       |
 
 ## パスワード変更
 
 ### エンドポイント
 
 ```
-PUT /admin/account/password
+PATCH /admin/account/password
 ```
 
 ### 説明
@@ -124,12 +124,12 @@ PUT /admin/account/password
 ### エンドポイント
 
 ```
-PUT /admin/account/email
+PATCH /admin/account/email
 ```
 
 ### 説明
 
-ログインユーザーのメールアドレス（ログイン ID）を変更する。セキュリティのため、現在のパスワードの確認が必要。
+ログインユーザーのメールアドレス（ログイン ID）を変更する。セキュリティのため、現在のメールアドレスとパスワードの確認が必要。
 
 ### リクエストヘッダー
 
@@ -140,15 +140,17 @@ PUT /admin/account/email
 
 ### リクエストボディ
 
-| フィールド | 型     | 必須 | 制約                        | 説明                   |
-| ---------- | ------ | ---- | --------------------------- | ---------------------- |
-| new_email  | string | Yes  | メール形式、50 文字以下     | 新しいメールアドレス   |
-| password   | string | Yes  | 8〜50 文字                  | 現在のパスワード       |
+| フィールド      | 型     | 必須 | 制約                        | 説明                     |
+| --------------- | ------ | ---- | --------------------------- | ------------------------ |
+| current_email   | string | Yes  | メール形式、50 文字以下     | 現在のメールアドレス     |
+| new_email       | string | Yes  | メール形式、50 文字以下     | 新しいメールアドレス     |
+| password        | string | Yes  | 8〜50 文字                  | 現在のパスワード         |
 
 ### リクエスト例
 
 ```json
 {
+  "current_email": "old-email@example.com",
   "new_email": "new-email@example.com",
   "password": "current_password123"
 }
@@ -168,12 +170,13 @@ PUT /admin/account/email
 
 #### エラー時
 
-| ステータス | エラーコード         | 説明                               |
-| ---------- | -------------------- | ---------------------------------- |
-| 400        | PASSWORD_MISMATCH    | パスワードが一致しない             |
-| 400        | EMAIL_ALREADY_EXISTS | メールアドレスが既に使用されている |
-| 401        | AUTHENTICATION_ERROR | 認証に失敗した                     |
-| 422        | VALIDATION_ERROR     | バリデーションエラー               |
+| ステータス | エラーコード         | 説明                                   |
+| ---------- | -------------------- | -------------------------------------- |
+| 400        | PASSWORD_MISMATCH    | パスワードが一致しない                 |
+| 400        | EMAIL_MISMATCH       | 現在のメールアドレスが一致しない       |
+| 400        | EMAIL_ALREADY_EXISTS | メールアドレスが既に使用されている     |
+| 401        | AUTHENTICATION_ERROR | 認証に失敗した                         |
+| 422        | VALIDATION_ERROR     | バリデーションエラー                   |
 
 ## バリデーションルール
 
@@ -237,6 +240,7 @@ app/
 ```python
 # common/errorcode.py
 PASSWORD_MISMATCH = "PASSWORD_MISMATCH"
+EMAIL_MISMATCH = "EMAIL_MISMATCH"
 EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS"
 ```
 
@@ -251,5 +255,6 @@ class Message:
 
 class ErrorMessage:
     PASSWORD_MISMATCH = "現在のパスワードが正しくありません"
+    EMAIL_MISMATCH = "現在のメールアドレスが正しくありません"
     EMAIL_ALREADY_EXISTS = "このメールアドレスは既に使用されています"
 ```
