@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from app.services.auth_service import AuthService
 from app.services.post_service import PostService
 from app.services.image_service import ImageService
+from app.services.account_service import AccountService
 
 
 @pytest.fixture
@@ -26,6 +27,11 @@ def post_service(mock_db):
 @pytest.fixture
 def image_service(mock_db):
     return ImageService(mock_db)
+
+
+@pytest.fixture
+def account_service(mock_db):
+    return AccountService(mock_db)
 
 
 @pytest.fixture
