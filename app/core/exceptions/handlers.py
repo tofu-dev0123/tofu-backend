@@ -9,6 +9,11 @@ from app.core.exceptions.image_exceptions import (
     ImageUploadValidationError,
 )
 from app.core.exceptions.s3_exceptions import S3FileUploadError
+from app.core.exceptions.account_exceptions import (
+    PasswordMismatchError,
+    EmailMismatchError,
+    EmailAlreadyExistsError,
+)
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse
 from app.common.errorcode import ErrorCode
@@ -124,6 +129,43 @@ def register_exception_handlers(app: FastAPI):
             content=ErrorResponse(
                 message=exc.message,
                 error=ErrorCode.S3_ERROR,
+                details=[],
+            ).dict(),
+        )
+
+    @app.exception_handler(PasswordMismatchError)
+    async def password_mismatch_error_handler(
+        request: Request, exc: PasswordMismatchError
+    ):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=ErrorMessage.PASSWORD_MISMATCH,
+                error=ErrorCode.PASSWORD_MISMATCH,
+                details=[],
+            ).dict(),
+        )
+
+    @app.exception_handler(EmailMismatchError)
+    async def email_mismatch_error_handler(request: Request, exc: EmailMismatchError):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=ErrorMessage.EMAIL_MISMATCH,
+                error=ErrorCode.EMAIL_MISMATCH,
+                details=[],
+            ).dict(),
+        )
+
+    @app.exception_handler(EmailAlreadyExistsError)
+    async def email_already_exists_error_handler(
+        request: Request, exc: EmailAlreadyExistsError
+    ):
+        return JSONResponse(
+            status_code=400,
+            content=ErrorResponse(
+                message=ErrorMessage.EMAIL_ALREADY_EXISTS,
+                error=ErrorCode.EMAIL_ALREADY_EXISTS,
                 details=[],
             ).dict(),
         )

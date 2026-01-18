@@ -10,6 +10,9 @@ class Message:
     POST_DELETE_SUCCESS = "記事を削除しました"
     POST_PATCH_SUCCESS = "公開ステータスを{status}に更新しました"
     IMAGE_DELETE_SUCCESS = "画像を削除しました"
+    ACCOUNT_UPDATE_SUCCESS = "アカウント情報を更新しました"
+    PASSWORD_CHANGE_SUCCESS = "パスワードを変更しました"
+    EMAIL_CHANGE_SUCCESS = "メールアドレスを変更しました"
 
 
 class ErrorMessage:
@@ -86,3 +89,19 @@ class ErrorMessage:
 
     # INTERNAL_SERVER_ERROR関連
     INTERNAL_SERVER_ERROR = "サーバーエラーが発生しました"
+
+    # アカウント関連
+    PASSWORD_MISMATCH = "現在のパスワードが正しくありません"
+    EMAIL_MISMATCH = "現在のメールアドレスが正しくありません"
+    EMAIL_ALREADY_EXISTS = "このメールアドレスは既に使用されています"
+    ACCOUNT_NAME_REQUIRED = "アカウント名は必須項目です"
+    ACCOUNT_NAME_MAX_LENGTH = (
+        f"アカウント名は{Constant.MAX_ACCOUNT_NAME_LENGTH}文字以内で入力してください"
+    )
+    ACCOUNT_NAME_BLANK = "アカウント名は空白のみは不可です"
+    NEW_PASSWORD_SAME = (
+        "新しいパスワードは現在のパスワードと異なるものを設定してください"
+    )
+    NEW_EMAIL_SAME = (
+        "新しいメールアドレスは現在のメールアドレスと異なるものを設定してください"
+    )
