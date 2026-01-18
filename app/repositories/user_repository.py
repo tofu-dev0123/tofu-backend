@@ -32,6 +32,4 @@ class UserRepository:
         return user
 
     def exists_by_username(self, username: str) -> bool:
-        return (
-            self.db.query(User).filter(User.username == username).first() is not None
-        )
+        return self.db.query(User).filter(User.username == username).first() is not None

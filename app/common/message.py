@@ -99,5 +99,9 @@ class ErrorMessage:
         f"アカウント名は{Constant.MAX_ACCOUNT_NAME_LENGTH}文字以内で入力してください"
     )
     ACCOUNT_NAME_BLANK = "アカウント名は空白のみは不可です"
-    NEW_PASSWORD_SAME = "新しいパスワードは現在のパスワードと異なるものを設定してください"
-    NEW_EMAIL_SAME = "新しいメールアドレスは現在のメールアドレスと異なるものを設定してください"
+    NEW_PASSWORD_SAME = (
+        "新しいパスワードは現在のパスワードと異なるものを設定してください"
+    )
+    NEW_EMAIL_SAME = (
+        "新しいメールアドレスは現在のメールアドレスと異なるものを設定してください"
+    )
