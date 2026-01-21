@@ -1,6 +1,6 @@
 from sqlalchemy import Column, BigInteger, String, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
-from app.db.database import Base
+from app.db.base_class import Base
 
 
 class Image(Base):
@@ -14,4 +14,3 @@ class Image(Base):
 
     # リレーションシップ
     post = relationship("Post", back_populates="images")
-

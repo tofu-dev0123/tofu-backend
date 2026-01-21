@@ -1,17 +1,17 @@
 services:
   api:
     build: .
+    env_file:
+      - .env.local
     container_name: blog-api
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: root
-      DB_PASSWORD: password
-      DB_NAME: blog_db
+      ENV_FILE: .env.local
     depends_on:
       db:
+        condition: service_healthy
+      localstack:
         condition: service_healthy
     volumes:
       - .:/app
@@ -29,10 +29,40 @@ services:
     volumes:
       - db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-ppassword",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  localstack:
+    image: localstack/localstack:3.6
+    container_name: blog-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=ap-northeast-1
+      - DEBUG=1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack/init:/etc/localstack/init
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   db-data:
+  localstack-data:

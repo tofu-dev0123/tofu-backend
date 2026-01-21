@@ -1,0 +1,30 @@
+class Constant:
+
+    # 認証関連
+    MAX_USERNAME_LENGTH = 50
+    MAX_PASSWORD_LENGTH = 50
+    MIN_PASSWORD_LENGTH = 8
+    MAX_ACCOUNT_NAME_LENGTH = 30
+
+    # 記事関連
+    MAX_CONTENT_MARKDOWN_SIZE = 1 * 1024 * 1024  # 1MB
+    MAX_SLUG_LENGTH = 50
+    MAX_TITLE_LENGTH = 255
+    MAX_THUMBNAIL_URL = 500
+    MAX_TAGS = 20
+    MAX_TAG_LENGTH = 30
+    MAX_KEYWORD_LENGTH = 1000
+    MIN_OFFSET = 0
+    MIN_LIMIT = 1
+    MAX_LIMIT = 30
+    MIN_POST_ID = 1
+    MIN_PAGE = 1
+
+    # 画像関連
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    ALLOWED_EXTENSIONS = {"jpeg", "jpg", "png", "heic"}
+    MAX_ALT_TEXT_LENGTH = 255
+    MIN_IMAGE_ID = 1
+
+    # 公開記事関連
+    PUBLIC_POST_LIMIT = 10

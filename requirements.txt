@@ -1,4 +1,6 @@
-fastapi
+fastapi>=0.103
+pydantic>=2.0
+pydantic-core>=2.0
 uvicorn[standard]
 SQLAlchemy>=2.0.0
 asyncmy>=0.2.9
@@ -8,3 +10,16 @@ python-dotenv
 pydantic-settings
 alembic
 bcrypt
+python-jose[cryptography]
+email-validator
+pytest
+httpx
+sqlalchemy-utils
+python-slugify
+deep-translator
+python-multipart
+boto3
+sqlalchemy-utils
+markdown-it-py>=3.0.0
+mdit-py-plugins>=0.4.0
+linkify-it-py
