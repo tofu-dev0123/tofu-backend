@@ -14,7 +14,15 @@ logging.basicConfig(
 )
 
 
-app = FastAPI()
+if not settings.is_local:
+    app = FastAPI(
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+else:
+    app = FastAPI()
+
 register_exception_handlers(app)
 
 # CORS設定
