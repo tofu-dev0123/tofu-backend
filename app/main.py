@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.db.database import get_db
 from app.api.router import api_router
 from app.core.exceptions.handlers import register_exception_handlers
-from app.core.middleware import OriginCheckMiddleware
 import logging
 
 logging.basicConfig(
@@ -15,7 +14,15 @@ logging.basicConfig(
 )
 
 
-app = FastAPI()
+if not settings.is_local:
+    app = FastAPI(
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+    )
+else:
+    app = FastAPI()
+
 register_exception_handlers(app)
 
 # CORS設定
@@ -26,10 +33,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
-
-# 本番環境でのオリジンチェックミドルウェア
-# CORSミドルウェアの後に追加（リクエストの順序が重要）
-app.add_middleware(OriginCheckMiddleware)
 
 # ルーターの登録
 app.include_router(api_router)
