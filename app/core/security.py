@@ -2,15 +2,11 @@ from datetime import datetime, timedelta
 import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, status, Depends, Request
 from app.schemas.errors import ErrorResponse
 from app.models.user import User
 from app.db.database import SessionLocal, get_db
 from app.core.exceptions.auth_exceptions import AuthenticationError
-
-
-security = HTTPBearer()
 
 
 def create_access_token(user_id: int, username: str) -> str:
@@ -87,10 +83,28 @@ def verify_token(token: str):
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     db: SessionLocal = Depends(get_db),
 ) -> User:
-    token = credentials.credentials
+    """
+    クッキーから認証トークンを取得し、ユーザー情報を返す
+
+    Args:
+        request: FastAPIのRequestオブジェクト
+        db: データベースセッション
+
+    Returns:
+        認証されたユーザー情報
+
+    Raises:
+        AuthenticationError: トークンが無効またはユーザーが存在しない場合
+    """
+    # クッキーからトークンを取得
+    token = request.cookies.get("auth_token")
+    
+    if not token:
+        raise AuthenticationError
+
     payload = verify_token(token)
     user_id = payload.get("sub")
 
