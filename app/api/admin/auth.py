@@ -41,10 +41,10 @@ async def login(
         key="auth_token",
         value=token,
         max_age=int(timedelta(hours=3).total_seconds()),
-        domain=settings.cookie_domain,
-        secure=settings.cookie_secure,
-        httponly=settings.COOKIE_HTTP_ONLY,
-        samesite=settings.COOKIE_SAME_SITE,
+        domain=".tofubase.com",
+        secure=True,
+        httponly=True,
+        samesite="none",
     )
 
     return LoginResponse(message=Message.LOGIN_SUCCESS, token=token)
