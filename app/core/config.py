@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     COOKIE_HTTP_ONLY: bool = Field(
         True, description="JavaScriptからアクセス不可にするか"
     )
-    COOKIE_SAME_SITE: str = Field("lax", description="SameSite属性（lax/strict/none）")
+    COOKIE_SAME_SITE: str = Field("none", description="SameSite属性（lax/strict/none）")
 
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env.local"),
