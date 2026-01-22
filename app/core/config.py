@@ -41,7 +41,9 @@ class Settings(BaseSettings):
 
     # ===== クッキー設定 =====
     COOKIE_SECURE: bool = Field(True, description="HTTPS接続時のみクッキーを送信するか")
-    COOKIE_HTTP_ONLY: bool = Field(True, description="JavaScriptからアクセス不可にするか")
+    COOKIE_HTTP_ONLY: bool = Field(
+        True, description="JavaScriptからアクセス不可にするか"
+    )
     COOKIE_SAME_SITE: str = Field("lax", description="SameSite属性（lax/strict/none）")
 
     model_config = SettingsConfigDict(
@@ -107,10 +109,10 @@ class Settings(BaseSettings):
         """
         if self.is_local:
             return None
-        
+
         if not self.CORS_ALLOW_ORIGINS:
             return None
-        
+
         # CORS_ALLOW_ORIGINSからドメインを抽出
         domains = []
         for origin in self.CORS_ALLOW_ORIGINS:
@@ -125,10 +127,10 @@ class Settings(BaseSettings):
             except Exception:
                 # URLの解析に失敗した場合はスキップ
                 continue
-        
+
         if not domains:
             return None
-        
+
         # 共通の親ドメインを抽出
         # 例: ["tofubase.com", "dev.tofubase.com"] -> "tofubase.com"
         if len(domains) == 1:
@@ -139,7 +141,7 @@ class Settings(BaseSettings):
             domain_parts = [d.split(".") for d in domains]
             # 最短のドメイン部分数を取得
             min_parts = min(len(parts) for parts in domain_parts)
-            
+
             # 末尾から共通部分を探す
             common_parts = []
             for i in range(1, min_parts + 1):
@@ -148,17 +150,17 @@ class Settings(BaseSettings):
                     common_parts = list(suffixes[0])
                 else:
                     break
-            
+
             if common_parts:
                 base_domain = ".".join(common_parts)
             else:
                 # 共通部分が見つからない場合は最初のドメインを使用
                 base_domain = domains[0]
-        
+
         # 既にドットで始まっている場合はそのまま返す
         if base_domain.startswith("."):
             return base_domain
-        
+
         # ドットで始まっていない場合は先頭にドットを追加
         # これにより、tofubase.comとdev.tofubase.comの両方で動作する
         return f".{base_domain}"

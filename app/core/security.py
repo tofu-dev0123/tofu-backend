@@ -101,7 +101,7 @@ def get_current_user(
     """
     # クッキーからトークンを取得
     token = request.cookies.get("auth_token")
-    
+
     if not token:
         raise AuthenticationError
 
