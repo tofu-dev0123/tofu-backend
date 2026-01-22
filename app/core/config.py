@@ -45,6 +45,9 @@ class Settings(BaseSettings):
         extra="forbid",
     )
 
+    # ===== クッキー設定 =====
+    COOKIE_DOMAIN: str
+
     # ===== 環境判別 =====
     @property
     def is_local(self) -> bool:

@@ -41,7 +41,7 @@ async def login(
         key="auth_token",
         value=token,
         max_age=int(timedelta(hours=3).total_seconds()),
-        domain=".tofubase.com",
+        domain=settings.COOKIE_DOMAIN,
         secure=True,
         httponly=True,
         samesite="none",
