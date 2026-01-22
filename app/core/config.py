@@ -39,14 +39,14 @@ class Settings(BaseSettings):
     # ===== CORS設定 =====
     CORS_ALLOW_ORIGINS: list[str]
 
+    # ===== クッキー設定 =====
+    COOKIE_DOMAIN: str
+
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env.local"),
         case_sensitive=True,
         extra="forbid",
     )
-
-    # ===== クッキー設定 =====
-    COOKIE_DOMAIN: str
 
     # ===== 環境判別 =====
     @property
