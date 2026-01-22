@@ -28,7 +28,7 @@ def register_exception_handlers(app: FastAPI):
             status_code=400,
             content=ErrorResponse(
                 message=exc.message, error=exc.code, details=[]
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(RequestValidationError)
@@ -48,7 +48,7 @@ def register_exception_handlers(app: FastAPI):
             status_code=400,
             content=ErrorResponse(
                 message="", error=ErrorCode.VALIDATION_ERROR, details=errors
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(LoginFailError)
@@ -57,7 +57,7 @@ def register_exception_handlers(app: FastAPI):
             status_code=400,
             content=ErrorResponse(
                 message=ErrorMessage.LOGIN_FAIL, error=ErrorCode.LOGIN_FAIL, details=[]
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(HTTPException)
@@ -69,20 +69,22 @@ def register_exception_handlers(app: FastAPI):
                     message=ErrorMessage.TOKEN_REQUIRED,
                     error=ErrorCode.AUTHENTICATION_ERROR,
                     details=[],
-                ).dict(),
+                ).model_dump(),
             )
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     @app.exception_handler(AuthenticationError)
     async def authentication_error_handler(request: Request, exc: AuthenticationError):
+        # メッセージが設定されている場合はそれを使用、そうでない場合はデフォルトメッセージ
+        message = exc.message if exc.message else ErrorMessage.AUTHENTICATION_ERROR
 
         return JSONResponse(
             status_code=401,
             content=ErrorResponse(
-                message=ErrorMessage.AUTHENTICATION_ERROR,
+                message=message,
                 error=ErrorCode.AUTHENTICATION_ERROR,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(ImageNotExistError)
@@ -93,7 +95,7 @@ def register_exception_handlers(app: FastAPI):
                 message=exc.message,
                 error=ErrorCode.NOT_EXIST,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(ImageNotExistOnStorageError)
@@ -106,7 +108,7 @@ def register_exception_handlers(app: FastAPI):
                 message=exc.message,
                 error=ErrorCode.NOT_EXIST_ON_STORAGE,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(ImageUploadValidationError)
@@ -118,7 +120,7 @@ def register_exception_handlers(app: FastAPI):
             status_code=400,
             content=ErrorResponse(
                 message="", error=ErrorCode.VALIDATION_ERROR, details=exc.errors
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(S3FileUploadError)
@@ -130,7 +132,7 @@ def register_exception_handlers(app: FastAPI):
                 message=exc.message,
                 error=ErrorCode.S3_ERROR,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(PasswordMismatchError)
@@ -143,7 +145,7 @@ def register_exception_handlers(app: FastAPI):
                 message=ErrorMessage.PASSWORD_MISMATCH,
                 error=ErrorCode.PASSWORD_MISMATCH,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(EmailMismatchError)
@@ -154,7 +156,7 @@ def register_exception_handlers(app: FastAPI):
                 message=ErrorMessage.EMAIL_MISMATCH,
                 error=ErrorCode.EMAIL_MISMATCH,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
     @app.exception_handler(EmailAlreadyExistsError)
@@ -167,7 +169,7 @@ def register_exception_handlers(app: FastAPI):
                 message=ErrorMessage.EMAIL_ALREADY_EXISTS,
                 error=ErrorCode.EMAIL_ALREADY_EXISTS,
                 details=[],
-            ).dict(),
+            ).model_dump(),
         )
 
 
