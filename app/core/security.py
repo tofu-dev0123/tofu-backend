@@ -95,16 +95,16 @@ def get_current_user(
         AuthenticationError: トークンが無効またはユーザーが存在しない場合
     """
     token = None
-    
+
     # まずクッキーからトークンを取得
     token = request.cookies.get("auth_token")
-    
+
     # クッキーにトークンがない場合、Authorizationヘッダーから取得
     if not token:
         authorization = request.headers.get("Authorization")
         if authorization and authorization.startswith("Bearer "):
             token = authorization.split("Bearer ")[1]
-    
+
     if not token:
         raise AuthenticationError(ErrorMessage.TOKEN_REQUIRED)
 
