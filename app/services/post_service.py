@@ -29,7 +29,7 @@ from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.handlers import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
-from app.utils.slug_utils import generate_slug, increment_slug_suffix
+from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
 
 
 logger = logging.getLogger(__name__)
@@ -171,9 +171,15 @@ class PostService:
     タイトルからスラグを生成する
     """
 
-    def generate_slug_of_title(self, title: str) -> str:
+    def generate_slug_of_title(self, title: str | None) -> str:
+        if not title:
+            return generate_draft_slug()
+
         # ベーススラグの生成
         base_slug = generate_slug(title)
+
+        if not base_slug:
+            return generate_draft_slug()
 
         # DBから同一prefixのスラグ取得
         existing_slugs = self.post_repo.find_slugs_like(base_slug)
@@ -448,6 +454,15 @@ class PostService:
                 post_id, request.status
             )
 
+            # 公開時にドラフトスラグをタイトルベーススラグに上書き
+            current_post = self.post_repo.find_by_post_id(post_id)
+            new_slug = current_post.slug
+            if (
+                request.status == PostStatus.PUBLISHED
+                and is_draft_generated_slug(current_post.slug)
+            ):
+                new_slug = self.generate_slug_of_title(request.title)
+
             # 更新するサムネイルURLをセット
             update_url = self.update_thumbnail(
                 post_id, request.thumbnail_url, request.thumbnail_delete_flag
@@ -467,6 +482,7 @@ class PostService:
             # 更新処理
             self.post_repo.update_post(
                 post_id=post_id,
+                slug=new_slug,
                 title=request.title,
                 content_md=request.content_md,
                 content_html=content_html,
@@ -544,7 +560,14 @@ class PostService:
             # 公開ステータスの値によって投稿日時を更新
             published_at = self.set_published_at_from_status(post_id, status)
 
-            self.post_repo.update_status_and_published_at(post_id, status, published_at)
+            # 公開時にドラフトスラグをタイトルベーススラグに上書き
+            new_slug = None
+            if status == PostStatus.PUBLISHED:
+                current_post = self.post_repo.find_by_post_id(post_id)
+                if is_draft_generated_slug(current_post.slug) and current_post.title:
+                    new_slug = self.generate_slug_of_title(current_post.title)
+
+            self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
             self.db.commit()
         except:

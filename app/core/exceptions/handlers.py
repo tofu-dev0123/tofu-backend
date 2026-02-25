@@ -36,7 +36,8 @@ def register_exception_handlers(app: FastAPI):
         errors = []
 
         for error in exc.errors():
-            value = error.get("loc")[1]
+            loc = error.get("loc")
+            value = loc[1] if len(loc) > 1 else loc[0]
             type = error.get("type")
             print(error.get("loc"))
             print(type)
