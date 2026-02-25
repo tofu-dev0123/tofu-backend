@@ -33,8 +33,8 @@ def get_post_service(
 async def get_posts(
     keyword: Optional[str] = Query(None, max_length=1000),
     status: Optional[PostStatus] = Query(None),
-    offset: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=30),
+    offset: Optional[int] = Query(0, ge=0),
+    limit: Optional[int] = Query(10, ge=1, le=30),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):

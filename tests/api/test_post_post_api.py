@@ -42,7 +42,7 @@ def test_validation_error_missing(client, valid_token):
     messages = [item["message"] for item in data["details"]]
 
     assert data["error"] == ErrorCode.VALIDATION_ERROR
-    assert ErrorMessage.TITLE_REQUIRED not in messages  # title は DRAFT 時任意
+    assert ErrorMessage.TITLE_REQUIRED in messages
     assert ErrorMessage.CONTENT_MARKDOWN_REQUIRED in messages
     assert ErrorMessage.STATUS_REQUIRED in messages
 

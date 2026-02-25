@@ -12,7 +12,7 @@ class ImageNotExistError(Exception):
 class ImageUploadValidationError(Exception):
     """画像アップロードバリデーションエラー"""
 
-    def __init__(self, errors: list[dict[str, str]]):
+    def __init__(self, errors: list[dict]):
         self.errors = errors
         super().__init__("Image upload validation error")
 

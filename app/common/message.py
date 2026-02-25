@@ -34,7 +34,6 @@ class ErrorMessage:
 
     # 記事関連
     TITLE_REQUIRED = "タイトルは必須項目です"
-    TITLE_REQUIRED_FOR_PUBLISHED = "公開時はタイトルは必須項目です"
     TITLE_MAX_LENGTH = (
         f"タイトルは{Constant.MAX_TITLE_LENGTH}文字以内で入力してください"
     )

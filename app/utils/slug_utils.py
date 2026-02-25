@@ -1,25 +1,12 @@
 import re
-import uuid
 from slugify import slugify
 from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from deep_translator import GoogleTranslator
 
-DRAFT_SLUG_PATTERN = re.compile(r"^draft-[0-9a-f]{8}$")
-
 """
 翻訳を行う
 """
-
-
-def generate_draft_slug() -> str:
-    """タイトルなし下書き用の UUID ベーススラグを生成する"""
-    return f"draft-{uuid.uuid4().hex[:8]}"
-
-
-def is_draft_generated_slug(slug: str) -> bool:
-    """自動生成された下書きスラグかどうかを判定する"""
-    return bool(DRAFT_SLUG_PATTERN.match(slug))
 
 
 def translate_to_english(text: str) -> str:

@@ -16,10 +16,10 @@ class ImageRepository:
 
     def find_url_by_post_id(self, id: int) -> list[str]:
         stmt = select(Image.url).where(Image.post_id == id)
-        return list(self.db.execute(stmt).scalars().all())
+        return self.db.execute(stmt).scalars().all()
 
     def update_post_id(self, image_id: int, post_id: int):
-        image: Image | None = self.db.query(Image).filter(Image.image_id == image_id).first()
+        image: Image = self.db.query(Image).filter(Image.image_id == image_id).first()
         if image:
             image.post_id = post_id
             self.db.commit()

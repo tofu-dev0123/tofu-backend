@@ -22,4 +22,4 @@ class TagRepository:
         tag = Tag(name=name, slug=slug)
         self.db.add(tag)
         self.db.flush()
-        return int(tag.tag_id)
+        return tag.tag_id
