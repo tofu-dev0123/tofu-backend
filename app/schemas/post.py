@@ -11,7 +11,7 @@ from app.schemas.image import Image
 class Post(BaseModel):
     post_id: int = Field(..., description="記事ID")
     user_id: int = Field(..., description="ユーザーID")
-    title: str = Field(..., description="タイトル")
+    title: str | None = Field(None, description="タイトル")
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
     status: PostStatus = Field(..., description="公開ステータス")
@@ -49,7 +49,7 @@ class PostGetResponse(BaseModel):
     """記事取得成功レスポンススキーマ"""
 
     post_id: int = Field(..., description="記事ID")
-    title: str = Field(..., description="タイトル")
+    title: str | None = Field(None, description="タイトル")
     slug: str = Field(..., description="スラグ")
     content_md: str = Field(..., description="マークダウン本文")
     content_html: str = Field(..., description="HTML本文")
