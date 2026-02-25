@@ -1,6 +1,8 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Enum, ForeignKey, func
+from typing import Optional
+from datetime import datetime
+from sqlalchemy import BigInteger, String, DateTime, Enum, ForeignKey, func
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 from app.db.base_class import Base
 
