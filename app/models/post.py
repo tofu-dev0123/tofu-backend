@@ -23,7 +23,7 @@ class Post(Base):
 
     post_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id"), nullable=False, index=True)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     content_md: Mapped[str] = mapped_column(MEDIUMTEXT, nullable=False)
     content_html: Mapped[str] = mapped_column(MEDIUMTEXT, nullable=False)

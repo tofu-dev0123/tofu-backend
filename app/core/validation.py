@@ -25,6 +25,7 @@ VALIDATION_MESSAGES = {
     ("new_email", "value_error"): ErrorMessage.USERNAME_FORMAT_EMAIL,
     # 記事関連
     ("title", "missing"): ErrorMessage.TITLE_REQUIRED,
+    ("body", "title_required_for_published"): ErrorMessage.TITLE_REQUIRED_FOR_PUBLISHED,
     ("title", "string_too_long"): ErrorMessage.TITLE_MAX_LENGTH,
     ("content_md", "missing"): ErrorMessage.CONTENT_MARKDOWN_REQUIRED,
     ("content_md", "size_over"): ErrorMessage.CONTENT_MARKDOWN_SIZE_OVER,

@@ -74,6 +74,7 @@ class PostRepository:
     def update_post(
         self,
         post_id: int,
+        slug: str,
         title: str,
         content_md: str,
         content_html: str,
@@ -85,6 +86,7 @@ class PostRepository:
             update(Post)
             .where(Post.post_id == post_id)
             .values(
+                slug=slug,
                 title=title,
                 content_md=content_md,
                 content_html=content_html,
@@ -101,16 +103,17 @@ class PostRepository:
         post_id: int,
         status: PostStatus,
         published_at: datetime | None,
+        slug: str | None = None,
     ):
-        stmt = (
-            update(Post)
-            .where(Post.post_id == post_id)
-            .values(
-                status=status,
-                published_at=published_at,
-                updated_at=datetime.now(),  # updated_at を管理してるなら
-            )
-        )
+        values = {
+            "status": status,
+            "published_at": published_at,
+            "updated_at": datetime.now(),
+        }
+        if slug is not None:
+            values["slug"] = slug
+
+        stmt = update(Post).where(Post.post_id == post_id).values(**values)
         self.db.execute(stmt)
 
     def delete(self, post_id):
