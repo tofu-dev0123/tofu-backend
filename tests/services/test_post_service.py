@@ -617,6 +617,7 @@ def test_update_all_success_full_update(
 ):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.find_by_post_id.return_value.slug = "existing-slug"
 
     fixed_time = datetime(2025, 1, 1, 12, 0, 0)
     mock_set_published_at.return_value = fixed_time
@@ -954,6 +955,7 @@ def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_serv
 @patch("app.services.post_service.PostService.set_published_at_from_status")
 def test_patch_status_success(mock_set_published_at, mock_db, post_service):
     post_service.post_repo = MagicMock()
+    post_service.post_repo.find_by_post_id.return_value.slug = "existing-slug"
     fixed_time = datetime(2025, 1, 1, 12, 0, 0)
     mock_set_published_at.return_value = fixed_time
 
@@ -962,7 +964,7 @@ def test_patch_status_success(mock_set_published_at, mock_db, post_service):
     assert result is None
     mock_set_published_at.assert_called_once_with(1, PostStatus.PUBLISHED)
     post_service.post_repo.update_status_and_published_at.assert_called_once_with(
-        1, PostStatus.PUBLISHED, fixed_time
+        1, PostStatus.PUBLISHED, fixed_time, slug=None
     )
     post_service.db.commit.assert_called_once()
 
