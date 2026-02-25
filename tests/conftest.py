@@ -36,8 +36,8 @@ def client():
 
 # ---- FastAPI の get_db をテスト用 DB に置き換える ----
 def override_get_db():
+    db = TestingSessionLocal()
     try:
-        db = TestingSessionLocal()
         yield db
     finally:
         db.close()

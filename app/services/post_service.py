@@ -67,7 +67,7 @@ class PostService:
         keyword: str | None,
         status: PostStatus | None,
     ):
-        posts: list[PostSchema] = self.post_repo.find_posts_by_user(
+        posts = self.post_repo.find_posts_by_user(
             user_id, offset, limit, keyword, status
         )
 
@@ -109,6 +109,11 @@ class PostService:
 
     def get_post_detail(self, post_id: int) -> PostGetResponse:
         data = self.query_repo.find_by_post_id(post_id)
+        if data is None:
+            from app.core.exceptions.handlers import ApplicationError
+            raise ApplicationError(
+                message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
+            )
         images = []
         tags = []
         if data.images:
@@ -238,7 +243,7 @@ class PostService:
     """
 
     def create_post(
-        self, request: PostsPostRequest, id: int, slug: str, date: datetime
+        self, request: PostsPostRequest, id: int, slug: str, date: datetime | None
     ) -> int:
         # MarkdownからHTMLへの変換
         content_html = self.convert_markdown_to_html(request.content_md)

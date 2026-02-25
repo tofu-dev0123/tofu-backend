@@ -11,7 +11,7 @@ class PostRepository:
 
     def exist_check_by_post_id(self, post_id) -> bool:
         stmt = select(exists().where(Post.post_id == post_id))
-        return self.db.execute(stmt).scalar()
+        return bool(self.db.execute(stmt).scalar())
 
     def find_posts_by_user(
         self,
@@ -60,10 +60,12 @@ class PostRepository:
     def create(self, post: Post) -> int:
         self.db.add(post)
         self.db.flush()
-        return post.post_id
+        return int(post.post_id)
 
     def find_by_post_id(self, id: int) -> Post:
-        return self.db.query(Post).filter(Post.post_id == id).first()
+        result = self.db.query(Post).filter(Post.post_id == id).first()
+        assert result is not None
+        return result
 
     def find_thumbnail_url_by_post_id(self, id: int) -> str | None:
         stmt = select(Post.thumbnail_url).where(Post.post_id == id)
