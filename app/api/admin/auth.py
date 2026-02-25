@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.services.auth_service import AuthService
@@ -7,6 +7,7 @@ from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResp
 from app.core.security import get_current_user
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.message import Message, ErrorMessage
+from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db),
 ):
     service = AuthService(db)
@@ -31,6 +33,16 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ErrorMessage.INTERNAL_SERVER_ERROR,
+        )
+
+    if settings.is_local:
+        response.set_cookie(
+            key="auth_token",
+            value=token,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            max_age=10800,
         )
 
     return LoginResponse(message=Message.LOGIN_SUCCESS, token=token)

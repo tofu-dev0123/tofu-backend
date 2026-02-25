@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
+from typing import Self
 from datetime import datetime
 from app.common.constant import Constant
 from app.models.post import PostStatus
@@ -10,7 +11,7 @@ from app.schemas.image import Image
 class Post(BaseModel):
     post_id: int = Field(..., description="記事ID")
     user_id: int = Field(..., description="ユーザーID")
-    title: str = Field(..., description="タイトル")
+    title: str | None = Field(None, description="タイトル")
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
     status: PostStatus = Field(..., description="公開ステータス")
@@ -48,7 +49,7 @@ class PostGetResponse(BaseModel):
     """記事取得成功レスポンススキーマ"""
 
     post_id: int = Field(..., description="記事ID")
-    title: str = Field(..., description="タイトル")
+    title: str | None = Field(None, description="タイトル")
     slug: str = Field(..., description="スラグ")
     content_md: str = Field(..., description="マークダウン本文")
     content_html: str = Field(..., description="HTML本文")
@@ -68,8 +69,8 @@ class PostGetResponse(BaseModel):
 class PostsPostRequest(BaseModel):
     """記事作成リクエストスキーマ"""
 
-    title: str = Field(
-        ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
+    title: str | None = Field(
+        None, max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
     )
     content_md: str = Field(..., description="マークダウン本文")
     thumbnail_url: str | None = Field(
@@ -78,6 +79,12 @@ class PostsPostRequest(BaseModel):
     status: PostStatus = Field(..., description="公開ステータス")
     images: list[int] = Field(default_factory=list, description="画像IDの配列")
     tags: list[str] = Field(default_factory=list, description="タグの配列")
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def empty_title_to_none(cls, v):
+        """空文字列を None に変換（DRAFT でのタイトル未入力を許容）"""
+        return None if v == "" else v
 
     @field_validator("content_md")
     def validate_content_md_size(cls, v):
@@ -99,6 +106,13 @@ class PostsPostRequest(BaseModel):
                 raise PydanticCustomError("string_too_long", "")
 
         return v
+
+    @model_validator(mode="after")
+    def validate_title_for_published(self) -> Self:
+        """PUBLISHED 時はタイトルを必須とする"""
+        if self.status == PostStatus.PUBLISHED and not self.title:
+            raise PydanticCustomError("title_required_for_published", "")
+        return self
 
 
 class PostsPutRequest(BaseModel):
