@@ -11,10 +11,10 @@ class DummyPostDetail:
         self.content_html = "<p>html</p>"
         self.thumbnail_url = "https://example.com/thumb.png"
         self.status = PostStatus.PUBLISHED
-        self.images = (
+        self.images: str | None = (
             "1|https://example.com/img1.png|alt1,2|https://example.com/img2.png|alt2"
         )
-        self.tags = "10|Python|python,20|FastAPI|fastapi"
+        self.tags: str | None = "10|Python|python,20|FastAPI|fastapi"
         self.published_at = datetime(2025, 1, 1)
         self.created_at = datetime(2025, 1, 1)
         self.updated_at = datetime(2025, 1, 2)

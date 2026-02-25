@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from app.repositories.post_repository import PostRepository
@@ -45,7 +46,7 @@ class PublicPostService:
                     title=post.title,
                     slug=post.slug,
                     thumbnail_url=post.thumbnail_url,
-                    published_at=post.published_at,
+                    published_at=post.published_at or datetime.now(),
                     tags=tags,
                 )
             )

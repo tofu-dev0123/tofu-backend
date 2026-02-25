@@ -3,8 +3,9 @@ import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
 from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 from app.models.user import User
-from app.db.database import SessionLocal, get_db
+from app.db.database import get_db
 from app.core.exceptions.auth_exceptions import AuthenticationError
 from app.common.message import ErrorMessage
 
@@ -79,7 +80,7 @@ def verify_token(token: str):
 
 def get_current_user(
     request: Request,
-    db: SessionLocal = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> User:
     """
     クッキーまたはAuthorizationヘッダーから認証トークンを取得し、ユーザー情報を返す
