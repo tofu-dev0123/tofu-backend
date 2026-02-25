@@ -256,7 +256,7 @@ def test_create_all_success_with_tags_and_images(
         title="Test",
         content_md="test_md",
         thumbnail_url="test_thumb",
-        status="PUBLISHED",
+        status=PostStatus.PUBLISHED,
         tags=["python", "fastapi"],
         images=[1, 2],
     )
@@ -299,7 +299,7 @@ def test_create_all_image_not_exist_error(
         title="Test",
         content_md="test_md",
         thumbnail_url="test_thumb",
-        status="PUBLISHED",
+        status=PostStatus.PUBLISHED,
         tags=["python", "fastapi"],
         images=[1, 2],
     )
@@ -739,7 +739,6 @@ def test_update_all_image_not_exist_error(
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url=None,
         thumbnail_delete_flag=False,
         status=PostStatus.DRAFT,
@@ -780,7 +779,6 @@ def test_update_all_invalid_image_owner(
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url=None,
         thumbnail_delete_flag=False,
         status=PostStatus.DRAFT,
@@ -819,7 +817,6 @@ def test_update_all_bad_request_of_thumbnail(
     req = PostsPutRequest(
         title="Updated Title",
         content_md="updated_md",
-        content_html="updated_html",
         thumbnail_url="https://example.com/new.png",
         thumbnail_delete_flag=True,
         status=PostStatus.DRAFT,
