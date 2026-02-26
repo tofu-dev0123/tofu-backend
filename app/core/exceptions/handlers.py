@@ -15,7 +15,7 @@ from app.core.exceptions.account_exceptions import (
     EmailAlreadyExistsError,
 )
 from app.core.validation import VALIDATION_MESSAGES
-from app.schemas.errors import ErrorResponse
+from app.schemas.errors import ErrorResponse, ErrorDetail
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 
@@ -120,7 +120,7 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=400,
             content=ErrorResponse(
-                message="", error=ErrorCode.VALIDATION_ERROR, details=exc.errors
+                message="", error=ErrorCode.VALIDATION_ERROR, details=[ErrorDetail(**e) for e in exc.errors]
             ).model_dump(),
         )
 

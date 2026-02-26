@@ -40,6 +40,7 @@ def test_get_posts_success(mock_db):
     # リポジトリのモック設定
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = [mock_post1, mock_post2]
+    service.post_repo.count_published_posts.return_value = 2
 
     result = service.get_posts(page=1, keyword=None)
 
@@ -77,6 +78,7 @@ def test_get_posts_with_keyword_success(mock_db):
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = [mock_post]
+    service.post_repo.count_published_posts.return_value = 1
 
     result = service.get_posts(page=1, keyword="Python")
 
@@ -106,12 +108,15 @@ def test_get_posts_pagination_success(mock_db):
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = [mock_post]
+    service.post_repo.count_published_posts.return_value = 25
 
     result = service.get_posts(page=2, keyword=None)
 
     assert isinstance(result, PostsPublishAtResponse)
     assert result.page == 2
     assert result.posts[0].post_id == 11
+    assert result.total_count == 25
+    assert result.total_pages == 3
 
     # オフセットの計算確認
     offset = (2 - 1) * Constant.PUBLIC_POST_LIMIT
@@ -126,6 +131,7 @@ def test_get_posts_empty_result(mock_db):
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = []
+    service.post_repo.count_published_posts.return_value = 0
 
     result = service.get_posts(page=1, keyword=None)
 
@@ -159,18 +165,14 @@ def test_get_posts_total_pages_calculation_with_remainder(mock_db):
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = mock_posts
+    service.post_repo.count_published_posts.return_value = 25
 
     result = service.get_posts(page=1, keyword=None)
 
-    # total_countは取得した件数（10件）だが、実際には25件ある想定
-    # このテストでは、取得した件数から総ページ数を計算するロジックを確認
-    assert result.total_count == 10
-    # 10件 / 10件 = 1ページ（端数なし）
-    assert result.total_pages == 1
-
-    # 実際の実装では、total_countは取得した件数から計算されるため、
-    # より正確なテストのためには、リポジトリから総件数を取得する必要がある
-    # しかし、現在の実装では len(posts) を使用しているため、このテストで確認
+    # total_countはDBの総件数（25件）
+    assert result.total_count == 25
+    # 25件 / 10件 = 3ページ（端数あり）
+    assert result.total_pages == 3
 
 
 # 正常系: 総ページ数の計算（端数なし、ちょうどページ数分）
@@ -191,6 +193,7 @@ def test_get_posts_total_pages_calculation_exact(mock_db):
 
     service.post_repo = MagicMock()
     service.post_repo.find_published_posts.return_value = mock_posts
+    service.post_repo.count_published_posts.return_value = 10
 
     result = service.get_posts(page=1, keyword=None)
 

@@ -67,12 +67,12 @@ class PostService:
         keyword: str | None,
         status: PostStatus | None,
     ):
-        posts: list[PostSchema] = self.post_repo.find_posts_by_user(
+        posts = self.post_repo.find_posts_by_user(
             user_id, offset, limit, keyword, status
         )
 
-        total_count = len(posts)
-        total_pages = math.ceil(total_count / limit)
+        total_count = self.post_repo.count_posts_by_user(user_id, keyword, status)
+        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
         posts_list = []
 
         for post in posts:
@@ -109,6 +109,10 @@ class PostService:
 
     def get_post_detail(self, post_id: int) -> PostGetResponse:
         data = self.query_repo.find_by_post_id(post_id)
+        if data is None:
+            raise ApplicationError(
+                message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
+            )
         images = []
         tags = []
         if data.images:
@@ -244,7 +248,7 @@ class PostService:
     """
 
     def create_post(
-        self, request: PostsPostRequest, id: int, slug: str, date: datetime
+        self, request: PostsPostRequest, id: int, slug: str, date: datetime | None
     ) -> int:
         # MarkdownからHTMLへの変換
         content_html = self.convert_markdown_to_html(request.content_md)
@@ -333,6 +337,8 @@ class PostService:
         self, post_id: int, new_status: PostStatus
     ) -> datetime | None:
         post = self.post_repo.find_by_post_id(post_id)
+        if post is None:
+            raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
 
         old_status = post.status
 
@@ -456,6 +462,8 @@ class PostService:
 
             # 公開時にドラフトスラグをタイトルベーススラグに上書き
             current_post = self.post_repo.find_by_post_id(post_id)
+            if current_post is None:
+                raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
             new_slug = current_post.slug
             if (
                 request.status == PostStatus.PUBLISHED
@@ -564,7 +572,7 @@ class PostService:
             new_slug = None
             if status == PostStatus.PUBLISHED:
                 current_post = self.post_repo.find_by_post_id(post_id)
-                if is_draft_generated_slug(current_post.slug) and current_post.title:
+                if current_post is not None and is_draft_generated_slug(current_post.slug) and current_post.title:
                     new_slug = self.generate_slug_of_title(current_post.title)
 
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)

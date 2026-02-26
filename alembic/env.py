@@ -49,6 +49,8 @@ def run_migrations_offline():
 # ---------------------------------------------------------
 def run_migrations_online():
     configuration = config.get_section(config.config_ini_section)
+    if configuration is None:
+        raise RuntimeError("Could not get alembic configuration section")
     configuration["sqlalchemy.url"] = get_url()
 
     connectable = engine_from_config(

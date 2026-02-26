@@ -11,7 +11,7 @@ class PostRepository:
 
     def exist_check_by_post_id(self, post_id) -> bool:
         stmt = select(exists().where(Post.post_id == post_id))
-        return self.db.execute(stmt).scalar()
+        return bool(self.db.execute(stmt).scalar())
 
     def find_posts_by_user(
         self,
@@ -35,6 +35,19 @@ class PostRepository:
         )
 
         return self.db.execute(statement).scalars().all()
+
+    def count_posts_by_user(
+        self,
+        user_id: int,
+        keyword: str | None = None,
+        status: PostStatus | None = None,
+    ) -> int:
+        stmt = select(func.count(Post.post_id)).where(Post.user_id == user_id)
+        if keyword:
+            stmt = stmt.where(Post.title.like(f"%{keyword}%"))
+        if status:
+            stmt = stmt.where(Post.status == status)
+        return self.db.execute(stmt).scalar() or 0
 
     def get_post_counts(self):
         stmt = select(
@@ -62,7 +75,7 @@ class PostRepository:
         self.db.flush()
         return post.post_id
 
-    def find_by_post_id(self, id: int) -> Post:
+    def find_by_post_id(self, id: int) -> Post | None:
         return self.db.query(Post).filter(Post.post_id == id).first()
 
     def find_thumbnail_url_by_post_id(self, id: int) -> str | None:
@@ -133,3 +146,11 @@ class PostRepository:
         )
 
         return self.db.execute(statement).scalars().all()
+
+    def count_published_posts(self, keyword: str | None = None) -> int:
+        stmt = select(func.count(Post.post_id)).where(
+            Post.status == PostStatus.PUBLISHED
+        )
+        if keyword:
+            stmt = stmt.where(Post.title.like(f"%{keyword}%"))
+        return self.db.execute(stmt).scalar() or 0
