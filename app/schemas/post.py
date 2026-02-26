@@ -22,10 +22,10 @@ class Post(BaseModel):
 
 class PostPublishAt(BaseModel):
     post_id: int = Field(..., description="記事ID")
-    title: str = Field(..., description="タイトル")
+    title: str | None = Field(None, description="タイトル")
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
-    published_at: datetime = Field(..., description="公開日時")
+    published_at: datetime | None = Field(None, description="公開日時")
     tags: list[Tag] = Field(default_factory=list, description="タグデータの配列")
 
 

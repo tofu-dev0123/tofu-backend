@@ -3,6 +3,9 @@ from app.models.post import PostStatus
 
 
 class DummyPostDetail:
+    images: str | None
+    tags: str | None
+
     def __init__(self):
         self.post_id = 1
         self.title = "テストタイトル"

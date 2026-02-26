@@ -54,18 +54,21 @@ class Settings(BaseSettings):
     def db_host(self) -> str:
         # local 以外 → Railway を使う
         if not self.is_local:
+            assert self.MYSQLHOST is not None, "MYSQLHOST is not set"
             return self.MYSQLHOST
         return self.DB_HOST or "localhost"
 
     @property
     def db_port(self) -> int:
         if not self.is_local:
+            assert self.MYSQLPORT is not None, "MYSQLPORT is not set"
             return self.MYSQLPORT
         return self.DB_PORT or 3306
 
     @property
     def db_user(self) -> str:
         if not self.is_local:
+            assert self.MYSQLUSER is not None, "MYSQLUSER is not set"
             return self.MYSQLUSER
         return self.DB_USER or "root"
 
@@ -78,6 +81,7 @@ class Settings(BaseSettings):
     @property
     def db_name(self) -> str:
         if not self.is_local:
+            assert self.MYSQLDATABASE is not None, "MYSQLDATABASE is not set"
             return self.MYSQLDATABASE
         return self.DB_NAME or "blog_db"
 
@@ -92,4 +96,4 @@ class Settings(BaseSettings):
         )
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
