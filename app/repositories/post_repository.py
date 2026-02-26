@@ -36,6 +36,19 @@ class PostRepository:
 
         return self.db.execute(statement).scalars().all()
 
+    def count_posts_by_user(
+        self,
+        user_id: int,
+        keyword: str | None = None,
+        status: PostStatus | None = None,
+    ) -> int:
+        stmt = select(func.count(Post.post_id)).where(Post.user_id == user_id)
+        if keyword:
+            stmt = stmt.where(Post.title.like(f"%{keyword}%"))
+        if status:
+            stmt = stmt.where(Post.status == status)
+        return self.db.execute(stmt).scalar()
+
     def get_post_counts(self):
         stmt = select(
             func.count(Post.post_id).label("total_count"),
@@ -133,3 +146,11 @@ class PostRepository:
         )
 
         return self.db.execute(statement).scalars().all()
+
+    def count_published_posts(self, keyword: str | None = None) -> int:
+        stmt = select(func.count(Post.post_id)).where(
+            Post.status == PostStatus.PUBLISHED
+        )
+        if keyword:
+            stmt = stmt.where(Post.title.like(f"%{keyword}%"))
+        return self.db.execute(stmt).scalar()

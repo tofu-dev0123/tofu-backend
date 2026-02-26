@@ -71,8 +71,8 @@ class PostService:
             user_id, offset, limit, keyword, status
         )
 
-        total_count = len(posts)
-        total_pages = math.ceil(total_count / limit)
+        total_count = self.post_repo.count_posts_by_user(user_id, keyword, status)
+        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
         posts_list = []
 
         for post in posts:

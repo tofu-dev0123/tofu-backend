@@ -26,8 +26,8 @@ class PublicPostService:
         offset = (page - 1) * limit
         posts = self.post_repo.find_published_posts(offset, limit, keyword)
 
-        total_count = len(posts)
-        total_pages = math.ceil(total_count / limit)
+        total_count = self.post_repo.count_published_posts(keyword)
+        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
 
         posts_list = []
         for post in posts:
