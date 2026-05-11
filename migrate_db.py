@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.db.database import SessionLocal
 from app.models import User
 from alembic.config import Config
-from alembic import command
+from alembic import command  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def wait_for_database(max_retries=30, retry_interval=1):

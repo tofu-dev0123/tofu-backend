@@ -10,3 +10,6 @@ __pycache__/
 
 # Claude Code 個人設定
 .claude/settings.local.json
+
+# direnv (nix-direnv キャッシュ)
+.direnv/

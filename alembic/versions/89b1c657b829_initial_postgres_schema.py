@@ -7,7 +7,7 @@ Create Date: 2026-05-11 22:00:51.403315
 """
 from typing import Sequence, Union
 
-from alembic import op
+from alembic import op  # pyright: ignore[reportAttributeAccessIssue]
 import sqlalchemy as sa
 
 
