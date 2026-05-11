@@ -15,7 +15,7 @@
 ## スタック概要
 
 - **FastAPI** + **SQLAlchemy 2.0**（`Mapped[T] = mapped_column()` 記法）+ **Pydantic v2**
-- **MySQL 8.0**（`asyncmy` / `pymysql`） ※AWS Lambda + Neon 移行に伴い Postgres 化予定（Issue #52）
+- **PostgreSQL 16**（`psycopg` 3.x）
 - **Alembic** マイグレーション
 - **pytest** テスト（**Docker 上で実行**）
 - **pyright** 型チェック（`pyrightconfig.json` あり）
@@ -42,7 +42,7 @@
 
 ## 実行・テスト
 
-- **アプリ起動**: `docker compose up`（api: http://localhost:8000、db: MySQL 8.0、localstack: S3 互換）
+- **アプリ起動**: `docker compose up`（api: http://localhost:8000、db: PostgreSQL 16、localstack: S3 互換）
 - **テスト**: Python パッケージはホストに無いため **必ず Docker 上で実行**
   - 例: `docker compose run --rm api pytest`
 - **型チェック**: `pyright` をホストで実行（`pyrightconfig.json` の `reportMissingImports: false` に依存）
@@ -57,7 +57,6 @@
 ## 進行中の作業
 
 - **Lambda + Neon 移行**（Issue #44）: Railway → AWS Lambda + Neon Free への移行
-  - MySQL → Postgres へのスキーマ移行を含む（Issue #52）
   - フェーズ毎の sub-issue に分割済み。最新状況は GitHub Issues を参照
 
 ## ファイル・ディレクトリ規約

@@ -28,7 +28,6 @@ def wait_for_database(max_retries=30, retry_interval=1):
                 pool_pre_ping=True,
                 connect_args={
                     "connect_timeout": 5,
-                    "ssl": {"ssl-mode": "preferred"},  # SSL接続を有効化
                 },
             )
             with engine.connect() as conn:

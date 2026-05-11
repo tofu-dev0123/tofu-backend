@@ -1,7 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from sqlalchemy import BigInteger, String, DateTime, Enum, ForeignKey, func
-from sqlalchemy.dialects.mysql import MEDIUMTEXT
+from sqlalchemy import BigInteger, String, DateTime, Enum, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 from app.db.base_class import Base
@@ -19,8 +18,8 @@ class Post(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.user_id"), nullable=False, index=True)
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    content_md: Mapped[str] = mapped_column(MEDIUMTEXT, nullable=False)
-    content_html: Mapped[str] = mapped_column(MEDIUMTEXT, nullable=False)
+    content_md: Mapped[str] = mapped_column(Text, nullable=False)
+    content_html: Mapped[str] = mapped_column(Text, nullable=False)
     thumbnail_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     status: Mapped[PostStatus] = mapped_column(Enum(PostStatus), nullable=False, default=PostStatus.DRAFT)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

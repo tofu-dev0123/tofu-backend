@@ -9,8 +9,8 @@
 | フレームワーク     | FastAPI                 |
 | ORM                | SQLAlchemy 2.0          |
 | バリデーション     | Pydantic v2             |
-| データベース       | MySQL 8.0               |
-| 非同期 DB ドライバ | asyncmy                 |
+| データベース       | PostgreSQL 16           |
+| DB ドライバ        | psycopg 3.x             |
 | マイグレーション   | Alembic                 |
 | 認証               | JWT (python-jose)       |
 | ストレージ         | AWS S3 / LocalStack     |
@@ -123,8 +123,8 @@ posts
 ├── user_id (FK → users)
 ├── title
 ├── slug (UNIQUE)
-├── content_md (MEDIUMTEXT)
-├── content_html (MEDIUMTEXT)
+├── content_md (TEXT)
+├── content_html (TEXT)
 ├── thumbnail_url
 ├── status (ENUM: DRAFT/PUBLISHED)
 ├── published_at

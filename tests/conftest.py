@@ -18,7 +18,7 @@ from app.db.database import get_db
 # ユーザーのモデルが Base を含んでる
 from app.models.user import Base
 
-TEST_DATABASE_URL = "mysql+pymysql://root:password@db:3306/test_db"
+TEST_DATABASE_URL = "postgresql+psycopg://blog_user:password@db:5432/test_db"
 
 # データベースがなければ作成
 if not database_exists(TEST_DATABASE_URL):
