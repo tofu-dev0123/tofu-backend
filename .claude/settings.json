@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | grep -E '(^|/)\\.env(\\.production)?$' && { echo 'Writes to .env / .env.production are blocked.' >&2; exit 2; } || exit 0"
+            "command": "fp=$(jq -r '.tool_input.file_path // empty'); base=$(basename \"$fp\"); case \"$base\" in .env.example|.env.local) exit 0 ;; .env|.env.*) echo \"Writes to $base are blocked. Allowed: .env.example, .env.local\" >&2; exit 2 ;; esac; exit 0"
           }
         ]
       }
