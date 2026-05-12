@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
-from alembic import context
+from alembic import context  # pyright: ignore[reportAttributeAccessIssue]
 
 # ---------------------------------------------------------
 # Alembic Config

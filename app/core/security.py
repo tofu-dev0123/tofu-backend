@@ -110,9 +110,14 @@ def get_current_user(
         raise AuthenticationError(ErrorMessage.TOKEN_REQUIRED)
 
     payload = verify_token(token)
-    user_id = payload.get("sub")
+    sub = payload.get("sub")
 
-    if not user_id:
+    if not sub:
+        raise AuthenticationError
+
+    try:
+        user_id = int(sub)
+    except (TypeError, ValueError):
         raise AuthenticationError
 
     user = db.query(User).filter(User.user_id == user_id).first()
