@@ -1,4 +1,5 @@
 {
+  "pythonVersion": "3.11",
   "reportMissingImports": false,
   "reportMissingModuleSource": false
 }

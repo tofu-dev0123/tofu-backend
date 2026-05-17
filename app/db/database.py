@@ -11,7 +11,6 @@ engine = create_engine(
     echo=False,  # SQLクエリをログ出力する場合はTrue
     connect_args={
         "connect_timeout": 10,
-        "ssl": {"ssl-mode": "preferred"},  # SSL接続を有効化
     },
 )
 

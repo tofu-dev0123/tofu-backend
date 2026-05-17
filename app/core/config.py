@@ -17,16 +17,12 @@ class Settings(BaseSettings):
     S3_ENDPOINT_URL: str | None = None
     CLOUDFRONT_DOMAIN: str | None = None
 
-    # ===== Railway MySQL =====
-    MYSQLHOST: Optional[str] = None
-    MYSQLPORT: Optional[int] = None
-    MYSQLUSER: Optional[str] = None
-    MYSQLPASSWORD: Optional[str] = None
-    MYSQLDATABASE: Optional[str] = None
+    # ===== Database (production: Neon などが提供する単一の接続文字列) =====
+    DATABASE_URL: Optional[str] = None
 
-    # ===== Local MySQL =====
+    # ===== Local Database (Docker Postgres) =====
     DB_HOST: Optional[str] = None
-    DB_PORT: Optional[int] = 3306
+    DB_PORT: Optional[int] = 5432
     DB_USER: Optional[str] = None
     DB_PASSWORD: Optional[str] = None
     DB_NAME: Optional[str] = None
@@ -41,7 +37,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.getenv("ENV_FILE", ".env.local"),
         case_sensitive=True,
-        extra="forbid",
+        extra="ignore",
     )
 
     # ===== 環境判別 =====
@@ -49,51 +45,27 @@ class Settings(BaseSettings):
     def is_local(self) -> bool:
         return self.APP_ENV == "local"
 
-    # ===== DB 共通取得 =====
-    @property
-    def db_host(self) -> str:
-        # local 以外 → Railway を使う
-        if not self.is_local:
-            assert self.MYSQLHOST is not None, "MYSQLHOST is not set"
-            return self.MYSQLHOST
-        return self.DB_HOST or "localhost"
-
-    @property
-    def db_port(self) -> int:
-        if not self.is_local:
-            assert self.MYSQLPORT is not None, "MYSQLPORT is not set"
-            return self.MYSQLPORT
-        return self.DB_PORT or 3306
-
-    @property
-    def db_user(self) -> str:
-        if not self.is_local:
-            assert self.MYSQLUSER is not None, "MYSQLUSER is not set"
-            return self.MYSQLUSER
-        return self.DB_USER or "root"
-
-    @property
-    def db_password(self) -> str:
-        if not self.is_local:
-            return self.MYSQLPASSWORD or ""
-        return self.DB_PASSWORD or ""
-
-    @property
-    def db_name(self) -> str:
-        if not self.is_local:
-            assert self.MYSQLDATABASE is not None, "MYSQLDATABASE is not set"
-            return self.MYSQLDATABASE
-        return self.DB_NAME or "blog_db"
-
     # ===== DB URL =====
     @property
     def database_url(self) -> str:
-        pwd = self.db_password.replace("%", "%25").replace("@", "%40")
-        return (
-            f"mysql+pymysql://{self.db_user}:{pwd}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
-            "?charset=utf8mb4"
-        )
+        # 本番系: DATABASE_URL をそのまま使用 (Neon 等は単一接続文字列で提供される)
+        if not self.is_local:
+            assert self.DATABASE_URL is not None, "DATABASE_URL is not set"
+            url = self.DATABASE_URL
+            # Neon などが返す `postgres://` を SQLAlchemy/psycopg 用のスキームに正規化
+            if url.startswith("postgres://"):
+                url = "postgresql+psycopg://" + url[len("postgres://"):]
+            elif url.startswith("postgresql://"):
+                url = "postgresql+psycopg://" + url[len("postgresql://"):]
+            return url
+
+        # ローカル: DB_* から組み立て
+        host = self.DB_HOST or "localhost"
+        port = self.DB_PORT or 5432
+        user = self.DB_USER or "postgres"
+        pwd = (self.DB_PASSWORD or "").replace("%", "%25").replace("@", "%40")
+        name = self.DB_NAME or "blog_db"
+        return f"postgresql+psycopg://{user}:{pwd}@{host}:{port}/{name}"
 
 
 settings = Settings()  # type: ignore[call-arg]
