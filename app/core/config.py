@@ -2,6 +2,38 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 from pydantic import Field
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _populate_env_from_ssm() -> None:
+    """
+    `<KEY>_SSM` 環境変数が設定されていれば、SSM Parameter Store から取得した値を
+    `<KEY>` 環境変数として `os.environ` に注入する。Settings 初期化前に呼ぶこと。
+
+    Lambda 実行時の secret 取得用 (DATABASE_URL, SECRET_KEY 等)。
+    ローカル開発では `<KEY>_SSM` を設定しないので何もしない。
+    """
+    ssm_keys = ["DATABASE_URL", "SECRET_KEY"]
+    targets = [k for k in ssm_keys if os.getenv(f"{k}_SSM") and not os.getenv(k)]
+    if not targets:
+        return
+
+    import boto3  # 遅延 import (ローカル開発では呼ばれない)
+
+    client = boto3.client("ssm")
+    for key in targets:
+        param_name = os.environ[f"{key}_SSM"]
+        try:
+            resp = client.get_parameter(Name=param_name, WithDecryption=True)
+            os.environ[key] = resp["Parameter"]["Value"]
+        except Exception as e:
+            logger.error("Failed to fetch SSM parameter %s: %s", param_name, e)
+            raise
+
+
+_populate_env_from_ssm()
 
 
 class Settings(BaseSettings):
