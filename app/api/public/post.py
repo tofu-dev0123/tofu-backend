@@ -18,7 +18,7 @@ def get_post_service(
     return PublicPostService(db)
 
 
-@router.get("/", response_model=PostsPublishAtResponse)
+@router.get("", response_model=PostsPublishAtResponse)
 async def get_posts(
     page: Optional[int] = Query(1, ge=1),
     keyword: Optional[str] = Query(None, max_length=1000),
