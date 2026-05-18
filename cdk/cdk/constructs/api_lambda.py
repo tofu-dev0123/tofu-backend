@@ -1,8 +1,6 @@
 """
 ApiLambda Construct: FastAPI を実行する Lambda + IAM + Function URL を一括で構築する。
 """
-import json
-
 from aws_cdk import (
     Duration,
     BundlingOptions,
@@ -33,7 +31,6 @@ class ApiLambda(Construct):
         super().__init__(scope, construct_id)
 
         s3_bucket_name = env_vars["S3_BUCKET_NAME"]
-        cors_origins = json.loads(env_vars["CORS_ALLOW_ORIGINS"])
         ssm_prefix = f"/blog-platform-backend/{env_name}"
 
         # ===== Lambda 関数 =====
@@ -81,14 +78,10 @@ class ApiLambda(Construct):
         self._grant_permissions(s3_bucket_name=s3_bucket_name, ssm_prefix=ssm_prefix)
 
         # ===== Function URL =====
+        # CORS は FastAPI CORSMiddleware に一本化する (Function URL 側で設定すると
+        # アプリ層と二重に CORS ヘッダーが付き、ブラウザがエラー扱いするため)
         self.function_url = self.function.add_function_url(
             auth_type=lambda_.FunctionUrlAuthType.NONE,
-            cors=lambda_.FunctionUrlCorsOptions(
-                allowed_origins=cors_origins,
-                allowed_methods=[lambda_.HttpMethod.ALL],
-                allowed_headers=["*"],
-                allow_credentials=True,
-            ),
         )
 
     def _grant_permissions(self, *, s3_bucket_name: str, ssm_prefix: str) -> None:
