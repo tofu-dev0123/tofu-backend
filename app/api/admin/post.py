@@ -29,7 +29,7 @@ def get_post_service(
     return PostService(db)
 
 
-@router.get("/", response_model=PostsListGetResponse)
+@router.get("", response_model=PostsListGetResponse)
 async def get_posts(
     keyword: Optional[str] = Query(None, max_length=1000),
     status: Optional[PostStatus] = Query(None),
@@ -45,7 +45,7 @@ async def get_posts(
     return result
 
 
-@router.post("/", response_model=PostsResponse)
+@router.post("", response_model=PostsResponse)
 async def create_posts(
     request: PostsPostRequest,
     service: PostService = Depends(get_post_service),
