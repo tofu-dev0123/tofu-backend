@@ -54,7 +54,8 @@ backend/
 │   └── utils/                  # ユーティリティ
 ├── tests/                      # テストコード
 ├── alembic/                    # マイグレーション
-└── docker-compose.yml          # 開発環境構成
+├── cdk/                        # AWS CDK プロジェクト (IaC)
+└── docker-compose.yml          # ローカル開発環境構成
 ```
 
 ## レイヤー構造
@@ -164,15 +165,15 @@ images
 | DELETE   | /admin/posts/{post_id}   | 記事削除         |
 | PATCH    | /admin/posts/{post_id}   | ステータス変更   |
 | GET      | /admin/posts/summary     | 記事統計取得     |
-| POST     | /admin/images            | 画像アップロード |
+| POST     | /admin/images/upload     | 画像アップロード |
 | DELETE   | /admin/images/{image_id} | 画像削除         |
 
-### 公開 API (/public)
+### 公開 API
 
-| メソッド | パス                    | 説明             |
-| -------- | ----------------------- | ---------------- |
-| GET      | /public/posts           | 公開記事一覧取得 |
-| GET      | /public/posts/{post_id} | 公開記事詳細取得 |
+| メソッド | パス           | 説明             |
+| -------- | -------------- | ---------------- |
+| GET      | /posts         | 公開記事一覧取得 |
+| GET      | /posts/{slug}  | 公開記事詳細取得 |
 
 ## 認証・セキュリティ
 
@@ -197,24 +198,50 @@ Authorization: Bearer <JWT_TOKEN>
 ### ローカル環境
 
 - Docker Compose で構築
-- MySQL 8.0
+- PostgreSQL 16
 - LocalStack（S3 互換ストレージ）
 
-### 本番環境
+### 本番・staging 環境
 
-- Railway（MySQL）
-- AWS S3 + CloudFront
+```
+[Browser]
+    ↓ https://api.tofubase.com (prod) / https://dev-api.tofubase.com (dev)
+[CloudFront] ─── ACM 証明書
+    ↓
+[Lambda Function URL]
+    ↓
+[Lambda Function (Python 3.12 / ARM64)]
+    ↓
+[Neon Postgres] / [AWS S3] / [AWS SSM Parameter Store]
+```
+
+- 計算基盤: AWS Lambda + Function URL + CloudFront (CDK 管理)
+- DB: Neon Postgres (main branch = prod / dev branch = staging)
+- 画像: AWS S3 + CloudFront (CDK 管理外、AWS Console 管理)
+- secrets: SSM Parameter Store `/blog-platform-backend/<env>/{DATABASE_URL,SECRET_KEY}` を Lambda が起動時に runtime fetch
+- リージョン: `us-east-1` (Neon のリージョン制約に追従)
+
+### IaC
+
+- AWS CDK (Python) — `backend/cdk/`
+- `cdk deploy -c env=dev` / `cdk deploy -c env=prod` で環境別に deploy
+- `.env.dev` / `.env.prod` (gitignore 済) から非 secret 値を読む
 
 ### 環境変数
 
-| 変数名                                          | 説明                     |
-| ----------------------------------------------- | ------------------------ |
-| APP_ENV                                         | 環境（local/production） |
-| DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME | DB 接続情報              |
-| AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY        | AWS 認証情報             |
-| S3_BUCKET_NAME, S3_ENDPOINT_URL                 | S3 設定                  |
-| SECRET_KEY                                      | JWT 署名キー             |
-| CORS_ALLOW_ORIGINS                              | CORS 許可オリジン        |
+| 変数名                                          | 説明                                                                   |
+| ----------------------------------------------- | ---------------------------------------------------------------------- |
+| APP_ENV                                         | 環境（local/staging/production）。local 以外は SSM 経由 secret 取得    |
+| DATABASE_URL                                    | Postgres 接続文字列（local 以外、または `_SSM` 経由）                   |
+| DATABASE_URL_SSM / SECRET_KEY_SSM               | Lambda 用: SSM パラメータ名を指定すると起動時に値を取得して上書き      |
+| DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME | local 専用（Docker Postgres 接続）                                     |
+| AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY        | local 用ダミー（Lambda 上では実行ロールから取得）                       |
+| S3_BUCKET_NAME, S3_ENDPOINT_URL                 | S3 設定（S3_ENDPOINT_URL は LocalStack 用、本番は未設定）              |
+| CLOUDFRONT_DOMAIN                               | 画像配信用 CloudFront ドメイン                                          |
+| SECRET_KEY                                      | JWT 署名キー（local 以外は SSM から取得）                               |
+| ALGORITHM                                       | JWT 署名アルゴリズム（HS256）                                           |
+| CORS_ALLOW_ORIGINS                              | CORS 許可オリジン（JSON 配列）                                          |
+| CUSTOM_DOMAIN                                   | CDK 専用: カスタムドメイン名（指定で CloudFront + ACM が作成される）   |
 
 ## 依存性注入パターン
 
