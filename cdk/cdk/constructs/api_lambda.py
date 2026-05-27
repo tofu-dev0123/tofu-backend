@@ -66,6 +66,7 @@ class ApiLambda(Construct):
                 "APP_ENV": env_vars["APP_ENV"],
                 "ALGORITHM": env_vars.get("ALGORITHM", "HS256"),
                 "S3_BUCKET_NAME": s3_bucket_name,
+                "S3_REGION": env_vars["S3_REGION"],
                 "CLOUDFRONT_DOMAIN": env_vars["CLOUDFRONT_DOMAIN"],
                 "CORS_ALLOW_ORIGINS": env_vars["CORS_ALLOW_ORIGINS"],
                 "DATABASE_URL_SSM": f"{ssm_prefix}/DATABASE_URL",

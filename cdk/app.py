@@ -38,7 +38,13 @@ if not env_path.exists():
 env_vars = {k: v for k, v in dotenv_values(env_path).items() if v}
 
 # CDK が Lambda env に乗せるために必要な最低限のキー
-required = ["APP_ENV", "S3_BUCKET_NAME", "CLOUDFRONT_DOMAIN", "CORS_ALLOW_ORIGINS"]
+required = [
+    "APP_ENV",
+    "S3_BUCKET_NAME",
+    "S3_REGION",
+    "CLOUDFRONT_DOMAIN",
+    "CORS_ALLOW_ORIGINS",
+]
 missing = [k for k in required if not env_vars.get(k)]
 if missing:
     raise ValueError(
