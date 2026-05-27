@@ -22,14 +22,18 @@ class S3:
     def get_s3_client(self):
         kwargs = {
             "service_name": "s3",
-            "aws_access_key_id": self.ACCESS_KEY_ID,
-            "aws_secret_access_key": self.SECRET_ACCESS_KEY,
             "region_name": self.REGION_NAME,
         }
 
-        # LocalStack は local 環境のみ
-        if self.env == "local" and self.ENDPOINT_URL:
-            kwargs["endpoint_url"] = self.ENDPOINT_URL
+        # local (LocalStack) のみ明示クレデンシャルとエンドポイントを使う。
+        # 本番 (Lambda) は実行ロールの一時クレデンシャルを使うため明示キーを渡さない。
+        # Lambda ランタイムが自動設定する一時アクセスキーを session token 無しで
+        # 渡すと InvalidAccessKeyId になるため、boto3 の既定の認証チェーンに任せる。
+        if self.env == "local":
+            kwargs["aws_access_key_id"] = self.ACCESS_KEY_ID
+            kwargs["aws_secret_access_key"] = self.SECRET_ACCESS_KEY
+            if self.ENDPOINT_URL:
+                kwargs["endpoint_url"] = self.ENDPOINT_URL
 
         return boto3.client(**kwargs)
 
