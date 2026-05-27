@@ -12,7 +12,9 @@ class S3:
         self.env = settings.APP_ENV
         self.ACCESS_KEY_ID = settings.AWS_ACCESS_KEY_ID
         self.SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
-        self.REGION_NAME = settings.AWS_DEFAULT_REGION
+        # S3 バケットのリージョン。本番は Lambda の AWS_REGION (us-east-1) に
+        # フォールバックさせず、バケットの実リージョンを明示する必要がある。
+        self.REGION_NAME = settings.S3_REGION or settings.AWS_DEFAULT_REGION
         self.ENDPOINT_URL = settings.S3_ENDPOINT_URL
         self.BUCKET_NAME = settings.S3_BUCKET_NAME
         self.CLOUDFRONT_DOMAIN = settings.CLOUDFRONT_DOMAIN
