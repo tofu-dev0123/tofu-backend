@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     AWS_DEFAULT_REGION: str | None = None
 
     S3_BUCKET_NAME: str | None = None
+    S3_REGION: str | None = None
     S3_ENDPOINT_URL: str | None = None
     CLOUDFRONT_DOMAIN: str | None = None
 
