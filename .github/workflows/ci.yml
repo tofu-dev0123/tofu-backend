@@ -1,0 +1,10 @@
+name: CI
+
+# develop / staging / production への PR で検証を実行する (Stage 1)。
+on:
+  pull_request:
+    branches: [develop, staging, production]
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
