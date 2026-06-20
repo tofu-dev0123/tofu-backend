@@ -23,10 +23,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      # アプリ + CDK の依存を入れて import を解決させる
-      # (pyrightconfig.json は reportMissingImports=false だが型解決のため)
-      - name: Install dependencies
-        run: pip install -r requirements.txt -r cdk/requirements.txt pyright
+      # ローカルと同条件で実行する。アプリ/CDK の依存は入れず、未解決 import は
+      # pyrightconfig.json の reportMissingImports=false に委ねる
+      # (依存を入れると jsii 生成型の偽陽性が出るため)。
+      - name: Install pyright
+        run: pip install pyright
       - name: Run pyright
         run: pyright
 
