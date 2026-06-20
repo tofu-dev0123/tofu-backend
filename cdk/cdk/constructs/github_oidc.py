@@ -117,6 +117,28 @@ class GithubOidc(Construct):
             )
         )
 
+        # DB マイグレーション (alembic) 用: アプリの機密値を SSM から取得する。
+        # CI のマイグレーションジョブが DATABASE_URL / SECRET_KEY を読むために必要。
+        # (app/core/config.py の _populate_env_from_ssm が参照する)
+        self.role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["ssm:GetParameter"],
+                resources=[
+                    f"arn:aws:ssm:{region}:{account}:parameter/blog-platform-backend/*",
+                ],
+            )
+        )
+        # SecureString 復号 (AWS マネージド SSM キー経由のみ。api_lambda.py 踏襲)
+        self.role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["kms:Decrypt"],
+                resources=[f"arn:aws:kms:{region}:{account}:key/*"],
+                conditions={
+                    "StringEquals": {"kms:ViaService": f"ssm.{region}.amazonaws.com"}
+                },
+            )
+        )
+
         # ===== 出力 =====
         CfnOutput(
             self,
