@@ -1,5 +1,12 @@
 {
   "pythonVersion": "3.11",
   "reportMissingImports": false,
-  "reportMissingModuleSource": false
+  "reportMissingModuleSource": false,
+  "exclude": [
+    "cdk",
+    ".direnv",
+    "**/node_modules",
+    "**/.venv",
+    "**/__pycache__"
+  ]
 }
