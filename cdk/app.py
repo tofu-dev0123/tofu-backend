@@ -32,17 +32,20 @@ cdk_env = cdk.Environment(
 env_name = app.node.try_get_context("env")
 
 if env_name:
-    # ===== 環境別 .env ファイルの読み込み =====
-    # .env.<env_name> は backend/ ルートに置く (gitignore 済)
-    backend_root = Path(__file__).parent.parent
-    env_path = backend_root / f".env.{env_name}"
+    # ===== 環境別デプロイ設定の読み込み =====
+    # 非機密のデプロイ設定は cdk/config/<env_name>.env にコミットして管理する
+    # (どのマシン/CI からでも同じ設定でデプロイできるようにするため)。
+    # 機密値 (DATABASE_URL / SECRET_KEY) は SSM Parameter Store 側で管理し、
+    # Lambda 実行時に取得する (app/core/config.py の _populate_env_from_ssm 参照)。
+    config_path = Path(__file__).parent / "config" / f"{env_name}.env"
 
-    if not env_path.exists():
+    if not config_path.exists():
         raise FileNotFoundError(
-            f"{env_path} が存在しません。.env.example を参考に作成してください。"
+            f"{config_path} が存在しません。"
+            " cdk/config/<env>.env を作成してください。"
         )
 
-    env_vars = {k: v for k, v in dotenv_values(env_path).items() if v}
+    env_vars = {k: v for k, v in dotenv_values(config_path).items() if v}
 
     # CDK が Lambda env に乗せるために必要な最低限のキー
     required = [
