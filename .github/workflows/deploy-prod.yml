@@ -1,0 +1,58 @@
+name: Deploy prod
+
+# production ブランチへの push で本番環境へデプロイ (Stage 3)。
+# environment: prod の Required reviewers により、デプロイ前に承認ゲートが入る。
+on:
+  push:
+    branches: [production]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: prod   # ← 承認ゲート (Required reviewers)
+    permissions:
+      id-token: write   # OIDC で AWS Role を assume するために必須
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      # DB マイグレーション (本番)。詳細は deploy-dev.yml のコメント参照。
+      - name: DB migration (prod)
+        run: |
+          docker compose run --rm --no-deps \
+            -e APP_ENV=staging \
+            -e DATABASE_URL_SSM=/blog-platform-backend/prod/DATABASE_URL \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_REGION=us-east-1 -e AWS_DEFAULT_REGION=us-east-1 \
+            api alembic upgrade head
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Setup CDK dependencies
+        working-directory: cdk
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt
+          npm ci
+
+      - name: cdk deploy (prod)
+        working-directory: cdk
+        run: node_modules/.bin/cdk deploy -c env=prod --require-approval never
