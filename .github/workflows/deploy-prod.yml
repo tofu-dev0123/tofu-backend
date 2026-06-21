@@ -36,7 +36,8 @@ jobs:
           docker compose run --rm --no-deps \
             -e APP_ENV=staging \
             -e DATABASE_URL_SSM=/blog-platform-backend/prod/DATABASE_URL \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_REGION=us-east-1 -e AWS_DEFAULT_REGION=us-east-1 \
             api alembic upgrade head
 
       - uses: actions/setup-python@v5

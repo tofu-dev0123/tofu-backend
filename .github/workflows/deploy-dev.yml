@@ -33,12 +33,15 @@ jobs:
       # AWS_* は OIDC セッションの一時認証情報をコンテナへ渡す
       # (.env.local のダミー値を上書きする)。必須項目 (SECRET_KEY/ALGORITHM/
       # CORS_ALLOW_ORIGINS) は .env.local から供給される。
+      # region は SSM パラメータが存在するスタック region (us-east-1) に固定する
+      # (.env.local の AWS_DEFAULT_REGION=ap-northeast-1 を上書き)。
       - name: DB migration (dev)
         run: |
           docker compose run --rm --no-deps \
             -e APP_ENV=staging \
             -e DATABASE_URL_SSM=/blog-platform-backend/dev/DATABASE_URL \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
+            -e AWS_REGION=us-east-1 -e AWS_DEFAULT_REGION=us-east-1 \
             api alembic upgrade head
 
       - uses: actions/setup-python@v5
