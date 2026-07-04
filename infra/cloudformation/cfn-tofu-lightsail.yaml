@@ -11,7 +11,8 @@ Description: >
 # -----------------------------------------------------------------------------
 # - リージョン: ap-northeast-1 (東京) にデプロイすること
 # - Web 経路 : Cloudflare(orange) -> Lightsail:443 (Caddy + Origin Cert) -> uvicorn
-# - SSH 経路 : Cloudflare Tunnel 経由のみ。22番はこのテンプレートで一切開けない
+# - SSH 経路 : CI は Cloudflare Tunnel (localhost:22)。管理はコンソールのブラウザ SSH
+#              (22 は lightsail-connect のみ許可し、インターネットには非公開)
 # - 秘密     : トンネルトークン / IAM アクセスキー / .env.production は手動投入
 # - 命名/タグ: ProjectPrefix でアプリを識別できるよう統一
 # =============================================================================
@@ -152,7 +153,14 @@ Resources:
             Protocol: tcp
             Cidrs: !Ref CloudflareIpv4Cidrs
             Ipv6Cidrs: !Ref CloudflareIpv6Cidrs
-          # 22 (SSH) は意図的に定義しない。Cloudflare Tunnel 経由でのみアクセスする。
+          # 22 (SSH) はインターネットには公開しない。lightsail-connect エイリアスで
+          # Lightsail コンソールのブラウザ SSH からのみ到達可能にする (管理用)。
+          # CI デプロイは Cloudflare Tunnel が箱内の localhost:22 に繋ぐため FW とは無関係。
+          - FromPort: 22
+            ToPort: 22
+            Protocol: tcp
+            CidrListAliases:
+              - lightsail-connect
       Tags:
         - Key: Project
           Value: !Ref ProjectPrefix

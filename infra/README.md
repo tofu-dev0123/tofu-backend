@@ -22,9 +22,17 @@ CDK は #75 で全廃予定。**現状は雛形（TODO 多数）**であり、�
 
 ```
 client → Cloudflare(orange) → Lightsail:443 [Caddy + Origin Cert] → uvicorn(FastAPI):8000
-                                    └ cloudflared 常駐 = SSH 専用トンネル (22番は閉鎖)
+                                    └ cloudflared 常駐 = CI デプロイ用 SSH トンネル (localhost:22)
 DB: Neon(外部) / 画像: S3 + CloudFront (据え置き) / secrets: .env.production 直置き
 ```
+
+### 箱への接続方法 (22番はインターネット非公開)
+
+| 用途 | 方法 |
+|---|---|
+| 管理・初回セットアップ (対話操作) | **Lightsail コンソールのブラウザ SSH**。FW は 22 を `lightsail-connect` にのみ許可しているため、AWS ログイン経由で接続できる |
+| CI の自動デプロイ | **Cloudflare Tunnel**。cloudflared が箱内の `localhost:22` に繋ぐ (FW とは無関係) |
+| 手元からの scp 等 (任意) | Tunnel 経由: `ssh/scp ... -o ProxyCommand="cloudflared access ssh --hostname ssh.api.tofubase.com"` (Access に自分の email 許可が必要) |
 
 ## デプロイ手順 (雛形段階のイメージ)
 

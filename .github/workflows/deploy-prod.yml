@@ -1,7 +1,15 @@
 name: Deploy prod
 
-# production ブランチへの push で本番環境へデプロイ (Stage 3)。
-# environment: prod の Required reviewers により、デプロイ前に承認ゲートが入る。
+# production ブランチへの push で本番 (Lightsail) へデプロイする。
+#   1. ARM64 イメージを build して GHCR に push
+#   2. Cloudflare Tunnel 経由の SSH で box に入り docker compose を更新
+# validate は PR 時 (ci.yml) で完了済みのため再実行しない (#73)。
+# マイグレーションは migrate.yml (手動) に分離済み。
+#
+# 必要な GitHub Secrets (environment: prod):
+#   - SSH_PRIVATE_KEY        : deploy ユーザーの秘密鍵 (box の authorized_keys と対)
+#   - CF_ACCESS_CLIENT_ID    : Cloudflare Access サービストークン (Client ID)
+#   - CF_ACCESS_CLIENT_SECRET: Cloudflare Access サービストークン (Client Secret)
 on:
   push:
     branches: [production]
@@ -10,49 +18,67 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
-jobs:
-  validate:
-    uses: ./.github/workflows/validate.yml
+env:
+  IMAGE: ghcr.io/tofu-dev0123/tofu-backend
+  DEPLOY_HOST: ssh.api.tofubase.com
+  DEPLOY_USER: deploy
+  APP_DIR: /srv/app
 
+jobs:
   deploy:
-    needs: validate
     runs-on: ubuntu-latest
     environment: prod   # ← 承認ゲート (Required reviewers)
     permissions:
-      id-token: write   # OIDC で AWS Role を assume するために必須
       contents: read
+      packages: write   # GHCR への push
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: us-east-1
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # DB マイグレーション (本番)。詳細は deploy-dev.yml のコメント参照。
-      - name: DB migration (prod)
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # Lightsail は ARM64 (Graviton) のため arm64 イメージを build する。
+      - name: Build and push (ARM64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Install cloudflared
         run: |
-          docker compose run --rm --no-deps \
-            -e APP_ENV=staging \
-            -e DATABASE_URL_SSM=/blog-platform-backend/prod/DATABASE_URL \
-            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-            -e AWS_REGION=us-east-1 -e AWS_DEFAULT_REGION=us-east-1 \
-            api alembic upgrade head
+          curl -fsSL -o cloudflared \
+            https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared && sudo mv cloudflared /usr/local/bin/
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: Setup CDK dependencies
-        working-directory: cdk
+      # cloudflared access ssh がサービストークンで Cloudflare Access を通過し、
+      # Tunnel 経由で box の localhost:22 に到達する (22番はインターネットに未開放)。
+      - name: Deploy over SSH (via Cloudflare Tunnel)
+        env:
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
-          python -m venv .venv
-          .venv/bin/pip install -r requirements.txt
-          npm ci
-
-      - name: cdk deploy (prod)
-        working-directory: cdk
-        run: node_modules/.bin/cdk deploy -c env=prod --require-approval never
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cat >> ~/.ssh/config <<EOF
+          Host lightsail
+            HostName ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            IdentityFile ~/.ssh/id_ed25519
+            StrictHostKeyChecking accept-new
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          ssh lightsail "cd ${APP_DIR} && \
+            docker compose -f docker-compose.production.yml pull && \
+            docker compose -f docker-compose.production.yml up -d"
