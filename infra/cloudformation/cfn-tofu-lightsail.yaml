@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Blog Platform Backend - production infrastructure (Lightsail VPS + static IP).
+  Raw CloudFormation for the Lambda -> Lightsail migration (Issue #74). Scaffold:
+  real values and secrets are finalized or injected manually at deploy time.
+  The S3 image-upload IAM user/policy already exist and are managed outside this
+  stack. See infra/README.md.
+
+# =============================================================================
+# 前提・設計 (詳細は infra/README.md)
+# -----------------------------------------------------------------------------
+# - リージョン: ap-northeast-1 (東京) にデプロイすること
+# - Web 経路 : Cloudflare(orange) -> Lightsail:443 (Caddy + Origin Cert) -> uvicorn
+# - SSH 経路 : Cloudflare Tunnel 経由のみ。22番はこのテンプレートで一切開けない
+# - 秘密     : トンネルトークン / IAM アクセスキー / .env.production は手動投入
+# - 命名/タグ: ProjectPrefix でアプリを識別できるよう統一
+# =============================================================================
+
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Default: tofu
+    Description: Prefix for resource names and tags so the stack is identifiable in the console.
+
+  EnvName:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+      - dev
+    Description: Environment name used in resource names and tags.
+
+  BundleId:
+    Type: String
+    Default: micro_3_0
+    Description: >
+      Lightsail bundle (spec). micro_3_0 is assumed to be the 1GB RAM tier.
+      TODO: confirm the exact id via `aws lightsail get-bundles --region ap-northeast-1`.
+
+  BlueprintId:
+    Type: String
+    Default: ubuntu_24_04
+    Description: >
+      OS blueprint.
+      TODO: confirm the exact id via `aws lightsail get-blueprints --region ap-northeast-1`.
+
+  AvailabilityZone:
+    Type: String
+    Default: ap-northeast-1a
+    Description: Availability zone to place the instance in.
+
+  CloudflareIpv4Cidrs:
+    Type: CommaDelimitedList
+    # TODO: https://www.cloudflare.com/ips-v4 の全レンジに更新する (下記は代表例、不完全)
+    Default: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
+    Description: Allowed source ranges for 80/443 (Cloudflare IPv4). Required to prevent origin direct access.
+
+  CloudflareIpv6Cidrs:
+    Type: CommaDelimitedList
+    # TODO: https://www.cloudflare.com/ips-v6 の全レンジに更新する
+    Default: "2400:cb00::/32,2606:4700::/32,2803:f800::/32,2405:b500::/32,2405:8100::/32,2a06:98c0::/29,2c0f:f248::/32"
+    Description: Allowed source ranges for 80/443 (Cloudflare IPv6).
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # Lightsail インスタンス
+  #   - UserData に bootstrap.sh 相当を注入 (CFN は外部ファイル参照不可のためインライン)
+  #   - Networking.Ports は 80/443 のみ・Cloudflare レンジ限定。22 は開けない
+  # ---------------------------------------------------------------------------
+  BackendInstance:
+    Type: AWS::Lightsail::Instance
+    Properties:
+      InstanceName: !Sub "${ProjectPrefix}-${EnvName}"
+      BundleId: !Ref BundleId
+      BlueprintId: !Ref BlueprintId
+      AvailabilityZone: !Ref AvailabilityZone
+      # TODO: infra/bootstrap.sh の最新内容とここを常に同期させること。
+      #       トンネルトークン等の秘密は UserData に直書きしない (README 参照)。
+      UserData: |
+        #!/bin/bash
+        set -euo pipefail
+        # NOTE: これは雛形。実体は infra/bootstrap.sh を参照し、内容を同期する。
+        echo "TODO: bootstrap.sh の内容をここに反映する"
+      Networking:
+        Ports:
+          - FromPort: 443
+            ToPort: 443
+            Protocol: tcp
+            Cidrs: !Ref CloudflareIpv4Cidrs
+            Ipv6Cidrs: !Ref CloudflareIpv6Cidrs
+          - FromPort: 80
+            ToPort: 80
+            Protocol: tcp
+            Cidrs: !Ref CloudflareIpv4Cidrs
+            Ipv6Cidrs: !Ref CloudflareIpv6Cidrs
+          # 22 (SSH) は意図的に定義しない。Cloudflare Tunnel 経由でのみアクセスする。
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectPrefix
+        - Key: Environment
+          Value: !Ref EnvName
+
+  # ---------------------------------------------------------------------------
+  # 静的IP (インスタンスに付与し、Cloudflare の A レコードから参照する)
+  #   ※ AWS::Lightsail::StaticIp は Tags 非対応
+  # ---------------------------------------------------------------------------
+  BackendStaticIp:
+    Type: AWS::Lightsail::StaticIp
+    DependsOn: BackendInstance
+    Properties:
+      StaticIpName: !Sub "${ProjectPrefix}-${EnvName}-ip"
+      AttachedTo: !Sub "${ProjectPrefix}-${EnvName}"
+
+  # ---------------------------------------------------------------------------
+  # NOTE: S3 画像アップロード用 IAM ユーザー/ポリシーは既に手動作成済みのため
+  #       このスタックでは管理しない。アプリはその既存ユーザーのアクセスキーを
+  #       .env.production 経由で使う (README 参照)。
+  #       必要な最小権限: s3:PutObject / GetObject / DeleteObject on
+  #                        arn:aws:s3:::tofu-blog-image-prod/*
+  # ---------------------------------------------------------------------------
+
+Outputs:
+  StaticIpAddress:
+    Description: Static IP to set on the Cloudflare A record.
+    Value: !GetAtt BackendStaticIp.IpAddress
+  InstanceName:
+    Description: Lightsail instance name.
+    Value: !Sub "${ProjectPrefix}-${EnvName}"

@@ -1,0 +1,40 @@
+# =============================================================================
+# 本番実行構成 (Lightsail 上で稼働)。ローカル用 docker-compose.yml とは別物。
+#   - db / localstack は含めない (DB は Neon、S3 は本物の AWS)
+#   - マイグレーションは CI 側 (workflow_dispatch) に分離するため、api は uvicorn 直起動
+#   - Caddy が 443 を終端し api:8000 へリバースプロキシ (Cloudflare Origin Cert)
+# ※ 雛形: TODO / 実値は後続フェーズで確定
+# =============================================================================
+services:
+  api:
+    # TODO: CI が GHCR に push するイメージ名に確定する (タグ運用は後続フェーズ)
+    image: ghcr.io/tofu-dev0123/tofu-backend:latest
+    container_name: blog-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    # start.py は migrate -> uvicorn だが、本番はマイグレを CI 分離するため uvicorn を直起動
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8000
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    container_name: blog-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Cloudflare Origin Certificate (手動配置)。詳細は infra/README.md
+      - ./certs:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,16 @@
+# =============================================================================
+# Caddy リバースプロキシ (本番)
+#   - Cloudflare(orange) -> ここ(443) -> api:8000
+#   - TLS は Let's Encrypt ではなく Cloudflare Origin Certificate を使う
+#     (Cloudflare SSL/TLS モードは Full (strict) 前提)
+# ※ 雛形: 証明書パス・ドメインは配置に合わせて確定
+# =============================================================================
+
+api.tofubase.com {
+	# TODO: Cloudflare ダッシュボードで発行した Origin Certificate を配置する
+	#   certs/origin.pem      : 証明書 (PEM)
+	#   certs/origin-key.pem  : 秘密鍵 (PEM)
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
+
+	reverse_proxy api:8000
+}
