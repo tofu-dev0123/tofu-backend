@@ -64,7 +64,7 @@ Parameters:
 Resources:
   # ---------------------------------------------------------------------------
   # Lightsail インスタンス
-  #   - UserData に bootstrap.sh 相当を注入 (CFN は外部ファイル参照不可のためインライン)
+  #   - 初回プロビジョニングは UserData にインライン (秘密不要な処理のみ)
   #   - Networking.Ports は 80/443 のみ・Cloudflare レンジ限定。22 は開けない
   # ---------------------------------------------------------------------------
   BackendInstance:
@@ -74,13 +74,72 @@ Resources:
       BundleId: !Ref BundleId
       BlueprintId: !Ref BlueprintId
       AvailabilityZone: !Ref AvailabilityZone
-      # TODO: infra/bootstrap.sh の最新内容とここを常に同期させること。
-      #       トンネルトークン等の秘密は UserData に直書きしない (README 参照)。
+      # 初回ブート時に cloud-init が root で 1 回だけ実行するプロビジョニング。
+      # 秘密が不要な処理のみをここに書く。秘密が必要な手順 (トンネル常駐 / 公開鍵配置 /
+      # GHCR ログイン / .env・証明書配置・起動) は起動後に手動で行う (infra/README.md)。
       UserData: |
         #!/bin/bash
         set -euo pipefail
-        # NOTE: これは雛形。実体は infra/bootstrap.sh を参照し、内容を同期する。
-        echo "TODO: bootstrap.sh の内容をここに反映する"
+        export DEBIAN_FRONTEND=noninteractive
+
+        APP_DIR=/srv/app
+        DEPLOY_USER=deploy
+        CLOUDFLARED_DEB_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb"
+
+        log() { echo "[bootstrap] $*"; }
+
+        # 1. ベースパッケージ + タイムゾーン
+        log "apt update & base packages"
+        apt-get update -y
+        apt-get install -y ca-certificates curl gnupg
+        timedatectl set-timezone Asia/Tokyo || true
+
+        # 2. Docker + compose plugin (公式スクリプト。compose v2 プラグイン同梱)
+        if ! command -v docker >/dev/null 2>&1; then
+          log "install docker"
+          curl -fsSL https://get.docker.com | sh
+        fi
+        systemctl enable --now docker
+
+        # 3. cloudflared (ARM64) バイナリのみ導入。
+        #    トンネル常駐 (`cloudflared service install <token>`) は接続トークンが必要な
+        #    ため起動後に手動実行する (README PART 2)。
+        if ! command -v cloudflared >/dev/null 2>&1; then
+          log "install cloudflared"
+          curl -fsSL -o /tmp/cloudflared.deb "${CLOUDFLARED_DEB_URL}"
+          dpkg -i /tmp/cloudflared.deb
+          rm -f /tmp/cloudflared.deb
+        fi
+
+        # 4. デプロイ用ユーザー (docker グループ)。公開鍵配置は手動 (README PART 2)。
+        if ! id "${DEPLOY_USER}" >/dev/null 2>&1; then
+          log "create deploy user"
+          useradd -m -s /bin/bash "${DEPLOY_USER}"
+        fi
+        usermod -aG docker "${DEPLOY_USER}"
+        install -d -m 700 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "/home/${DEPLOY_USER}/.ssh"
+
+        # 5. sshd ハードニング (鍵認証のみ / root ログイン禁止)。drop-in で冪等。
+        #    SSH は cloudflared トンネル経由 (localhost:22) で使う。
+        log "harden sshd"
+        install -d -m 755 /etc/ssh/sshd_config.d
+        cat > /etc/ssh/sshd_config.d/99-hardening.conf <<'HARDENING'
+        PasswordAuthentication no
+        PermitRootLogin no
+        PubkeyAuthentication yes
+        HARDENING
+        systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true
+
+        # 6. アプリ配置ディレクトリ (資材の配布は CI の SSH デプロイ or 手動 scp)。
+        install -d -m 750 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${APP_DIR}"
+        install -d -m 700 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "${APP_DIR}/certs"
+
+        # 7. 自動セキュリティ更新 (既定では自動再起動しない)
+        log "enable unattended-upgrades"
+        apt-get install -y unattended-upgrades
+        systemctl enable --now unattended-upgrades || true
+
+        log "自動プロビジョニング完了。次は手動手順 (README PART 2) を実施。"
       Networking:
         Ports:
           - FromPort: 443
