@@ -15,3 +15,7 @@ __pycache__/
 
 # direnv (nix-direnv キャッシュ)
 .direnv/
+
+# 証明書・秘密鍵 (Cloudflare Origin Cert など。コミット禁止)
+*.pem
+*.key

@@ -34,6 +34,28 @@ DB: Neon(外部) / 画像: S3 + CloudFront (据え置き) / secrets: .env.produc
 | CI の自動デプロイ | **Cloudflare Tunnel**。cloudflared が箱内の `localhost:22` に繋ぐ (FW とは無関係) |
 | 手元からの scp 等 (任意) | Tunnel 経由: `ssh/scp ... -o ProxyCommand="cloudflared access ssh --hostname ssh.api.tofubase.com"` (Access に自分の email 許可が必要) |
 
+## PART 0: Cloudflare 事前設定 (Zero Trust)
+
+CFN デプロイや PART 2 の前に、Cloudflare 側を用意する。無料の Zero Trust プランで足りる。
+
+1. **Tunnel 作成** — Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared 型)。
+   名前例 `tofu-prod`。発行される**接続トークン**を控える (PART 2 (a) で使用・秘密)。
+2. **Public Hostname 追加** — その Tunnel に:
+   - Subdomain `ssh` / Domain `api.tofubase.com` (→ `ssh.api.tofubase.com`)
+   - Type: **SSH** / URL: `localhost:22`
+3. **Access アプリ (self-hosted)** — Access → Applications → Add:
+   - Application domain: `ssh.api.tofubase.com`
+4. **サービストークン発行** (CI 用) — Access → Service Auth → Create Service Token。
+   Client ID/Secret を GitHub Environment `prod` の `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` へ。
+5. **Access ポリシー** — 上記アプリに:
+   - Service Auth: 発行したサービストークンを許可 (CI 用)
+   - Allow: 自分の email を許可 (自分の対話 SSH / scp 用)
+6. **Origin Certificate 発行** — SSL/TLS → Origin Server → Create Certificate (`api.tofubase.com`)。
+   pem/key を box の `/srv/app/certs/origin.pem` / `origin-key.pem` に配置 (PART 2 (d))。
+7. **SSL/TLS モード** を **Full (strict)** に設定。
+8. **DNS (カットオーバー時に切替)** — `api.tofubase.com` を A レコード = Lightsail 静的IP、**orange (proxied)** に。
+   ※ 切替は旧構成を残したまま行う (詳細は #75 / カットオーバー手順)。
+
 ## デプロイ手順 (雛形段階のイメージ)
 
 前提: 東京リージョン。CLI から実行 (変更頻度が低いため CI 管理外)。
@@ -78,6 +100,15 @@ echo "<GHCR_PAT>" | sudo -u deploy docker login ghcr.io -u <github_user> --passw
 cd /srv/app && sudo -u deploy docker compose -f docker-compose.production.yml up -d
 ```
 
+## PART 3: DB マイグレーション (Neon main)
+
+deploy とは分離済み。GitHub Actions の **`Migrate DB` ワークフローを手動実行** (environment=`prod`) する。
+`prod` の承認ゲートを通ると `alembic upgrade head` が Neon main に適用される。
+
+- Actions → `Migrate DB` → Run workflow → environment: `prod`
+- 前提: GitHub Environment `prod` に `DATABASE_URL` (Neon main の pooled URL) を登録済み
+- カットオーバー窓では**後方互換 (expand) のみ**適用し、破壊的変更は撤去後に回す
+
 ### 手動で投入する秘密の一覧
 
 | 項目 | 投入先 | 備考 |
@@ -100,11 +131,13 @@ cd /srv/app && sudo -u deploy docker compose -f docker-compose.production.yml up
 
 - [ ] `BundleId` / `BlueprintId` を `aws lightsail get-bundles|get-blueprints` で確定
 - [ ] Cloudflare IP レンジ (v4/v6) を公式リストで最新化
-- [ ] Cloudflare Tunnel / Access / Public Hostname(SSH) の設定
-- [ ] Origin Certificate 発行・配置、Cloudflare SSL を Full (strict) に
+- [ ] PART 0 (Cloudflare Tunnel / Access / Origin Cert / Full strict) を実施
+- [ ] GitHub Environment `prod`/`dev` に Secrets を登録 (SSH_PRIVATE_KEY / CF_ACCESS_* / DATABASE_URL)
 
-## 後続フェーズ (本タスク=雛形のスコープ外)
+## 実行順序 (まとめ)
 
-- アプリ改修: Mangum 剥がし (`app/main.py` の `handler`、`requirements.txt`)
-- CI/CD 刷新: GHCR build/push + Tunnel 経由 SSH deploy + マイグレ分離 workflow
-- カットオーバー (DNS 切替) → #75 で旧 CDK/Lambda/CloudFront/ACM/SSM 撤去
+1. PART 0: Cloudflare 事前設定
+2. CFN デプロイ (Lightsail Instance + StaticIp、UserData 自動プロビジョニング)
+3. PART 2: 起動後の手動手順 (ブラウザ SSH でトンネル常駐・鍵配置・資材配置・起動)
+4. PART 3: DB マイグレーション (Migrate DB ワークフロー, env=prod)
+5. カットオーバー (DNS を Lightsail に切替) → #75 で旧 CDK/Lambda/CloudFront/ACM/SSM 撤去
