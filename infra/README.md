@@ -32,7 +32,7 @@ DB: Neon(外部) / 画像: S3 + CloudFront (据え置き) / secrets: .env.produc
 |---|---|
 | 管理・初回セットアップ (対話操作) | **Lightsail コンソールのブラウザ SSH**。FW は 22 を `lightsail-connect` にのみ許可しているため、AWS ログイン経由で接続できる |
 | CI の自動デプロイ | **Cloudflare Tunnel**。cloudflared が箱内の `localhost:22` に繋ぐ (FW とは無関係) |
-| 手元からの scp 等 (任意) | Tunnel 経由: `ssh/scp ... -o ProxyCommand="cloudflared access ssh --hostname ssh.api.tofubase.com"` (Access に自分の email 許可が必要) |
+| 手元からの scp 等 (任意) | Tunnel 経由: `ssh/scp ... -o ProxyCommand="cloudflared access ssh --hostname ssh-api.tofubase.com"` (Access に自分の email 許可が必要) |
 
 ## PART 0: Cloudflare 事前設定 (Zero Trust)
 
@@ -41,10 +41,11 @@ CFN デプロイや PART 2 の前に、Cloudflare 側を用意する。無料の
 1. **Tunnel 作成** — Zero Trust → Networks → Tunnels → Create a tunnel (Cloudflared 型)。
    名前例 `tofu-prod`。発行される**接続トークン**を控える (PART 2 (a) で使用・秘密)。
 2. **Public Hostname 追加** — その Tunnel に:
-   - Subdomain `ssh` / Domain `api.tofubase.com` (→ `ssh.api.tofubase.com`)
+   - Subdomain `ssh-api` / Domain `tofubase.com` (→ `ssh-api.tofubase.com`)
+     ※ 2階層 (`ssh.api...`) は無料 Universal SSL 対象外で TLS が張れないため 1階層にする
    - Type: **SSH** / URL: `localhost:22`
 3. **Access アプリ (self-hosted)** — Access → Applications → Add:
-   - Application domain: `ssh.api.tofubase.com`
+   - Application domain: `ssh-api.tofubase.com`
 4. **サービストークン発行** (CI 用) — Access → Service Auth → Create Service Token。
    Client ID/Secret を GitHub Environment `prod` の `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` へ。
 5. **Access ポリシー** — 上記アプリに:

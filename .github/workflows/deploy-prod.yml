@@ -20,7 +20,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/tofu-dev0123/tofu-backend
-  DEPLOY_HOST: ssh.api.tofubase.com
+  DEPLOY_HOST: ssh-api.tofubase.com
   DEPLOY_USER: deploy
   APP_DIR: /srv/app
 
