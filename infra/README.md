@@ -129,8 +129,8 @@ deploy とは分離済み。GitHub Actions の **`Migrate DB` ワークフロー
 
 ## TODO (実デプロイ前に確定)
 
-- [ ] `BundleId` / `BlueprintId` を `aws lightsail get-bundles|get-blueprints` で確定
-- [ ] Cloudflare IP レンジ (v4/v6) を公式リストで最新化
+- [x] `BundleId`=`micro_3_0` / `BlueprintId`=`ubuntu_24_04` を実在確認・確定 (2026-07-05)
+- [x] Cloudflare IP レンジ (v4/v6) を公式リストで反映 (2026-07-05・cutover 前に再確認)
 - [ ] PART 0 (Cloudflare Tunnel / Access / Origin Cert / Full strict) を実施
 - [ ] GitHub Environment `prod`/`dev` に Secrets を登録 (SSH_PRIVATE_KEY / CF_ACCESS_* / DATABASE_URL)
 
