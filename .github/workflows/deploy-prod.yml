@@ -1,7 +1,7 @@
 name: Deploy prod
 
 # production ブランチへの push で本番 (Lightsail) へデプロイする。
-#   1. ARM64 イメージを build して GHCR に push
+#   1. amd64 イメージを build して GHCR に push (Lightsail は x86_64)
 #   2. Cloudflare Tunnel 経由の SSH で box に入り docker compose を更新
 # validate は PR 時 (ci.yml) で完了済みのため再実行しない (#73)。
 # マイグレーションは migrate.yml (手動) に分離済み。
@@ -41,15 +41,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
-      # Lightsail は ARM64 (Graviton) のため arm64 イメージを build する。
-      - name: Build and push (ARM64)
+      # Lightsail は x86_64 のため amd64 イメージを build する。
+      - name: Build and push (amd64)
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/arm64
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ env.IMAGE }}:latest

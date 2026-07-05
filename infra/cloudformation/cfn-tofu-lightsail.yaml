@@ -88,7 +88,7 @@ Resources:
 
         APP_DIR=/srv/app
         DEPLOY_USER=deploy
-        CLOUDFLARED_DEB_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb"
+        CLOUDFLARED_DEB_URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb"
 
         log() { echo "[bootstrap] $*"; }
 
@@ -107,7 +107,7 @@ Resources:
         fi
         systemctl enable --now docker
 
-        # 3. cloudflared (ARM64) バイナリのみ導入。
+        # 3. cloudflared (amd64) バイナリのみ導入。Lightsail は x86_64。
         #    トンネル常駐 (`cloudflared service install <token>`) は接続トークンが必要な
         #    ため起動後に手動実行する (README PART 2)。
         if ! command -v cloudflared >/dev/null 2>&1; then
