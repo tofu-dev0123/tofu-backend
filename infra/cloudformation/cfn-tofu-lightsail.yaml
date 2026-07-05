@@ -79,9 +79,11 @@ Resources:
       # 初回ブート時に cloud-init が root で 1 回だけ実行するプロビジョニング。
       # 秘密が不要な処理のみをここに書く。秘密が必要な手順 (トンネル常駐 / 公開鍵配置 /
       # GHCR ログイン / .env・証明書配置・起動) は起動後に手動で行う (infra/README.md)。
+      # Lightsail は UserData を自前の前置きに連結し /bin/sh (dash) で実行するため、
+      # シバンは効かず bash 専用構文は使えない。POSIX sh 互換で書く (pipefail 不可)。
       UserData: |
-        #!/bin/bash
-        set -euo pipefail
+        #!/bin/sh
+        set -eu
         export DEBIAN_FRONTEND=noninteractive
 
         APP_DIR=/srv/app
@@ -91,9 +93,11 @@ Resources:
         log() { echo "[bootstrap] $*"; }
 
         # 1. ベースパッケージ + タイムゾーン
+        #    初回ブートの自動 apt と競合しうるため dpkg ロックを最大 300 秒待つ。
         log "apt update & base packages"
-        apt-get update -y
-        apt-get install -y ca-certificates curl gnupg
+        APT="apt-get -o DPkg::Lock::Timeout=300"
+        $APT update -y
+        $APT install -y ca-certificates curl gnupg
         timedatectl set-timezone Asia/Tokyo || true
 
         # 2. Docker + compose plugin (公式スクリプト。compose v2 プラグイン同梱)
@@ -138,7 +142,7 @@ Resources:
 
         # 7. 自動セキュリティ更新 (既定では自動再起動しない)
         log "enable unattended-upgrades"
-        apt-get install -y unattended-upgrades
+        $APT install -y unattended-upgrades
         systemctl enable --now unattended-upgrades || true
 
         log "自動プロビジョニング完了。次は手動手順 (README PART 2) を実施。"
