@@ -1,0 +1,41 @@
+name: Migrate DB
+
+# マイグレーションを deploy から分離し、手動トリガで必要時のみ実行する (#73)。
+# 対象環境を選び、その環境の DATABASE_URL (GitHub Environment secret) で Neon に適用する。
+# prod は environment: prod の承認ゲートが入る。
+#
+# 必要な GitHub Secrets (environment ごと: dev / prod):
+#   - DATABASE_URL : Neon の pooled 接続文字列
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 対象環境
+        type: choice
+        options:
+          - dev
+          - prod
+        required: true
+
+concurrency:
+  group: migrate-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # APP_ENV=staging で非 local 扱いとし DATABASE_URL を使わせる。
+      # SECRET_KEY 等の必須項目は compose の env_file (.env.local) のダミー値から供給。
+      # --no-deps でローカル db/localstack は起動しない (Neon に直接適用)。
+      - name: alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          docker compose run --rm --no-deps \
+            -e APP_ENV=staging \
+            -e DATABASE_URL \
+            api alembic upgrade head
