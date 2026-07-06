@@ -3,7 +3,6 @@
   "reportMissingImports": false,
   "reportMissingModuleSource": false,
   "exclude": [
-    "cdk",
     ".direnv",
     "**/node_modules",
     "**/.venv",
