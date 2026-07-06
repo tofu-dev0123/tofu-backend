@@ -1,10 +1,6 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum
 from app.core.config import settings
-from app.db.database import get_db
 from app.api.router import api_router
 from app.core.exceptions.handlers import register_exception_handlers
 import logging
@@ -37,6 +33,3 @@ app.add_middleware(
 
 # ルーターの登録
 app.include_router(api_router)
-
-# AWS Lambda 用 ASGI ハンドラ (Function URL / API Gateway 互換)
-handler = Mangum(app, lifespan="off")
