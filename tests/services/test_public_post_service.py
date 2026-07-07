@@ -8,6 +8,7 @@ from app.schemas.post import (
     PostsPublishAtResponse,
     PostPublishAt,
     PostPublishAtResponse,
+    PostSlugsResponse,
 )
 from app.schemas.tag import Tag
 from app.common.constant import Constant
@@ -199,6 +200,38 @@ def test_get_posts_total_pages_calculation_exact(mock_db):
 
     assert result.total_count == 10
     assert result.total_pages == 1  # 10 / 10 = 1.0 → ceil(1.0) = 1
+
+
+# 正常系: 公開記事スラグ一覧の取得
+def test_get_slugs_success(mock_db):
+    service = PublicPostService(mock_db)
+
+    service.post_repo = MagicMock()
+    service.post_repo.find_published_slugs.return_value = [
+        "first-post",
+        "second-post",
+        "hello-world",
+    ]
+
+    result = service.get_slugs()
+
+    assert isinstance(result, PostSlugsResponse)
+    assert result.slugs == ["first-post", "second-post", "hello-world"]
+    service.post_repo.find_published_slugs.assert_called_once_with()
+
+
+# 正常系: 公開記事が0件の場合は空配列を返す
+def test_get_slugs_empty(mock_db):
+    service = PublicPostService(mock_db)
+
+    service.post_repo = MagicMock()
+    service.post_repo.find_published_slugs.return_value = []
+
+    result = service.get_slugs()
+
+    assert isinstance(result, PostSlugsResponse)
+    assert result.slugs == []
+    service.post_repo.find_published_slugs.assert_called_once_with()
 
 
 # 正常系: 記事詳細の取得（タグあり）

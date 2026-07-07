@@ -4,6 +4,7 @@ from typing import Optional
 from app.schemas.post import (
     PostsPublishAtResponse,
     PostPublishAtResponse,
+    PostSlugsResponse,
 )
 from app.services.public.post_service import PublicPostService
 from app.db.database import get_db
@@ -29,6 +30,14 @@ async def get_posts(
         page = 1
 
     result = service.get_posts(page, keyword)
+    return result
+
+
+@router.get("/slugs", response_model=PostSlugsResponse)
+async def get_slugs(
+    service: PublicPostService = Depends(get_post_service),
+):
+    result = service.get_slugs()
     return result
 
 
