@@ -7,6 +7,7 @@ from app.schemas.post import (
     PostsPublishAtResponse,
     PostPublishAt,
     PostPublishAtResponse,
+    PostSlugsResponse,
 )
 from app.schemas.tag import Tag
 from app.core.exceptions.handlers import ApplicationError
@@ -57,6 +58,10 @@ class PublicPostService:
             limit=limit,
             posts=posts_list,
         )
+
+    def get_slugs(self) -> PostSlugsResponse:
+        slugs = self.post_repo.find_published_slugs()
+        return PostSlugsResponse(slugs=slugs)
 
     def get_post(self, slug: str) -> PostPublishAtResponse:
         data = self.query_repo.find_by_slug(slug)

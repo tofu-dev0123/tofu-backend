@@ -8,8 +8,36 @@ from app.schemas.post import (
     PostsPublishAtResponse,
     PostPublishAt,
     PostPublishAtResponse,
+    PostSlugsResponse,
 )
 from app.schemas.tag import Tag
+
+
+# 正常系: 公開記事スラグ一覧の取得成功
+@patch("app.services.public.post_service.PublicPostService.get_slugs")
+def test_get_slugs_success(mock_get_slugs, client):
+    mock_get_slugs.return_value = PostSlugsResponse(
+        slugs=["first-post", "second-post", "hello-world"]
+    )
+
+    response = client.get("/posts/slugs")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["slugs"] == ["first-post", "second-post", "hello-world"]
+    mock_get_slugs.assert_called_once_with()
+
+
+# 正常系: 公開記事が0件の場合は空配列を返す
+@patch("app.services.public.post_service.PublicPostService.get_slugs")
+def test_get_slugs_empty(mock_get_slugs, client):
+    mock_get_slugs.return_value = PostSlugsResponse(slugs=[])
+
+    response = client.get("/posts/slugs")
+
+    assert response.status_code == 200
+    assert response.json()["slugs"] == []
+    mock_get_slugs.assert_called_once_with()
 
 
 # 正常系: 公開記事一覧の取得成功（page=1, keywordなし）
