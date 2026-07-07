@@ -54,7 +54,7 @@ backend/
 │   └── utils/                  # ユーティリティ
 ├── tests/                      # テストコード
 ├── alembic/                    # マイグレーション
-├── cdk/                        # AWS CDK プロジェクト (IaC)
+├── infra/                      # 本番インフラ (生 CloudFormation / 本番 compose / Caddyfile)
 └── docker-compose.yml          # ローカル開発環境構成
 ```
 
@@ -201,47 +201,50 @@ Authorization: Bearer <JWT_TOKEN>
 - PostgreSQL 16
 - LocalStack（S3 互換ストレージ）
 
-### 本番・staging 環境
+### 本番環境
 
 ```
 [Browser]
-    ↓ https://api.tofubase.com (prod) / https://dev-api.tofubase.com (dev)
-[CloudFront] ─── ACM 証明書
-    ↓
-[Lambda Function URL]
-    ↓
-[Lambda Function (Python 3.12 / ARM64)]
-    ↓
-[Neon Postgres] / [AWS S3] / [AWS SSM Parameter Store]
+    ↓ https://api.tofubase.com
+[Cloudflare (proxy / TLS)]
+    ↓ (Cloudflare IP からのみ 443 許可)
+[Lightsail VPS (Ubuntu 24.04 / x86_64 / 東京)]
+    ├── Caddy (443 終端 / Origin Cert, Full strict)
+    │       ↓ reverse_proxy
+    └── uvicorn (FastAPI)  ── docker compose
+        ↓
+[Neon Postgres] / [AWS S3 + CloudFront (画像)]
+
+※ 管理 SSH は Cloudflare Tunnel 経由 (cloudflared 常駐、22 は非公開)
 ```
 
-- 計算基盤: AWS Lambda + Function URL + CloudFront (CDK 管理)
-- DB: Neon Postgres (main branch = prod / dev branch = staging)
-- 画像: AWS S3 + CloudFront (CDK 管理外、AWS Console 管理)
-- secrets: SSM Parameter Store `/blog-platform-backend/<env>/{DATABASE_URL,SECRET_KEY}` を Lambda が起動時に runtime fetch
-- リージョン: `us-east-1` (Neon のリージョン制約に追従)
+- 計算基盤: AWS Lightsail 上の docker compose (uvicorn + Caddy)。**prod のみ**
+- dev: ローカル docker + Cloudflare Tunnel (専用サーバー無し)
+- DB: Neon Postgres (main branch = prod / dev branch = dev)
+- 画像: AWS S3 + CloudFront (据え置き、AWS Console 管理)
+- secrets: box の `.env.production` 直置き (root 600)。CI マイグレ用に `DATABASE_URL` を GitHub Environment secret にも複製
+- リージョン: Lightsail = 東京 (`ap-northeast-1`) / Neon = `us-east-1`
 
 ### IaC
 
-- AWS CDK (Python) — `backend/cdk/`
-- `cdk deploy -c env=dev` / `cdk deploy -c env=prod` で環境別に deploy
-- `.env.dev` / `.env.prod` (gitignore 済) から非 secret 値を読む
+- 生 CloudFormation — `infra/cloudformation/cfn-tofu-lightsail.yaml` (Lightsail Instance + StaticIp)
+- `aws cloudformation deploy` で作成 (変更頻度が低いため手動)
+- box の初回セットアップ・Cloudflare 設定手順は `infra/README.md`
 
 ### 環境変数
 
 | 変数名                                          | 説明                                                                   |
 | ----------------------------------------------- | ---------------------------------------------------------------------- |
-| APP_ENV                                         | 環境（local/staging/production）。local 以外は SSM 経由 secret 取得    |
-| DATABASE_URL                                    | Postgres 接続文字列（local 以外、または `_SSM` 経由）                   |
-| DATABASE_URL_SSM / SECRET_KEY_SSM               | Lambda 用: SSM パラメータ名を指定すると起動時に値を取得して上書き      |
+| APP_ENV                                         | 環境（local/production）。local 以外は DATABASE_URL 等を必須とする      |
+| DATABASE_URL                                    | Postgres 接続文字列（local 以外で必須。Neon の pooler URL）             |
 | DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME | local 専用（Docker Postgres 接続）                                     |
-| AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY        | local 用ダミー（Lambda 上では実行ロールから取得）                       |
-| S3_BUCKET_NAME, S3_ENDPOINT_URL                 | S3 設定（S3_ENDPOINT_URL は LocalStack 用、本番は未設定）              |
+| AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY        | S3 画像アップロード用 IAM ユーザーのキー（local はダミー）              |
+| AWS_DEFAULT_REGION                              | AWS リージョン（`ap-northeast-1`）                                      |
+| S3_BUCKET_NAME, S3_REGION, S3_ENDPOINT_URL      | S3 設定（S3_ENDPOINT_URL は LocalStack 用、本番は未設定）              |
 | CLOUDFRONT_DOMAIN                               | 画像配信用 CloudFront ドメイン                                          |
-| SECRET_KEY                                      | JWT 署名キー（local 以外は SSM から取得）                               |
+| SECRET_KEY                                      | JWT 署名キー                                                           |
 | ALGORITHM                                       | JWT 署名アルゴリズム（HS256）                                           |
 | CORS_ALLOW_ORIGINS                              | CORS 許可オリジン（JSON 配列）                                          |
-| CUSTOM_DOMAIN                                   | CDK 専用: カスタムドメイン名（指定で CloudFront + ACM が作成される）   |
 
 ## 依存性注入パターン
 

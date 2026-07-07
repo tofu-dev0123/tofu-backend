@@ -147,6 +147,10 @@ class PostRepository:
 
         return self.db.execute(statement).scalars().all()
 
+    def find_published_slugs(self) -> list[str]:
+        stmt = select(Post.slug).where(Post.status == PostStatus.PUBLISHED)
+        return list(self.db.execute(stmt).scalars().all())
+
     def count_published_posts(self, keyword: str | None = None) -> int:
         stmt = select(func.count(Post.post_id)).where(
             Post.status == PostStatus.PUBLISHED

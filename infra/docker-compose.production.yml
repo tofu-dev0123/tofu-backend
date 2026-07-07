@@ -13,9 +13,13 @@ services:
     restart: unless-stopped
     env_file:
       - .env.production
-    # start.py は migrate -> uvicorn だが、本番はマイグレを CI 分離するため uvicorn を直起動
+    # start.py は migrate -> uvicorn だが、本番はマイグレを CI 分離するため uvicorn を直起動。
+    # --proxy-headers + --forwarded-allow-ips=* で Caddy の X-Forwarded-Proto(https) を信用させる。
+    # これが無いと uvicorn が http 扱いし、末尾スラッシュの 307 リダイレクト先が http:// になって
+    # 認証ヘッダが落ち、認証必須 API が 401 になる。
     command: >
       uvicorn app.main:app --host 0.0.0.0 --port 8000
+      --proxy-headers --forwarded-allow-ips=*
     expose:
       - "8000"
 

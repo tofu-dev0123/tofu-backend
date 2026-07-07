@@ -1,7 +1,7 @@
 # infra/ — 本番インフラ (Lightsail VPS)
 
-Issue #74「Lambda → Lightsail VPS 移行」の生 CloudFormation 定義一式。
-CDK は #75 で全廃予定。**現状は雛形（TODO 多数）**であり、実デプロイ前に各値の確定が必要。
+Issue #74「Lambda → Lightsail VPS 移行」で構築した本番インフラ定義一式。
+本番は Lightsail で稼働中。CDK は #75 で全廃済み。
 
 ## 構成
 

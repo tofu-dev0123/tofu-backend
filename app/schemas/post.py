@@ -192,6 +192,12 @@ class PostsPublishAtResponse(BaseModel):
     posts: list[PostPublishAt] = Field(default_factory=list, description="記事一覧")
 
 
+class PostSlugsResponse(BaseModel):
+    """公開記事スラグ一覧取得成功レスポンススキーマ"""
+
+    slugs: list[str] = Field(default_factory=list, description="公開記事のスラグ配列")
+
+
 class PostPublishAtResponse(BaseModel):
     """公開記事取得成功レスポンススキーマ"""
 
