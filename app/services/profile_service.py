@@ -1,9 +1,12 @@
+import logging
 from sqlalchemy.orm import Session
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import ProfileResponse, ProfilePutRequest
 from app.core.exceptions.handlers import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileService:
@@ -51,6 +54,8 @@ class ProfileService:
             )
 
             self.db.commit()
+
+            logger.info("profile updated", extra={"profile_id": profile.profile_id})
 
         except:
             self.db.rollback()

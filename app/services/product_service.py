@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from app.repositories.product_repository import ProductRepository
 from app.repositories.product_tag_repository import ProductTagRepository
@@ -14,6 +15,8 @@ from app.schemas.tag import Tag
 from app.core.exceptions.handlers import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+
+logger = logging.getLogger(__name__)
 
 
 class ProductService:
@@ -97,6 +100,8 @@ class ProductService:
 
             self.db.commit()
 
+            logger.info("product created", extra={"product_id": product_id})
+
             return product_id
 
         except:
@@ -130,6 +135,8 @@ class ProductService:
 
             self.db.commit()
 
+            logger.info("product updated", extra={"product_id": product_id})
+
         except:
             self.db.rollback()
             raise
@@ -149,6 +156,8 @@ class ProductService:
             self.product_repo.delete(product_id)
 
             self.db.commit()
+
+            logger.info("product deleted", extra={"product_id": product_id})
 
         except:
             self.db.rollback()

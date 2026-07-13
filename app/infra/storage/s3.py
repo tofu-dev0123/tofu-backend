@@ -1,9 +1,12 @@
 import boto3
+import logging
 import uuid
 from urllib.parse import urlparse
 from datetime import datetime
 from app.core.config import settings
 from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
 
 
 class S3:
@@ -50,8 +53,8 @@ class S3:
                     "CacheControl": "max-age=31536000",
                 },
             )
-        except ClientError as e:
-            print("S3 upload failed:", e)
+        except ClientError:
+            logger.exception("S3 upload failed", extra={"key": key})
             raise
 
     def delete_object(self, key: str):
