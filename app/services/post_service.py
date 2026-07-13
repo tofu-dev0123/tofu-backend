@@ -290,6 +290,8 @@ class PostService:
 
             self.db.commit()
 
+            logger.info("post created", extra={"post_id": new_post_id, "user_id": user_id})
+
             return new_post_id
 
         except ImageNotExistError as e:
@@ -475,6 +477,8 @@ class PostService:
 
             self.db.commit()
 
+            logger.info("post updated", extra={"post_id": post_id})
+
         except:
             self.db.rollback()
             raise
@@ -529,6 +533,8 @@ class PostService:
 
             self.db.commit()
 
+            logger.info("post deleted", extra={"post_id": post_id})
+
         except:
             self.db.rollback()
             raise
@@ -548,6 +554,8 @@ class PostService:
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
             self.db.commit()
+
+            logger.info("post status changed", extra={"post_id": post_id, "status": status.value})
         except:
             self.db.rollback()
             raise

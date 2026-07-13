@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from app.repositories.timeline_repository import TimelineRepository
 from app.models.timeline import Timeline as TimelineModel
@@ -10,6 +11,8 @@ from app.schemas.timeline import (
 from app.core.exceptions.handlers import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+
+logger = logging.getLogger(__name__)
 
 
 class TimelineService:
@@ -55,6 +58,8 @@ class TimelineService:
 
             self.db.commit()
 
+            logger.info("timeline created", extra={"timeline_id": timeline_id})
+
             return timeline_id
 
         except:
@@ -82,6 +87,8 @@ class TimelineService:
 
             self.db.commit()
 
+            logger.info("timeline updated", extra={"timeline_id": timeline_id})
+
         except:
             self.db.rollback()
             raise
@@ -100,6 +107,8 @@ class TimelineService:
             self.timeline_repo.delete(timeline_id)
 
             self.db.commit()
+
+            logger.info("timeline deleted", extra={"timeline_id": timeline_id})
 
         except:
             self.db.rollback()

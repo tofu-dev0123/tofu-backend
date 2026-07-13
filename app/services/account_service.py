@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
@@ -8,6 +9,8 @@ from app.core.exceptions.account_exceptions import (
     EmailAlreadyExistsError,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class AccountService:
 
@@ -17,7 +20,9 @@ class AccountService:
 
     def update_account_name(self, user: User, account_name: str) -> User:
         """アカウント名を変更する"""
-        return self.user_repo.update_account_name(user, account_name)
+        updated = self.user_repo.update_account_name(user, account_name)
+        logger.info("account name updated", extra={"user_id": user.user_id})
+        return updated
 
     def change_password(
         self, user: User, current_password: str, new_password: str
@@ -30,6 +35,7 @@ class AccountService:
         # 新しいパスワードをハッシュ化して更新
         hashed_password = hash_password(new_password)
         self.user_repo.update_password(user, hashed_password)
+        logger.info("password changed", extra={"user_id": user.user_id})
 
     def change_email(
         self, user: User, current_email: str, new_email: str, password: str
@@ -48,4 +54,6 @@ class AccountService:
             raise EmailAlreadyExistsError()
 
         # メールアドレスを更新
-        return self.user_repo.update_email(user, new_email)
+        updated = self.user_repo.update_email(user, new_email)
+        logger.info("email changed", extra={"user_id": user.user_id})
+        return updated

@@ -10,6 +10,7 @@
 - [アーキテクチャ](.claude/rules/architecture.md) — 技術スタック、レイヤー構造、データベース設計、API 設計、デプロイ構成
 - [コーディング規約](.claude/rules/coding-guidelines.md) — 命名規則、型定義、バリデーション、エラーハンドリング
 - [テストガイドライン](.claude/rules/testing-guidelines.md) — テストの書き方とディレクトリ構成
+- [ログガイドライン](.claude/rules/logging-guidelines.md) — 構造化ログ基盤、レベル方針、request_id、レイヤー別ログ配置
 - [アカウント管理 API](.claude/rules/api-account.md) — アカウント情報変更、パスワード変更、メールアドレス変更
 
 ## スタック概要

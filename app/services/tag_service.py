@@ -1,6 +1,9 @@
+import logging
 from sqlalchemy.orm import Session
 from app.repositories.tag_repository import TagRepository
 from app.utils.slug_utils import generate_slug, increment_slug_suffix
+
+logger = logging.getLogger(__name__)
 
 
 class TagService:
@@ -35,12 +38,14 @@ class TagService:
             # 同じものがなければそのまま登録
             if base_slug not in existing_slugs:
                 new_id = self.tag_repo.create(tag_name, base_slug)
+                logger.debug("tag created", extra={"tag_id": new_id})
                 id_list.append(new_id)
                 continue
 
             tag_slug = increment_slug_suffix(base_slug, existing_slugs)
 
             new_id = self.tag_repo.create(tag_name, tag_slug)
+            logger.debug("tag created", extra={"tag_id": new_id})
 
             id_list.append(new_id)
 
