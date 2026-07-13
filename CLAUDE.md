@@ -5,12 +5,12 @@
 
 ## ドキュメント
 
-詳細は `docs/` を参照してください。
+詳細は `.claude/rules/` を参照してください。
 
-- [アーキテクチャ](docs/architecture.md) — 技術スタック、レイヤー構造、データベース設計、API 設計、デプロイ構成
-- [コーディング規約](docs/coding-guidelines.md) — 命名規則、型定義、バリデーション、エラーハンドリング
-- [テストガイドライン](docs/testing-guidelines.md) — テストの書き方とディレクトリ構成
-- [アカウント管理 API](docs/api-account.md) — アカウント情報変更、パスワード変更、メールアドレス変更
+- [アーキテクチャ](.claude/rules/architecture.md) — 技術スタック、レイヤー構造、データベース設計、API 設計、デプロイ構成
+- [コーディング規約](.claude/rules/coding-guidelines.md) — 命名規則、型定義、バリデーション、エラーハンドリング
+- [テストガイドライン](.claude/rules/testing-guidelines.md) — テストの書き方とディレクトリ構成
+- [アカウント管理 API](.claude/rules/api-account.md) — アカウント情報変更、パスワード変更、メールアドレス変更
 
 ## スタック概要
 
@@ -71,7 +71,7 @@
 - 既存 API の仕様を変更する場合は **必ず事前確認** すること
 - データモデルの変更は慎重に行うこと
 - **指示されていない範囲の変更は禁止**
-- 詳細なコーディング規約は [docs/coding-guidelines.md](docs/coding-guidelines.md) を参照
+- 詳細なコーディング規約は [.claude/rules/coding-guidelines.md](.claude/rules/coding-guidelines.md) を参照
 
 ## ファイル・ディレクトリ規約
 
