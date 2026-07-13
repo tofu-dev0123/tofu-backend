@@ -20,10 +20,10 @@ from app.schemas.tag import Tag
 from app.models.post import Post as PostModel, PostStatus
 from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
-from app.repositories.tag_repository import TagRepository
 from app.repositories.post_tag_repository import PostTagRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.queries.post_detail_query import PostDetailQueryRepository
+from app.services.tag_service import TagService
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.handlers import ApplicationError
@@ -41,7 +41,7 @@ class PostService:
         self.db = db
         self.s3 = S3()
         self.post_repo = PostRepository(db)
-        self.tag_repo = TagRepository(db)
+        self.tag_service = TagService(db)
         self.post_tag_repo = PostTagRepository(db)
         self.image_repo = ImageRepository(db)
         self.query_repo = PostDetailQueryRepository(db)
@@ -202,37 +202,7 @@ class PostService:
     """
 
     def generate_slug_of_tag_and_get_id(self, tags: list[str]) -> list[int]:
-        slug_list = []
-
-        if not tags:
-            return slug_list
-
-        for tag_name in tags:
-            id = self.tag_repo.find_id_by_name(tag_name)
-
-            # DBからidを取得できたらそのidを使う
-            if id:
-                slug_list.append(id)
-                continue
-
-            # ベーススラグの生成
-            base_slug = generate_slug(tag_name)
-
-            existing_slugs = self.tag_repo.find_slugs_starting_with(base_slug)
-
-            # 同じものがなければそのまま返す
-            if base_slug not in existing_slugs:
-                new_id = self.tag_repo.create(tag_name, base_slug)
-                slug_list.append(new_id)
-                continue
-
-            tag_slug = increment_slug_suffix(base_slug, existing_slugs)
-
-            new_id = self.tag_repo.create(tag_name, tag_slug)
-
-            slug_list.append(new_id)
-
-        return slug_list
+        return self.tag_service.get_or_create_tag_ids(tags)
 
     """
     公開ステータスの値をチェックして日時を返す
@@ -319,6 +289,8 @@ class PostService:
                 self.attach_post_id_to_image(request.images, new_post_id)
 
             self.db.commit()
+
+            logger.info("post created", extra={"post_id": new_post_id, "user_id": user_id})
 
             return new_post_id
 
@@ -505,6 +477,8 @@ class PostService:
 
             self.db.commit()
 
+            logger.info("post updated", extra={"post_id": post_id})
+
         except:
             self.db.rollback()
             raise
@@ -559,6 +533,8 @@ class PostService:
 
             self.db.commit()
 
+            logger.info("post deleted", extra={"post_id": post_id})
+
         except:
             self.db.rollback()
             raise
@@ -578,6 +554,8 @@ class PostService:
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
             self.db.commit()
+
+            logger.info("post status changed", extra={"post_id": post_id, "status": status.value})
         except:
             self.db.rollback()
             raise

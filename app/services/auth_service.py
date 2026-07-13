@@ -1,7 +1,10 @@
+import logging
 from sqlalchemy.orm import Session
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.repositories.user_repository import UserRepository
 from app.core.security import create_access_token, verify_password
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -24,5 +27,7 @@ class AuthService:
 
         # 4. JWTトークンを生成
         token = create_access_token(user.user_id, user.username)
+
+        logger.info("login success", extra={"user_id": user.user_id})
 
         return token
