@@ -13,6 +13,13 @@ class Message:
     ACCOUNT_UPDATE_SUCCESS = "アカウント情報を更新しました"
     PASSWORD_CHANGE_SUCCESS = "パスワードを変更しました"
     EMAIL_CHANGE_SUCCESS = "メールアドレスを変更しました"
+    PROFILE_UPDATE_SUCCESS = "プロフィールを更新しました"
+    TIMELINE_CREATE_SUCCESS = "年表を作成しました"
+    TIMELINE_UPDATE_SUCCESS = "年表を更新しました"
+    TIMELINE_DELETE_SUCCESS = "年表を削除しました"
+    PRODUCT_CREATE_SUCCESS = "プロダクトを作成しました"
+    PRODUCT_UPDATE_SUCCESS = "プロダクトを更新しました"
+    PRODUCT_DELETE_SUCCESS = "プロダクトを削除しました"
 
 
 class ErrorMessage:
@@ -54,6 +61,52 @@ class ErrorMessage:
     KEYWORD_MAX_LENGTH = (
         f"キーワードは{Constant.MAX_KEYWORD_LENGTH}文字以内で入力してください"
     )
+
+    # プロフィール関連
+    HEADLINE_REQUIRED = "肩書きは必須項目です"
+    HEADLINE_MAX_LENGTH = (
+        f"肩書きは{Constant.MAX_HEADLINE_LENGTH}文字以内で入力してください"
+    )
+    BIO_REQUIRED = "自己紹介文は必須項目です"
+    BIO_MAX_LENGTH = f"自己紹介文は{Constant.MAX_BIO_LENGTH}文字以内で入力してください"
+    SITE_DESCRIPTION_REQUIRED = "サイト説明文は必須項目です"
+    SITE_DESCRIPTION_MAX_LENGTH = (
+        f"サイト説明文は{Constant.MAX_SITE_DESCRIPTION_LENGTH}文字以内で入力してください"
+    )
+
+    # 年表関連
+    YEAR_REQUIRED = "年は必須項目です"
+    YEAR_TYPE = "年は数値で入力してください"
+    YEAR_RANGE = (
+        f"年は{Constant.MIN_YEAR}〜{Constant.MAX_YEAR}の範囲で入力してください"
+    )
+    TIMELINE_TITLE_MAX_LENGTH = (
+        f"見出しは{Constant.MAX_TIMELINE_TITLE_LENGTH}文字以内で入力してください"
+    )
+    TIMELINE_BODY_MAX_LENGTH = (
+        f"本文は{Constant.MAX_TIMELINE_BODY_LENGTH}文字以内で入力してください"
+    )
+    TIMELINE_ID_REQUIRED = "年表IDは必須項目です"
+    MIN_TIMELINE_ID = f"年表IDは{Constant.MIN_TIMELINE_ID}以上の整数で指定してください"
+
+    # プロダクト関連
+    PRODUCT_TITLE_REQUIRED = "タイトルは必須項目です"
+    PRODUCT_TITLE_MAX_LENGTH = (
+        f"タイトルは{Constant.MAX_PRODUCT_TITLE_LENGTH}文字以内で入力してください"
+    )
+    PRODUCT_DESCRIPTION_MAX_LENGTH = (
+        f"説明は{Constant.MAX_PRODUCT_DESCRIPTION_LENGTH}文字以内で入力してください"
+    )
+    LINK_URL_MAX_LENGTH = (
+        f"リンクURLは{Constant.MAX_LINK_URL_LENGTH}文字以内で入力してください"
+    )
+    PRODUCT_ID_REQUIRED = "プロダクトIDは必須項目です"
+    MIN_PRODUCT_ID = f"プロダクトIDは{Constant.MIN_PRODUCT_ID}以上の整数で指定してください"
+
+    # 表示順（年表・プロダクト共通）
+    SORT_ORDER_MIN = (
+        f"表示順は{Constant.MIN_SORT_ORDER}以上の整数で指定してください"
+    )
     MIN_OFFSET = f"オフセット値は{Constant.MIN_OFFSET}以上の整数で指定してください"
     MIN_LIMIT = f"リミット値は{Constant.MIN_LIMIT}以上の整数で指定してください"
     MAX_LIMIT = f"リミット値は{Constant.MAX_LIMIT}以下の整数で指定してください"
@@ -79,6 +132,9 @@ class ErrorMessage:
     # 記事関連
     IMAGE_NOT_EXIST = "指定した画像IDが存在しません"
     NOT_EXIST = "指定した記事が存在しません"
+    TIMELINE_NOT_EXIST = "指定した年表が存在しません"
+    PRODUCT_NOT_EXIST = "指定したプロダクトが存在しません"
+    PROFILE_NOT_EXIST = "プロフィールが存在しません"
     NOT_EXIST_ON_STORAGE = "ストレージに対象ファイルが存在しません"
     BAD_REQUEST_OF_THUMBNAIL = (
         "新規サムネイルを登録する場合は削除フラグはOFFにしてください"
