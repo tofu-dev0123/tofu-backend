@@ -28,3 +28,24 @@ class Constant:
 
     # 公開記事関連
     PUBLIC_POST_LIMIT = 10
+
+    # プロフィール関連
+    MAX_HEADLINE_LENGTH = 255
+    MAX_BIO_LENGTH = 2000
+    MAX_SITE_DESCRIPTION_LENGTH = 1000
+
+    # 年表関連
+    MIN_YEAR = 1900
+    MAX_YEAR = 2100
+    MAX_TIMELINE_TITLE_LENGTH = 255
+    MAX_TIMELINE_BODY_LENGTH = 2000
+    MIN_TIMELINE_ID = 1
+
+    # プロダクト関連
+    MAX_PRODUCT_TITLE_LENGTH = 255
+    MAX_PRODUCT_DESCRIPTION_LENGTH = 2000
+    MAX_LINK_URL_LENGTH = 500
+    MIN_PRODUCT_ID = 1
+
+    # 表示順（年表・プロダクト共通）
+    MIN_SORT_ORDER = 0

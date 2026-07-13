@@ -47,4 +47,26 @@ VALIDATION_MESSAGES = {
     ("image_id", "missing"): ErrorMessage.IMAGE_ID_REQUIRED,
     ("image_id", "greater_than_equal"): ErrorMessage.MIN_IMAGE_ID,
     ("page", "greater_than_equal"): ErrorMessage.MIN_PAGE,
+    # プロフィール関連
+    ("headline", "missing"): ErrorMessage.HEADLINE_REQUIRED,
+    ("headline", "string_too_long"): ErrorMessage.HEADLINE_MAX_LENGTH,
+    ("bio", "missing"): ErrorMessage.BIO_REQUIRED,
+    ("bio", "string_too_long"): ErrorMessage.BIO_MAX_LENGTH,
+    ("site_description", "missing"): ErrorMessage.SITE_DESCRIPTION_REQUIRED,
+    ("site_description", "string_too_long"): ErrorMessage.SITE_DESCRIPTION_MAX_LENGTH,
+    # 年表関連
+    ("year", "missing"): ErrorMessage.YEAR_REQUIRED,
+    ("year", "int_parsing"): ErrorMessage.YEAR_TYPE,
+    ("year", "int_type"): ErrorMessage.YEAR_TYPE,
+    ("year", "greater_than_equal"): ErrorMessage.YEAR_RANGE,
+    ("year", "less_than_equal"): ErrorMessage.YEAR_RANGE,
+    ("body", "string_too_long"): ErrorMessage.TIMELINE_BODY_MAX_LENGTH,
+    ("sort_order", "greater_than_equal"): ErrorMessage.SORT_ORDER_MIN,
+    ("timeline_id", "missing"): ErrorMessage.TIMELINE_ID_REQUIRED,
+    ("timeline_id", "greater_than_equal"): ErrorMessage.MIN_TIMELINE_ID,
+    # プロダクト関連
+    ("description", "string_too_long"): ErrorMessage.PRODUCT_DESCRIPTION_MAX_LENGTH,
+    ("link_url", "string_too_long"): ErrorMessage.LINK_URL_MAX_LENGTH,
+    ("product_id", "missing"): ErrorMessage.PRODUCT_ID_REQUIRED,
+    ("product_id", "greater_than_equal"): ErrorMessage.MIN_PRODUCT_ID,
 }
