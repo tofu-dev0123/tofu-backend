@@ -11,6 +11,7 @@ class Product(BaseModel):
     title: str = Field(..., description="タイトル")
     description: str | None = Field(None, description="説明")
     link_url: str | None = Field(None, description="リンクURL")
+    github_url: str | None = Field(None, description="GitHubリンクURL")
     published: bool = Field(..., description="公開フラグ")
     sort_order: int = Field(..., description="表示順")
     tags: list[Tag] = Field(default_factory=list, description="技術タグの配列")
@@ -32,11 +33,14 @@ class _ProductRequestBase(BaseModel):
     link_url: str | None = Field(
         None, max_length=Constant.MAX_LINK_URL_LENGTH, description="リンクURL"
     )
+    github_url: str | None = Field(
+        None, max_length=Constant.MAX_LINK_URL_LENGTH, description="GitHubリンクURL"
+    )
     published: bool = Field(False, description="公開フラグ")
     sort_order: int = Field(0, ge=Constant.MIN_SORT_ORDER, description="表示順")
     tags: list[str] = Field(default_factory=list, description="技術タグの配列")
 
-    @field_validator("description", "link_url")
+    @field_validator("description", "link_url", "github_url")
     def empty_string_to_null(cls, v):
         return None if v == "" else v
 

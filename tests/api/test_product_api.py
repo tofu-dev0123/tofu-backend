@@ -12,6 +12,7 @@ def _product_schema(product_id=1):
         title="プロダクト",
         description="説明",
         link_url="https://example.com",
+        github_url="https://github.com/example/repo",
         published=True,
         sort_order=0,
         tags=[Tag(tag_id=1, name="Python", slug="python")],
@@ -31,6 +32,9 @@ def test_get_products_success(mock_get, client, valid_token):
     data = response.json()
     assert len(data["products"]) == 1
     assert data["products"][0]["tags"][0]["name"] == "Python"
+    assert (
+        data["products"][0]["github_url"] == "https://github.com/example/repo"
+    )
 
 
 # 異常系: トークンなし
@@ -48,6 +52,7 @@ def test_create_product_success(mock_create, client, valid_token):
         "title": "新規",
         "description": "d",
         "link_url": "https://example.com",
+        "github_url": "https://github.com/example/repo",
         "published": True,
         "sort_order": 1,
         "tags": ["python"],
