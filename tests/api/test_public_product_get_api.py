@@ -13,6 +13,7 @@ def test_get_public_products_success(mock_get, client):
                 title="プロダクト",
                 description="説明",
                 link_url="https://example.com",
+                github_url="https://github.com/example/repo",
                 published=True,
                 sort_order=0,
                 tags=[Tag(tag_id=1, name="Python", slug="python")],
@@ -27,6 +28,7 @@ def test_get_public_products_success(mock_get, client):
     assert len(data["products"]) == 1
     assert data["products"][0]["title"] == "プロダクト"
     assert data["products"][0]["tags"][0]["name"] == "Python"
+    assert data["products"][0]["github_url"] == "https://github.com/example/repo"
     mock_get.assert_called_once_with()
 
 

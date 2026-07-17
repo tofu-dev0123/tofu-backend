@@ -17,6 +17,7 @@ def _mock_product(product_id=1, published=True):
     product.title = "プロダクト"
     product.description = "説明"
     product.link_url = "https://example.com"
+    product.github_url = "https://github.com/example/repo"
     product.published = published
     product.sort_order = 0
     product.tags = [mock_tag]
@@ -71,6 +72,7 @@ def test_create_product_success(product_service):
         title="新規",
         description="desc",
         link_url="https://example.com",
+        github_url="https://github.com/example/repo",
         published=True,
         sort_order=1,
         tags=["python", "fastapi"],
@@ -99,6 +101,7 @@ def test_update_product_success(product_service):
         title="更新",
         description="d",
         link_url=None,
+        github_url="https://github.com/example/repo",
         published=False,
         sort_order=2,
         tags=["python"],
@@ -108,7 +111,7 @@ def test_update_product_success(product_service):
 
     assert result is None
     product_service.product_repo.update.assert_called_once_with(
-        7, "更新", "d", None, False, 2
+        7, "更新", "d", None, "https://github.com/example/repo", False, 2
     )
     product_service.product_tag_repo.delete_product_tags.assert_called_once_with(7)
     product_service.db.commit.assert_called_once()

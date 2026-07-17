@@ -41,6 +41,7 @@ class ProductService:
             title=product.title,
             description=product.description,
             link_url=product.link_url,
+            github_url=product.github_url,
             published=product.published,
             sort_order=product.sort_order,
             tags=tags,
@@ -90,6 +91,7 @@ class ProductService:
                 title=request.title,
                 description=request.description,
                 link_url=request.link_url,
+                github_url=request.github_url,
                 published=request.published,
                 sort_order=request.sort_order,
             )
@@ -124,6 +126,7 @@ class ProductService:
                 request.title,
                 request.description,
                 request.link_url,
+                request.github_url,
                 request.published,
                 request.sort_order,
             )
