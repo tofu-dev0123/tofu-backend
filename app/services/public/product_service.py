@@ -29,6 +29,7 @@ class PublicProductService:
                     title=product.title,
                     description=product.description,
                     link_url=product.link_url,
+                    github_url=product.github_url,
                     published=product.published,
                     sort_order=product.sort_order,
                     tags=tags,

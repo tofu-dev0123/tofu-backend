@@ -49,6 +49,7 @@ class ProductRepository:
         title: str,
         description: str | None,
         link_url: str | None,
+        github_url: str | None,
         published: bool,
         sort_order: int,
     ) -> None:
@@ -59,6 +60,7 @@ class ProductRepository:
                 title=title,
                 description=description,
                 link_url=link_url,
+                github_url=github_url,
                 published=published,
                 sort_order=sort_order,
                 updated_at=datetime.now(),
