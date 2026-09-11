@@ -6,8 +6,12 @@ from app.db.base_class import Base
 # エンジンの作成
 engine = create_engine(
     settings.database_url,
-    pool_pre_ping=True,  # 接続の有効性を確認
-    pool_recycle=3600,  # 1時間で接続を再生成
+    # pool_pre_ping は接続チェックアウトの度に SELECT 1 を投げるため、
+    # DB が遠い (Neon: us-east-1) 現構成ではリクエスト毎に往復が 1 回増える。
+    # レイテンシ削減のため無効化し、代わりに pool_recycle を短くして
+    # 寝かせた接続を掴みにくくする。
+    pool_pre_ping=False,
+    pool_recycle=300,  # 5分で接続を再生成
     echo=False,  # SQLクエリをログ出力する場合はTrue
     connect_args={
         "connect_timeout": 10,
