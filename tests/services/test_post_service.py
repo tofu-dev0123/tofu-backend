@@ -6,6 +6,7 @@ from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.handlers import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.utils.slug_utils import is_draft_generated_slug
 from tests.mock_data.post_detail import DummyPostDetail
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
@@ -123,7 +124,8 @@ def test_image_not_exist(post_service):
 
 
 # タイトルスラグ衝突なし→新規作成
-def test_generate_slug_of_title_no_conflict(post_service):
+@patch("app.services.post_service.generate_slug", return_value="test-title")
+def test_generate_slug_of_title_no_conflict(mock_gen, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_slugs_like.return_value = []
 
@@ -137,8 +139,9 @@ def test_generate_slug_of_title_no_conflict(post_service):
 
 
 # タイトルスラグ衝突→increment_suffixで作成
+@patch("app.services.post_service.generate_slug", return_value="test-title")
 @patch("app.services.post_service.increment_slug_suffix", return_value="test-title-1")
-def test_generate_slug_of_title_conflict(mock_inc, post_service):
+def test_generate_slug_of_title_conflict(mock_inc, mock_gen, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.find_slugs_like.return_value = ["test-title"]
 
@@ -923,3 +926,64 @@ def test_patch_status_exception_rollback(mock_set_published_at, mock_db, post_se
 
     mock_set_published_at.assert_called_once_with(1, PostStatus.PUBLISHED)
     post_service.db.rollback.assert_called_once()
+
+
+# タイトルのスラグ生成失敗→ドラフトスラグを返す
+@patch("app.services.post_service.generate_slug", return_value="")
+def test_generate_slug_of_title_fallback_to_draft_slug(mock_gen, post_service):
+    post_service.post_repo = MagicMock()
+
+    result = post_service.generate_slug_of_title("ループエンジニアリングを実践してみた")
+
+    assert is_draft_generated_slug(result)
+    post_service.post_repo.find_slugs_like.assert_not_called()
+
+
+# patch_status: 公開時にドラフトスラグをタイトルベースのスラグへ上書きする
+@patch("app.services.post_service.PostService.db", create=True)
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="test-title",
+)
+@patch("app.services.post_service.PostService.set_published_at_from_status")
+def test_patch_status_overwrites_draft_slug(
+    mock_set_published_at, mock_generate_slug_of_title, mock_db, post_service
+):
+    post_service.post_repo = MagicMock()
+    mock_current_post = Mock()
+    mock_current_post.slug = "draft-0a1b2c3d"
+    mock_current_post.title = "既存タイトル"
+    post_service.post_repo.find_by_post_id.return_value = mock_current_post
+    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
+    mock_set_published_at.return_value = fixed_time
+
+    post_service.patch_status(PostStatus.PUBLISHED, 1)
+
+    post_service.post_repo.update_status_and_published_at.assert_called_once_with(
+        1, PostStatus.PUBLISHED, fixed_time, slug="test-title"
+    )
+
+
+# patch_status: 公開時にスラグ生成が失敗→既存のドラフトスラグを維持する
+@patch("app.services.post_service.PostService.db", create=True)
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="draft-9f8e7d6c",
+)
+@patch("app.services.post_service.PostService.set_published_at_from_status")
+def test_patch_status_keeps_draft_slug_when_generation_failed(
+    mock_set_published_at, mock_generate_slug_of_title, mock_db, post_service
+):
+    post_service.post_repo = MagicMock()
+    mock_current_post = Mock()
+    mock_current_post.slug = "draft-0a1b2c3d"
+    mock_current_post.title = "既存タイトル"
+    post_service.post_repo.find_by_post_id.return_value = mock_current_post
+    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
+    mock_set_published_at.return_value = fixed_time
+
+    post_service.patch_status(PostStatus.PUBLISHED, 1)
+
+    post_service.post_repo.update_status_and_published_at.assert_called_once_with(
+        1, PostStatus.PUBLISHED, fixed_time, slug=None
+    )
