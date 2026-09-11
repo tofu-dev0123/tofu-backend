@@ -1,3 +1,4 @@
+import re
 from unittest.mock import MagicMock, patch
 
 
@@ -75,3 +76,21 @@ def test_get_or_create_tag_ids_multiple_tags(mock_gen_slug, mock_inc, tag_servic
     assert result == [5, 10, 20]
     tag_service.tag_repo.create.assert_any_call("fastapi", "fastapi")
     tag_service.tag_repo.create.assert_any_call("nextjs", "nextjs-1")
+
+
+# 新規タグのスラグ生成失敗→UUIDベースのスラグで作成
+@patch("app.services.tag_service.generate_slug", return_value="")
+def test_get_or_create_tag_ids_fallback_slug_when_generation_failed(
+    mock_gen, tag_service
+):
+    tag_service.tag_repo = MagicMock()
+    tag_service.tag_repo.find_id_by_name.return_value = None
+    tag_service.tag_repo.find_slugs_starting_with.return_value = []
+    tag_service.tag_repo.create.return_value = 1
+
+    result = tag_service.get_or_create_tag_ids(["・"])
+
+    assert result == [1]
+    created_slug = tag_service.tag_repo.create.call_args[0][1]
+    assert re.match(r"^tag-[0-9a-f]{8}$", created_slug)
+

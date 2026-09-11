@@ -441,7 +441,11 @@ class PostService:
                 request.status == PostStatus.PUBLISHED
                 and is_draft_generated_slug(current_post.slug)
             ):
-                new_slug = self.generate_slug_of_title(request.title)
+                generated_slug = self.generate_slug_of_title(request.title)
+
+                # 生成に失敗した場合は既存のドラフトスラグを維持する
+                if not is_draft_generated_slug(generated_slug):
+                    new_slug = generated_slug
 
             # 更新するサムネイルURLをセット
             update_url = self.update_thumbnail(
@@ -549,7 +553,11 @@ class PostService:
             if status == PostStatus.PUBLISHED:
                 current_post = self.post_repo.find_by_post_id(post_id)
                 if current_post is not None and is_draft_generated_slug(current_post.slug) and current_post.title:
-                    new_slug = self.generate_slug_of_title(current_post.title)
+                    generated_slug = self.generate_slug_of_title(current_post.title)
+
+                    # 生成に失敗した場合は既存のドラフトスラグを維持する
+                    if not is_draft_generated_slug(generated_slug):
+                        new_slug = generated_slug
 
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
