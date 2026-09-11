@@ -20,7 +20,7 @@ def get_post_service(
 
 
 @router.get("", response_model=PostsPublishAtResponse)
-async def get_posts(
+def get_posts(
     page: Optional[int] = Query(1, ge=1),
     keyword: Optional[str] = Query(None, max_length=1000),
     service: PublicPostService = Depends(get_post_service),
@@ -34,7 +34,7 @@ async def get_posts(
 
 
 @router.get("/slugs", response_model=PostSlugsResponse)
-async def get_slugs(
+def get_slugs(
     service: PublicPostService = Depends(get_post_service),
 ):
     result = service.get_slugs()
@@ -42,7 +42,7 @@ async def get_slugs(
 
 
 @router.get("/{slug}", response_model=PostPublishAtResponse)
-async def get_post(
+def get_post(
     slug: str = Path(..., description="スラグ"),
     service: PublicPostService = Depends(get_post_service),
 ):
