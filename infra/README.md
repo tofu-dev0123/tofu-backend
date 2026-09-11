@@ -128,12 +128,54 @@ deploy とは分離済み。GitHub Actions の **`Migrate DB` ワークフロー
 `CLOUDFRONT_DOMAIN` / `CORS_ALLOW_ORIGINS` / `APP_ENV=production`
 （`*_SSM` 系は設定しない = SSM 取得を無効化。詳細は `app/core/config.py`）
 
+## PART 4: Cloudflare キャッシュ設定 (公開 API)
+
+公開 API は `Cache-Control: public, max-age=0, s-maxage=300` を返す
+(`app/api/public/cache.py`)。ただし **Cloudflare はデフォルトで JSON をキャッシュしない**
+(静的な拡張子のみが対象) ため、Cache Rule を入れないとこのヘッダは無視される。
+
+### 設定手順
+
+Caching → Cache Rules → Create rule:
+
+1. **Rule name**: `public-api-cache`
+2. **When incoming requests match** — Custom filter expression:
+
+   ```
+   (http.host eq "api.tofubase.com" and http.request.method eq "GET" and
+    (starts_with(http.request.uri.path, "/posts") or
+     starts_with(http.request.uri.path, "/about") or
+     starts_with(http.request.uri.path, "/products")))
+   ```
+
+3. **Then**:
+   - Cache eligibility: **Eligible for cache**
+   - Edge TTL: **Use cache-control header if present, use default otherwise**
+     (= origin の `s-maxage=300` を尊重する)
+   - Browser TTL: **Respect origin TTL** (origin は `max-age=0` を返すのでブラウザには載らない)
+
+### 注意点
+
+- **管理 API (`/admin/*`) を条件に含めないこと。** 認証付きレスポンスがエッジに載ると事故になる。
+  上記の式は公開パスのみを明示列挙している。
+- 記事を更新しても **最大 5 分は古い内容が返る**。即時反映が必要になったら
+  キャッシュパージ (管理画面の Purge、または更新時に API を叩く) を検討する。
+- TTL を変えるときは origin 側の `Constant.PUBLIC_CACHE_MAX_AGE` と揃える。
+
+### 動作確認
+
+```bash
+# 1回目は MISS、2回目以降は HIT になる
+curl -sI https://api.tofubase.com/posts/<slug> | grep -i "cf-cache-status\|cache-control"
+```
+
 ## TODO (実デプロイ前に確定)
 
 - [x] `BundleId`=`micro_3_0` / `BlueprintId`=`ubuntu_24_04` を実在確認・確定 (2026-07-05)
 - [x] Cloudflare IP レンジ (v4/v6) を公式リストで反映 (2026-07-05・cutover 前に再確認)
 - [ ] PART 0 (Cloudflare Tunnel / Access / Origin Cert / Full strict) を実施
 - [ ] GitHub Environment `prod`/`dev` に Secrets を登録 (SSH_PRIVATE_KEY / CF_ACCESS_* / DATABASE_URL)
+- [ ] PART 4 (公開 API の Cache Rule) を設定 (#101)
 
 ## 実行順序 (まとめ)
 
@@ -141,4 +183,5 @@ deploy とは分離済み。GitHub Actions の **`Migrate DB` ワークフロー
 2. CFN デプロイ (Lightsail Instance + StaticIp、UserData 自動プロビジョニング)
 3. PART 2: 起動後の手動手順 (ブラウザ SSH でトンネル常駐・鍵配置・資材配置・起動)
 4. PART 3: DB マイグレーション (Migrate DB ワークフロー, env=prod)
-5. カットオーバー (DNS を Lightsail に切替) → #75 で旧 CDK/Lambda/CloudFront/ACM/SSM 撤去
+5. PART 4: 公開 API の Cache Rule 設定 (DNS 切替後に有効になる)
+6. カットオーバー (DNS を Lightsail に切替) → #75 で旧 CDK/Lambda/CloudFront/ACM/SSM 撤去

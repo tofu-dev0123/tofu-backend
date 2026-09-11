@@ -29,6 +29,10 @@ class Constant:
     # 公開記事関連
     PUBLIC_POST_LIMIT = 10
 
+    # 公開API キャッシュ関連
+    PUBLIC_CACHE_MAX_AGE = 300  # CDN キャッシュ保持時間(秒)
+    PUBLIC_CACHE_CONTROL = f"public, max-age=0, s-maxage={PUBLIC_CACHE_MAX_AGE}"
+
     # プロフィール関連
     MAX_HEADLINE_LENGTH = 255
     MAX_BIO_LENGTH = 2000
