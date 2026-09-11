@@ -13,7 +13,7 @@ def get_product_service(db: Session = Depends(get_db)) -> PublicProductService:
 
 
 @router.get("", response_model=ProductListResponse)
-async def get_products(
+def get_products(
     service: PublicProductService = Depends(get_product_service),
 ):
     return service.get_products()

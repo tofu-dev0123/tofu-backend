@@ -13,7 +13,7 @@ def get_about_service(db: Session = Depends(get_db)) -> PublicAboutService:
 
 
 @router.get("", response_model=AboutResponse)
-async def get_about(
+def get_about(
     service: PublicAboutService = Depends(get_about_service),
 ):
     return service.get_about()
