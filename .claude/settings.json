@@ -36,9 +36,7 @@
       "Bash(gh pr view:*)",
       "Bash(gh api:*)",
       "Bash(scripts/check.sh)",
-      "Bash(scripts/check.sh:*)",
       "Bash(./scripts/check.sh)",
-      "Bash(./scripts/check.sh:*)",
       "Bash(gh label list:*)",
       "Bash(gh repo view:*)"
     ],
