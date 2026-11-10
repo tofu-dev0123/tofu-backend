@@ -21,7 +21,7 @@ def get_posts(
 ) -> PostsPublishAtResponse:
 
     if page is None:
-        page = 1
+        page = Constant.MIN_PAGE
 
     result = service.get_posts(page, keyword)
     return result
