@@ -9,7 +9,7 @@ from app.models.tag import Tag
 
 
 class PostDetailQueryRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def find_by_post_id(self, post_id: int) -> Row[Any] | None:

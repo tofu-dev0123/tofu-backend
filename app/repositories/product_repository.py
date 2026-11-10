@@ -7,7 +7,7 @@ from app.models.product import Product
 
 class ProductRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def exists_by_id(self, product_id: int) -> bool:

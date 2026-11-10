@@ -5,7 +5,7 @@ from app.models.post_tag import PostTag
 
 class PostTagRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def create(self, post_tag: PostTag) -> None:

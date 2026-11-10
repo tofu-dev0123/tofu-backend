@@ -7,7 +7,7 @@ from app.models.timeline import Timeline
 
 class TimelineRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def exists_by_id(self, timeline_id: int) -> bool:

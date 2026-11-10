@@ -11,7 +11,7 @@ class ImageNotExistError(BaseAppError):
 class ImageUploadValidationError(Exception):
     """画像アップロードバリデーションエラー"""
 
-    def __init__(self, errors: list[dict]):
+    def __init__(self, errors: list[dict]) -> None:
         self.errors = errors
         super().__init__("Image upload validation error")
 

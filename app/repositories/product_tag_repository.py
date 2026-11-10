@@ -5,7 +5,7 @@ from app.models.product_tag import ProductTag
 
 class ProductTagRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def create(self, product_tag: ProductTag) -> None:

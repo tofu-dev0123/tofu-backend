@@ -5,7 +5,7 @@ from app.models.tag import Tag
 
 class TagRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def find_id_by_name(self, name: str) -> int | None:

@@ -5,7 +5,7 @@ from app.models.image import Image
 
 class ImageRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def find_by_image_id(self, id: int) -> Image | None:

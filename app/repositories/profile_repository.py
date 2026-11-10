@@ -6,7 +6,7 @@ from app.models.profile import Profile
 
 class ProfileRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def get(self) -> Profile | None:

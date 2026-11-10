@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class S3:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.env = settings.APP_ENV
         self.ACCESS_KEY_ID = settings.AWS_ACCESS_KEY_ID
         self.SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY

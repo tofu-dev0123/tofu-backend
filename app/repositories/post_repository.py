@@ -8,7 +8,7 @@ from datetime import datetime
 
 class PostRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def exists_by_post_id(self, post_id: int) -> bool:
