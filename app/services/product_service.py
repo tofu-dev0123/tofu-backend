@@ -11,10 +11,10 @@ from app.schemas.product import (
     ProductPostRequest,
     ProductPutRequest,
 )
-from app.schemas.tag import Tag
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
 from app.services.guards import ensure_exists
+from app.services.mappers import to_product
 
 logger = logging.getLogger(__name__)
 
@@ -34,32 +34,12 @@ class ProductService:
         self.tag_service = tag_service or TagService(db)
 
     """
-    プロダクトモデルをスキーマに変換する
-    """
-
-    def _to_schema(self, product: ProductModel) -> Product:
-        tags = [
-            Tag(tag_id=tag.tag_id, name=tag.name, slug=tag.slug)
-            for tag in product.tags
-        ]
-        return Product(
-            product_id=product.product_id,
-            title=product.title,
-            description=product.description,
-            link_url=product.link_url,
-            github_url=product.github_url,
-            published=product.published,
-            sort_order=product.sort_order,
-            tags=tags,
-        )
-
-    """
     プロダクト一覧を取得する
     """
 
     def get_products(self) -> ProductListResponse:
         products = self.product_repo.find_all()
-        return ProductListResponse(products=[self._to_schema(p) for p in products])
+        return ProductListResponse(products=[to_product(p) for p in products])
 
     """
     プロダクト詳細を取得する
@@ -71,7 +51,7 @@ class ProductService:
             ErrorMessage.PRODUCT_NOT_EXIST,
         )
 
-        return self._to_schema(product)
+        return to_product(product)
 
     """
     中間テーブルにタグを登録する

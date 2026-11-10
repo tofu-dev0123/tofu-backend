@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from app.repositories.timeline_repository import TimelineRepository
 from app.models.timeline import Timeline as TimelineModel
 from app.schemas.timeline import (
-    Timeline,
     TimelineListResponse,
     TimelinePostRequest,
     TimelinePutRequest,
@@ -11,6 +10,7 @@ from app.schemas.timeline import (
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
 from app.services.guards import ensure_exists
+from app.services.mappers import to_timeline
 
 logger = logging.getLogger(__name__)
 
@@ -32,16 +32,7 @@ class TimelineService:
     def get_timelines(self) -> TimelineListResponse:
         timelines = self.timeline_repo.find_all()
 
-        timeline_list = [
-            Timeline(
-                timeline_id=t.timeline_id,
-                year=t.year,
-                title=t.title,
-                body=t.body,
-                sort_order=t.sort_order,
-            )
-            for t in timelines
-        ]
+        timeline_list = [to_timeline(t) for t in timelines]
 
         return TimelineListResponse(timelines=timeline_list)
 

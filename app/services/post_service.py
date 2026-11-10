@@ -15,8 +15,6 @@ from botocore.exceptions import (
     BotoCoreError,
 )
 from app.infra.storage.s3 import S3
-from app.schemas.image import Image
-from app.schemas.tag import Tag
 from app.models.post import Post as PostModel, PostStatus
 from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
@@ -32,6 +30,7 @@ from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
 from app.services.transaction import transaction
 from app.services.guards import ensure_exists
+from app.services.mappers import parse_images, parse_tags
 
 
 logger = logging.getLogger(__name__)
@@ -120,28 +119,6 @@ class PostService:
 
     def get_post_detail(self, post_id: int) -> PostGetResponse:
         data = ensure_exists(self.query_repo.find_by_post_id(post_id))
-        images = []
-        tags = []
-        if data.images:
-            images = [
-                Image(
-                    image_id=int(i[0]),
-                    url=i[1],
-                    alt_text=i[2],
-                )
-                for i in (img.split("|") for img in data.images.split(","))
-            ]
-
-        if data.tags:
-            tags = [
-                Tag(
-                    tag_id=int(t[0]),
-                    name=t[1],
-                    slug=t[2],
-                )
-                for t in (tag.split("|") for tag in data.tags.split(","))
-            ]
-
         #  サムネイルURLが存在する場合はサムネイルを取得する
         if data.thumbnail_url:
             thumbnail = self.image_repo.find_by_url(data.thumbnail_url)
@@ -158,8 +135,8 @@ class PostService:
             thumbnail_url=data.thumbnail_url,
             thumbnail_alt_text=thumbnail.alt_text if thumbnail else None,
             status=data.status,
-            images=images,
-            tags=tags,
+            images=parse_images(data.images),
+            tags=parse_tags(data.tags),
             published_at=data.published_at,
             created_at=data.created_at,
             updated_at=data.updated_at,

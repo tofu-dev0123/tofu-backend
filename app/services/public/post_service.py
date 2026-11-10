@@ -9,8 +9,8 @@ from app.schemas.post import (
     PostPublishAtResponse,
     PostSlugsResponse,
 )
-from app.schemas.tag import Tag
 from app.services.guards import ensure_exists
+from app.services.mappers import parse_tags, to_tag
 
 
 class PublicPostService:
@@ -35,14 +35,6 @@ class PublicPostService:
 
         posts_list = []
         for post in posts:
-            tags = [
-                Tag(
-                    tag_id=tag.tag_id,
-                    name=tag.name,
-                    slug=tag.slug,
-                )
-                for tag in post.tags
-            ]
             posts_list.append(
                 PostPublishAt(
                     post_id=post.post_id,
@@ -50,7 +42,7 @@ class PublicPostService:
                     slug=post.slug,
                     thumbnail_url=post.thumbnail_url,
                     published_at=post.published_at,
-                    tags=tags,
+                    tags=[to_tag(tag) for tag in post.tags],
                 )
             )
 
@@ -68,17 +60,6 @@ class PublicPostService:
 
     def get_post(self, slug: str) -> PostPublishAtResponse:
         data = ensure_exists(self.query_repo.find_by_slug(slug))
-        tags = []
-
-        if data.tags:
-            tags = [
-                Tag(
-                    tag_id=int(t[0]),
-                    name=t[1],
-                    slug=t[2],
-                )
-                for t in (tag.split("|") for tag in data.tags.split(","))
-            ]
 
         return PostPublishAtResponse(
             post_id=data.post_id,
@@ -86,6 +67,6 @@ class PublicPostService:
             slug=data.slug,
             content_html=data.content_html,
             thumbnail_url=data.thumbnail_url,
-            tags=tags,
+            tags=parse_tags(data.tags),
             published_at=data.published_at,
         )

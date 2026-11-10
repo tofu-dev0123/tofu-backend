@@ -5,6 +5,7 @@ from app.schemas.profile import ProfileResponse, ProfilePutRequest
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
 from app.services.guards import ensure_exists
+from app.services.mappers import to_profile
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,7 @@ class ProfileService:
     def get_profile(self) -> ProfileResponse:
         profile = ensure_exists(self.profile_repo.get(), ErrorMessage.PROFILE_NOT_EXIST)
 
-        return ProfileResponse(
-            headline=profile.headline,
-            bio=profile.bio,
-            site_description=profile.site_description,
-        )
+        return to_profile(profile)
 
     """
     プロフィールを更新する
