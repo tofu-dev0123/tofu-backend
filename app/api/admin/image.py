@@ -25,13 +25,9 @@ async def upload(
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
-    try:
-        service.validate(image_file, alt_text)
+    service.validate(image_file, alt_text)
 
-        result = service.upload_file(image_file, alt_text)
-
-    except:
-        raise
+    result = service.upload_file(image_file, alt_text)
 
     return result
 
@@ -42,10 +38,6 @@ async def delete(
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
-    try:
-        service.delete_image(image_id)
-
-    except:
-        raise
+    service.delete_image(image_id)
 
     return ImageDeleteResponse(message=Message.IMAGE_DELETE_SUCCESS)
