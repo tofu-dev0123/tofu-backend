@@ -3,6 +3,7 @@
 各スキーマでは `field_validator("<field>")(関数)` の形で割り当てる。
 """
 
+from collections.abc import Callable
 from pydantic_core import PydanticCustomError
 from app.common.constant import Constant
 
@@ -29,3 +30,20 @@ def validate_tags(v: list[str]) -> list[str]:
             raise PydanticCustomError("string_too_long", "")
 
     return v
+
+
+def max_length_validator(
+    max_length: int, error_type: str
+) -> Callable[[str | None], str | None]:
+    """文字数が上限を超えたら error_type のエラーを送出するバリデータを返す
+
+    同名フィールドでもスキーマごとに別メッセージを返したい場合に使う
+    （メッセージは `(フィールド名, error_type)` で解決される）。
+    """
+
+    def validate(v: str | None) -> str | None:
+        if v is not None and len(v) > max_length:
+            raise PydanticCustomError(error_type, "")
+        return v
+
+    return validate

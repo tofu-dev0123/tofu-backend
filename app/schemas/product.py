@@ -1,7 +1,11 @@
 from pydantic import BaseModel, Field, field_validator
 from app.common.constant import Constant
 from app.schemas.tag import Tag
-from app.schemas.validators import empty_string_to_none, validate_tags
+from app.schemas.validators import (
+    empty_string_to_none,
+    max_length_validator,
+    validate_tags,
+)
 
 
 class Product(BaseModel):
@@ -24,9 +28,7 @@ class ProductListResponse(BaseModel):
 
 
 class _ProductRequestBase(BaseModel):
-    title: str = Field(
-        ..., max_length=Constant.MAX_PRODUCT_TITLE_LENGTH, description="タイトル"
-    )
+    title: str = Field(..., description="タイトル")
     description: str | None = Field(
         None, max_length=Constant.MAX_PRODUCT_DESCRIPTION_LENGTH, description="説明"
     )
@@ -44,6 +46,9 @@ class _ProductRequestBase(BaseModel):
         empty_string_to_none
     )
     _validate_tags = field_validator("tags")(validate_tags)
+    _validate_title_length = field_validator("title")(
+        max_length_validator(Constant.MAX_PRODUCT_TITLE_LENGTH, "product_title_too_long")
+    )
 
 
 class ProductPostRequest(_ProductRequestBase):
