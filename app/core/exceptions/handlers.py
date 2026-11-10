@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 from fastapi import Request
 from fastapi import FastAPI, HTTPException
@@ -107,7 +107,7 @@ def _make_simple_handler(
     error: str,
     get_message: Callable[[BaseAppError], str],
     log_message: str | None,
-):
+) -> Callable[[Request, Exception], Awaitable[JSONResponse]]:
     async def handler(request: Request, exc: Exception) -> JSONResponse:
         assert isinstance(exc, BaseAppError)
         if log_message is not None:
