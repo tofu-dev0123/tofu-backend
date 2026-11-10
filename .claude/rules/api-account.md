@@ -116,6 +116,7 @@ PATCH /admin/account/password
 | ステータス | エラーコード         | 説明                           |
 | ---------- | -------------------- | ------------------------------ |
 | 400        | PASSWORD_MISMATCH    | 現在のパスワードが一致しない   |
+| 400        | NEW_PASSWORD_SAME    | 新しいパスワードが現在と同一   |
 | 401        | AUTHENTICATION_ERROR | 認証に失敗した                 |
 | 422        | VALIDATION_ERROR     | バリデーションエラー           |
 
@@ -175,6 +176,7 @@ PATCH /admin/account/email
 | 400        | PASSWORD_MISMATCH    | パスワードが一致しない                 |
 | 400        | EMAIL_MISMATCH       | 現在のメールアドレスが一致しない       |
 | 400        | EMAIL_ALREADY_EXISTS | メールアドレスが既に使用されている     |
+| 400        | NEW_EMAIL_SAME       | 新しいメールアドレスが現在と同一       |
 | 401        | AUTHENTICATION_ERROR | 認証に失敗した                         |
 | 422        | VALIDATION_ERROR     | バリデーションエラー                   |
 
@@ -242,6 +244,8 @@ app/
 PASSWORD_MISMATCH = "PASSWORD_MISMATCH"
 EMAIL_MISMATCH = "EMAIL_MISMATCH"
 EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS"
+NEW_PASSWORD_SAME = "NEW_PASSWORD_SAME"
+NEW_EMAIL_SAME = "NEW_EMAIL_SAME"
 ```
 
 ### 追加するメッセージ
@@ -257,4 +261,6 @@ class ErrorMessage:
     PASSWORD_MISMATCH = "現在のパスワードが正しくありません"
     EMAIL_MISMATCH = "現在のメールアドレスが正しくありません"
     EMAIL_ALREADY_EXISTS = "このメールアドレスは既に使用されています"
+    NEW_PASSWORD_SAME = "新しいパスワードは現在のパスワードと異なるものを設定してください"
+    NEW_EMAIL_SAME = "新しいメールアドレスは現在のメールアドレスと異なるものを設定してください"
 ```
