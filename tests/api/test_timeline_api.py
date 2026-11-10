@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
+from app.common.constant import Constant
 from app.schemas.timeline import Timeline, TimelineListResponse
 from app.core.exceptions.application_exceptions import ApplicationError
 
@@ -75,6 +76,36 @@ def test_create_timeline_validation_year_range(client, auth_headers):
     data = response.json()
     messages = [item["message"] for item in data["details"]]
     assert ErrorMessage.YEAR_RANGE in messages
+
+
+# バリデーションエラー: 見出しの文字数上限超過（記事用ではなく年表用のメッセージ）
+def test_create_timeline_validation_title_too_long(client, auth_headers):
+    response = client.post(
+        "/admin/timelines",
+        headers=auth_headers,
+        json={"year": 2026, "title": "a" * (Constant.MAX_TIMELINE_TITLE_LENGTH + 1)},
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.TIMELINE_TITLE_MAX_LENGTH in messages
+    assert ErrorMessage.TITLE_MAX_LENGTH not in messages
+
+
+# 正常系: 見出しが文字数上限ちょうど
+@patch("app.services.timeline_service.TimelineService.create_timeline")
+def test_create_timeline_title_max_length_boundary(mock_create, client, auth_headers):
+    mock_create.return_value = 10
+
+    response = client.post(
+        "/admin/timelines",
+        headers=auth_headers,
+        json={"year": 2026, "title": "a" * Constant.MAX_TIMELINE_TITLE_LENGTH},
+    )
+
+    assert response.status_code == 200
 
 
 # 正常系: 年表更新
