@@ -2,6 +2,7 @@ import pytest
 from io import BytesIO
 from fastapi import UploadFile
 from starlette.datastructures import Headers
+from datetime import datetime
 from unittest.mock import MagicMock
 from app.services.auth_service import AuthService
 from app.services.post_service import PostService
@@ -11,6 +12,15 @@ from app.services.tag_service import TagService
 from app.services.profile_service import ProfileService
 from app.services.timeline_service import TimelineService
 from app.services.product_service import ProductService
+
+
+FIXED_NOW = datetime(2025, 1, 1, 12, 0, 0)
+
+
+@pytest.fixture
+def fixed_now():
+    """PostService 等に注入する固定の現在時刻"""
+    return FIXED_NOW
 
 
 @pytest.fixture
@@ -58,6 +68,7 @@ def post_service(mock_db):
         post_tag_repo=MagicMock(),
         image_repo=MagicMock(),
         query_repo=MagicMock(),
+        now=lambda: FIXED_NOW,
     )
 
 

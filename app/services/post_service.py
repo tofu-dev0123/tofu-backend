@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from markdown_it import MarkdownIt
 from app.schemas.post import (
@@ -48,6 +49,7 @@ class PostService:
         post_tag_repo: PostTagRepository | None = None,
         image_repo: ImageRepository | None = None,
         query_repo: PostDetailQueryRepository | None = None,
+        now: Callable[[], datetime] = datetime.now,
     ) -> None:
         self.db = db
         self.s3 = s3 or S3()
@@ -57,6 +59,7 @@ class PostService:
         self.image_repo = image_repo or ImageRepository(db)
         self.query_repo = query_repo or PostDetailQueryRepository(db)
         self.md = MarkdownIt("gfm-like")
+        self.now = now
 
     """
     MarkdownからHTMLへの変換処理
@@ -199,7 +202,7 @@ class PostService:
 
     def check_status_and_setting_date(self, status: PostStatus) -> datetime | None:
         if status == PostStatus.PUBLISHED:
-            return datetime.now()
+            return self.now()
         return None
 
     """
@@ -303,7 +306,7 @@ class PostService:
 
         # DRAFT → PUBLISHED（初公開）
         if old_status == PostStatus.DRAFT and new_status == PostStatus.PUBLISHED:
-            return datetime.now()
+            return self.now()
 
         # PUBLISHED → DRAFT（公開解除）
         if old_status == PostStatus.PUBLISHED and new_status == PostStatus.DRAFT:
@@ -313,7 +316,7 @@ class PostService:
         if new_status == PostStatus.PUBLISHED:
             # published_atが未設定の場合は現在日時を設定（不整合データのフォールバック）
             return (
-                post.published_at if post.published_at is not None else datetime.now()
+                post.published_at if post.published_at is not None else self.now()
             )
 
         # DRAFT → DRAFT
