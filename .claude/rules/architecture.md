@@ -264,13 +264,10 @@ async def get_posts(
 
 ## トランザクション管理
 
-Service 層でトランザクションを管理する。
+Service 層で `transaction` コンテキストマネージャ（`app/services/transaction.py`）を使ってトランザクションを管理する。
 
 ```python
-try:
-    # 複数のDB操作
-    self.db.commit()
-except:
-    self.db.rollback()
-    raise
+with transaction(self.db):
+    # 複数のDB操作（正常終了で commit、例外時は rollback して再送出）
+    ...
 ```
