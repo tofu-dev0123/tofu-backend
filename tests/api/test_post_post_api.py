@@ -6,7 +6,7 @@ from app.common.constant import Constant
 
 # 正常系
 @patch("app.services.post_service.PostService.create_all")
-def test_login_success(mock_create_all, client, valid_token):
+def test_create_post_success(mock_create_all, client, valid_token):
     mock_create_all.return_value = 1
     req = {
         "title": "Test",

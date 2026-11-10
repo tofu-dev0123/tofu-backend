@@ -8,7 +8,7 @@ from app.schemas.post import PostGetResponse
 
 # 正常系
 @patch("app.services.post_service.PostService.get_post_detail")
-def test_login_success(mock_get_detail, client, valid_token):
+def test_get_post_detail_success(mock_get_detail, client, valid_token):
     mock_get_detail.return_value = PostGetResponse(
         post_id=1,
         title="テストタイトル",
