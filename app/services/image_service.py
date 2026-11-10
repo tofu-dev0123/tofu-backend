@@ -17,6 +17,7 @@ from botocore.exceptions import (
     ClientError,
     BotoCoreError,
 )
+from app.services.transaction import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,8 @@ class ImageService:
             raise ImageNotExistOnStorageError
 
     def delete_image(self, image_id: int):
-        try:
+        # ストレージから正常に削除できた場合のみデータをコミットする
+        with transaction(self.db):
             # 画像データがDBに登録されているかチェック
             image = self.check_exist_image(image_id)
             url = image.url
@@ -128,11 +130,4 @@ class ImageService:
             if self.s3.exists(object_key):
                 self.s3.delete_object(object_key)
 
-            # ストレージから正常に削除できた場合にデータコミット
-            self.db.commit()
-
-            logger.info("image deleted", extra={"image_id": image_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("image deleted", extra={"image_id": image_id})
