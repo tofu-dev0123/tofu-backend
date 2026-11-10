@@ -409,7 +409,7 @@ class PostService:
 
     def update_all(self, request: PostsPutRequest, post_id: int):
         with transaction(self.db):
-            ensure_exists(self.post_repo.exist_check_by_post_id(post_id))
+            ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
             # ステータスの値によって投稿日時をセット
             new_published_at = self.set_published_at_from_status(
@@ -491,7 +491,7 @@ class PostService:
 
     def delete_all(self, post_id: int):
         with transaction(self.db):
-            ensure_exists(self.post_repo.exist_check_by_post_id(post_id))
+            ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
             #  サムネイルの削除処理
             self.delete_thumbnail(post_id)

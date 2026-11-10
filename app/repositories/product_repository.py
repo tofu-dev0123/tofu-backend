@@ -9,7 +9,7 @@ class ProductRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def exist_check(self, product_id: int) -> bool:
+    def exists_by_id(self, product_id: int) -> bool:
         stmt = select(exists().where(Product.product_id == product_id))
         return bool(self.db.execute(stmt).scalar())
 

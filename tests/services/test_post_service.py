@@ -536,7 +536,7 @@ def test_update_all_success_full_update(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
     mock_current_post = Mock()
     mock_current_post.slug = "existing-slug"
     post_service.post_repo.find_by_post_id.return_value = mock_current_post
@@ -559,7 +559,7 @@ def test_update_all_success_full_update(
     result = post_service.update_all(req, post_id=999)
 
     assert result is None
-    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(999)
+    post_service.post_repo.exists_by_post_id.assert_called_once_with(999)
     mock_set_published_at.assert_called_once_with(999, PostStatus.PUBLISHED)
     mock_update_thumbnail.assert_called_once_with(
         999, "https://example.com/new-thumb.png", False
@@ -589,7 +589,7 @@ def test_update_all_success_minimal_update(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
 
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
@@ -614,7 +614,7 @@ def test_update_all_success_minimal_update(
 
 # update_all: 記事が存在しない
 def test_update_all_post_not_exist(mock_db, post_service):
-    post_service.post_repo.exist_check_by_post_id.return_value = False
+    post_service.post_repo.exists_by_post_id.return_value = False
 
     req = PostsPutRequest(
         title="Updated Title",
@@ -649,7 +649,7 @@ def test_update_all_image_not_exist_error(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
 
@@ -687,7 +687,7 @@ def test_update_all_invalid_image_owner(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
     mock_set_published_at.return_value = None
     mock_update_thumbnail.return_value = None
 
@@ -724,7 +724,7 @@ def test_update_all_bad_request_of_thumbnail(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
     mock_set_published_at.return_value = None
 
     req = PostsPutRequest(
@@ -807,12 +807,12 @@ def test_delete_all_success(
     mock_db,
     post_service,
 ):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
 
     result = post_service.delete_all(1)
 
     assert result is None
-    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    post_service.post_repo.exists_by_post_id.assert_called_once_with(1)
     mock_delete_thumbnail.assert_called_once_with(1)
     post_service.post_tag_repo.delete_post_tags.assert_called_once_with(1)
     mock_delete_image_from_post_id.assert_called_once_with(1)
@@ -823,14 +823,14 @@ def test_delete_all_success(
 
 # delete_all: 記事が存在しない場合
 def test_delete_all_post_not_exist(mock_db, post_service):
-    post_service.post_repo.exist_check_by_post_id.return_value = False
+    post_service.post_repo.exists_by_post_id.return_value = False
 
     with pytest.raises(ApplicationError) as exc_info:
         post_service.delete_all(1)
 
     assert exc_info.value.message == ErrorMessage.NOT_EXIST
     assert exc_info.value.code == ErrorCode.NOT_EXIST
-    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    post_service.post_repo.exists_by_post_id.assert_called_once_with(1)
     post_service.db.rollback.assert_called_once()
 
 
@@ -840,12 +840,12 @@ def test_delete_all_post_not_exist(mock_db, post_service):
     side_effect=Exception("Error"),
 )
 def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_service):
-    post_service.post_repo.exist_check_by_post_id.return_value = True
+    post_service.post_repo.exists_by_post_id.return_value = True
 
     with pytest.raises(Exception):
         post_service.delete_all(1)
 
-    post_service.post_repo.exist_check_by_post_id.assert_called_once_with(1)
+    post_service.post_repo.exists_by_post_id.assert_called_once_with(1)
     mock_delete_thumbnail.assert_called_once_with(1)
     post_service.db.rollback.assert_called_once()
 

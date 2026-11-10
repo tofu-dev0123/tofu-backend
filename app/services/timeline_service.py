@@ -62,7 +62,7 @@ class TimelineService:
     def update_timeline(self, timeline_id: int, request: TimelinePutRequest) -> None:
         with transaction(self.db):
             ensure_exists(
-                self.timeline_repo.exist_check(timeline_id),
+                self.timeline_repo.exists_by_id(timeline_id),
                 ErrorMessage.TIMELINE_NOT_EXIST,
             )
 
@@ -83,7 +83,7 @@ class TimelineService:
     def delete_timeline(self, timeline_id: int) -> None:
         with transaction(self.db):
             ensure_exists(
-                self.timeline_repo.exist_check(timeline_id),
+                self.timeline_repo.exists_by_id(timeline_id),
                 ErrorMessage.TIMELINE_NOT_EXIST,
             )
 

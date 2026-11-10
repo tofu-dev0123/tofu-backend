@@ -83,7 +83,7 @@ def test_create_product_success(product_service):
 
 # update_product: 正常系
 def test_update_product_success(product_service):
-    product_service.product_repo.exist_check.return_value = True
+    product_service.product_repo.exists_by_id.return_value = True
     product_service.tag_service.get_or_create_tag_ids.return_value = [10]
 
     req = ProductPutRequest(
@@ -108,7 +108,7 @@ def test_update_product_success(product_service):
 
 # update_product: 存在しない場合はロールバック
 def test_update_product_not_exist(product_service):
-    product_service.product_repo.exist_check.return_value = False
+    product_service.product_repo.exists_by_id.return_value = False
 
     req = ProductPutRequest(
         title="x", description=None, link_url=None, published=False, sort_order=0, tags=[]
@@ -124,7 +124,7 @@ def test_update_product_not_exist(product_service):
 
 # delete_product: 正常系
 def test_delete_product_success(product_service):
-    product_service.product_repo.exist_check.return_value = True
+    product_service.product_repo.exists_by_id.return_value = True
 
     result = product_service.delete_product(4)
 
@@ -136,7 +136,7 @@ def test_delete_product_success(product_service):
 
 # delete_product: 存在しない場合はロールバック
 def test_delete_product_not_exist(product_service):
-    product_service.product_repo.exist_check.return_value = False
+    product_service.product_repo.exists_by_id.return_value = False
 
     with pytest.raises(ApplicationError) as exc_info:
         product_service.delete_product(4)

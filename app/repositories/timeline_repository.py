@@ -9,7 +9,7 @@ class TimelineRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def exist_check(self, timeline_id: int) -> bool:
+    def exists_by_id(self, timeline_id: int) -> bool:
         stmt = select(exists().where(Timeline.timeline_id == timeline_id))
         return bool(self.db.execute(stmt).scalar())
 

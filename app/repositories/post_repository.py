@@ -9,7 +9,7 @@ class PostRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def exist_check_by_post_id(self, post_id) -> bool:
+    def exists_by_post_id(self, post_id) -> bool:
         stmt = select(exists().where(Post.post_id == post_id))
         return bool(self.db.execute(stmt).scalar())
 

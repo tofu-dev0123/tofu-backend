@@ -42,7 +42,7 @@ async def logout(
 
 
 @router.post("/me", response_model=MeResponse)
-async def me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user)):
     return MeResponse(
         user_id=current_user.user_id,
         username=current_user.username,
