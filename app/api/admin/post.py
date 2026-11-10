@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Path
-from sqlalchemy.orm import Session
 from typing import Optional
-from app.db.database import get_db
+from app.api.deps import get_post_service
 from app.core.security import get_current_user
 from app.common.message import Message
 from app.schemas.post import (
@@ -21,12 +20,6 @@ from app.models.post import PostStatus
 
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
-
-
-def get_post_service(
-    db: Session = Depends(get_db),
-) -> PostService:
-    return PostService(db)
 
 
 @router.get("", response_model=PostsListGetResponse)

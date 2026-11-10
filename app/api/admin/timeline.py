@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Path
-from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.api.deps import get_timeline_service
 from app.core.security import get_current_user
 from app.common.message import Message
 from app.schemas.timeline import (
@@ -15,10 +14,6 @@ from app.models.user import User
 
 
 router = APIRouter(prefix="/timelines", tags=["Timeline 年表関連"])
-
-
-def get_timeline_service(db: Session = Depends(get_db)) -> TimelineService:
-    return TimelineService(db)
 
 
 @router.get("", response_model=TimelineListResponse)

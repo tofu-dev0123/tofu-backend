@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, Path
 import logging
-from sqlalchemy.orm import Session
 from app.common.message import Message
-from app.db.database import get_db
+from app.api.deps import get_image_service
 from app.core.security import get_current_user
 from app.schemas.image import ImageUploadResponse, ImageDeleteResponse
 from app.services.image_service import ImageService
@@ -10,12 +9,6 @@ from app.models.user import User
 
 router = APIRouter(prefix="/images", tags=["Image 画像関連"])
 logger = logging.getLogger(__name__)
-
-
-def get_image_service(
-    db: Session = Depends(get_db),
-) -> ImageService:
-    return ImageService(db)
 
 
 @router.post("/upload", response_model=ImageUploadResponse)

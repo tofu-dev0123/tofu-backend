@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Path
-from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.api.deps import get_product_service
 from app.core.security import get_current_user
 from app.common.message import Message
 from app.schemas.product import (
@@ -16,10 +15,6 @@ from app.models.user import User
 
 
 router = APIRouter(prefix="/products", tags=["Product プロダクト関連"])
-
-
-def get_product_service(db: Session = Depends(get_db)) -> ProductService:
-    return ProductService(db)
 
 
 @router.get("", response_model=ProductListResponse)

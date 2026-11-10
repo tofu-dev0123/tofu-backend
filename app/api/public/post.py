@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Query, Path
-from sqlalchemy.orm import Session
 from typing import Optional
 from app.schemas.post import (
     PostsPublishAtResponse,
@@ -7,23 +6,17 @@ from app.schemas.post import (
     PostSlugsResponse,
 )
 from app.services.public.post_service import PublicPostService
-from app.db.database import get_db
+from app.api.deps import get_public_post_service
 
 
 router = APIRouter(prefix="/posts", tags=["Post 公開記事関連"])
-
-
-def get_post_service(
-    db: Session = Depends(get_db),
-) -> PublicPostService:
-    return PublicPostService(db)
 
 
 @router.get("", response_model=PostsPublishAtResponse)
 def get_posts(
     page: Optional[int] = Query(1, ge=1),
     keyword: Optional[str] = Query(None, max_length=1000),
-    service: PublicPostService = Depends(get_post_service),
+    service: PublicPostService = Depends(get_public_post_service),
 ):
 
     if page is None:
@@ -35,7 +28,7 @@ def get_posts(
 
 @router.get("/slugs", response_model=PostSlugsResponse)
 def get_slugs(
-    service: PublicPostService = Depends(get_post_service),
+    service: PublicPostService = Depends(get_public_post_service),
 ):
     result = service.get_slugs()
     return result
@@ -44,7 +37,7 @@ def get_slugs(
 @router.get("/{slug}", response_model=PostPublishAtResponse)
 def get_post(
     slug: str = Path(..., description="スラグ"),
-    service: PublicPostService = Depends(get_post_service),
+    service: PublicPostService = Depends(get_public_post_service),
 ):
     result = service.get_post(slug)
     return result
