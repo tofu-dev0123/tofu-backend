@@ -20,9 +20,9 @@ class Post(BaseModel):
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
     status: PostStatus = Field(..., description="公開ステータス")
-    publishedAt: datetime | None = Field(None, description="投稿日時")
-    createdAt: datetime = Field(..., description="作成日時")
-    updatedAt: datetime = Field(..., description="更新日時")
+    published_at: datetime | None = Field(None, description="投稿日時")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
 
 
 class PostPublishAt(BaseModel):

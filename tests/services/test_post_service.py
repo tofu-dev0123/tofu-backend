@@ -22,9 +22,9 @@ def test_get_posts_success(post_service):
     mock_post.slug = "test"
     mock_post.thumbnail_url = None
     mock_post.status = PostStatus.PUBLISHED
-    mock_post.published_at = datetime(2025, 1, 1)
+    mock_post.published_at = datetime(2025, 1, 3)
     mock_post.created_at = datetime(2025, 1, 1)
-    mock_post.updated_at = datetime(2025, 1, 1)
+    mock_post.updated_at = datetime(2025, 1, 2)
 
     post_service.post_repo.find_posts_by_user.return_value = [mock_post]
     post_service.post_repo.count_posts_by_user.return_value = 1
@@ -36,6 +36,9 @@ def test_get_posts_success(post_service):
     assert result.total_count == 1
     assert result.total_pages == 1
     assert len(result.posts) == 1
+    assert result.posts[0].published_at == mock_post.published_at
+    assert result.posts[0].created_at == mock_post.created_at
+    assert result.posts[0].updated_at == mock_post.updated_at
     post_service.post_repo.count_posts_by_user.assert_called_once_with(1, None, None)
 
 
