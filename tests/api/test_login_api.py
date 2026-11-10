@@ -4,7 +4,7 @@ from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
 from app.core.security import verify_token
-from tests.conftest import TEST_USER_PASSWORD
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 
 # 正常系

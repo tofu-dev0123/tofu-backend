@@ -10,6 +10,7 @@ from sqlalchemy_utils import create_database, database_exists
 from app.main import create_app
 from app.core.security import create_access_token, get_current_user, hash_password
 from app.db.database import get_db
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 # Base.metadata にテーブルを登録するため、全モデルを import しておく
 from app.models.user import Base, User
@@ -19,9 +20,6 @@ from app.models.post_tag import PostTag  # noqa: F401
 from app.models.image import Image  # noqa: F401
 
 TEST_DATABASE_URL = "postgresql+psycopg://blog_user:password@db:5432/test_db"
-
-# test_user の平文パスワード（DB には bcrypt ハッシュを保存する）
-TEST_USER_PASSWORD = "password"
 
 
 @pytest.fixture(scope="session")

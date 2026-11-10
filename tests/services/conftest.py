@@ -59,7 +59,7 @@ def auth_service(mock_db):
 
 
 @pytest.fixture
-def post_service(mock_db):
+def post_service(mock_db, fixed_now):
     return PostService(
         mock_db,
         s3=MagicMock(),
@@ -68,7 +68,7 @@ def post_service(mock_db):
         post_tag_repo=MagicMock(),
         image_repo=MagicMock(),
         query_repo=MagicMock(),
-        now=lambda: FIXED_NOW,
+        now=lambda: fixed_now,
     )
 
 
