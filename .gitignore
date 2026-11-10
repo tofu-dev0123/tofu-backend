@@ -19,3 +19,6 @@ __pycache__/
 # 証明書・秘密鍵 (Cloudflare Origin Cert など。コミット禁止)
 *.pem
 *.key
+
+# scripts/check.sh の成功記録 (push / PR 作成前チェック用)
+.claude/.last-check
