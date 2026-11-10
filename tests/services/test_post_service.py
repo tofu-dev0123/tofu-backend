@@ -160,14 +160,10 @@ def test_generate_slug_of_title_conflict(mock_inc, mock_gen, post_service):
 
 
 # 公開ステータスがPUBLISHED→現在時刻を返す
-@patch("app.services.post_service.datetime")
-def test_check_status_and_setting_date_with_PUBLISHED(mock_datetime, post_service):
-    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
-    mock_datetime.now.return_value = fixed_time
-
+def test_check_status_and_setting_date_with_PUBLISHED(post_service, fixed_now):
     result = post_service.check_status_and_setting_date(PostStatus.PUBLISHED)
 
-    assert result == fixed_time
+    assert result == fixed_now
 
 
 # 公開ステータスがDRAFT→None
@@ -254,18 +250,14 @@ def test_create_all_image_not_exist_error(
 
 
 # set_published_at_from_status: DRAFT → PUBLISHED（初公開）
-@patch("app.services.post_service.datetime")
-def test_set_published_at_from_status_draft_to_published(mock_datetime, post_service):
-    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
-    mock_datetime.now.return_value = fixed_time
-
+def test_set_published_at_from_status_draft_to_published(post_service, fixed_now):
     mock_post = Mock()
     mock_post.status = PostStatus.DRAFT
     post_service.post_repo.find_by_post_id.return_value = mock_post
 
     result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
 
-    assert result == fixed_time
+    assert result == fixed_now
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
 
@@ -296,13 +288,7 @@ def test_set_published_at_from_status_published_to_published(post_service):
 
 
 # set_published_at_from_status: PUBLISHED → PUBLISHED（published_atがNoneの場合）
-@patch("app.services.post_service.datetime")
-def test_set_published_at_from_status_published_to_published_with_none(
-    mock_datetime, post_service
-):
-    fixed_time = datetime(2025, 1, 1, 12, 0, 0)
-    mock_datetime.now.return_value = fixed_time
-
+def test_set_published_at_from_status_published_to_published_with_none(post_service, fixed_now):
     mock_post = Mock()
     mock_post.status = PostStatus.PUBLISHED
     mock_post.published_at = None
@@ -310,7 +296,7 @@ def test_set_published_at_from_status_published_to_published_with_none(
 
     result = post_service.set_published_at_from_status(1, PostStatus.PUBLISHED)
 
-    assert result == fixed_time
+    assert result == fixed_now
     post_service.post_repo.find_by_post_id.assert_called_once_with(1)
 
 

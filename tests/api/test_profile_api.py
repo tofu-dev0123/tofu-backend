@@ -7,13 +7,13 @@ from app.schemas.profile import ProfileResponse
 
 # 正常系: プロフィール取得
 @patch("app.services.profile_service.ProfileService.get_profile")
-def test_get_profile_success(mock_get_profile, client, valid_token):
+def test_get_profile_success(mock_get_profile, client, auth_headers):
     mock_get_profile.return_value = ProfileResponse(
         headline="Webエンジニア", bio="自己紹介", site_description="サイト説明"
     )
 
     response = client.get(
-        "/admin/profile", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/profile", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -32,13 +32,13 @@ def test_get_profile_no_token(client):
 
 # 正常系: プロフィール更新
 @patch("app.services.profile_service.ProfileService.update_profile")
-def test_update_profile_success(mock_update_profile, client, valid_token):
+def test_update_profile_success(mock_update_profile, client, auth_headers):
     mock_update_profile.return_value = None
 
     req = {"headline": "new", "bio": "new bio", "site_description": "new desc"}
     response = client.put(
         "/admin/profile",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -47,7 +47,7 @@ def test_update_profile_success(mock_update_profile, client, valid_token):
 
 
 # バリデーションエラー: headline 最大文字数超過
-def test_update_profile_validation_headline_max(client, valid_token):
+def test_update_profile_validation_headline_max(client, auth_headers):
     req = {
         "headline": "a" * (Constant.MAX_HEADLINE_LENGTH + 1),
         "bio": "b",
@@ -55,7 +55,7 @@ def test_update_profile_validation_headline_max(client, valid_token):
     }
     response = client.put(
         "/admin/profile",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -67,10 +67,10 @@ def test_update_profile_validation_headline_max(client, valid_token):
 
 
 # バリデーションエラー: 必須項目欠落
-def test_update_profile_validation_missing(client, valid_token):
+def test_update_profile_validation_missing(client, auth_headers):
     response = client.put(
         "/admin/profile",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 

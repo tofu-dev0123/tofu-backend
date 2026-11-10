@@ -3,9 +3,9 @@ from app.common.errorcode import ErrorCode
 
 
 # 正常系
-def test_logout_success(client, valid_token):
+def test_logout_success(client, auth_headers):
     response = client.post(
-        "/admin/auth/logout", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/auth/logout", headers=auth_headers
     )
 
     assert response.status_code == 200

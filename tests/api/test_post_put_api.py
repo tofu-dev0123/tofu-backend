@@ -8,7 +8,7 @@ from app.core.exceptions.application_exceptions import ApplicationError
 
 # 正常系
 @patch("app.services.post_service.PostService.update_all")
-def test_update_post_success(mock_update_all, client, valid_token):
+def test_update_post_success(mock_update_all, client, auth_headers):
     mock_update_all.return_value = None
     req = {
         "title": "Updated Test",
@@ -22,7 +22,7 @@ def test_update_post_success(mock_update_all, client, valid_token):
     }
     response = client.put(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -35,10 +35,10 @@ def test_update_post_success(mock_update_all, client, valid_token):
 
 
 # 必須項目バリデーションエラー
-def test_validation_error_missing(client, valid_token):
+def test_validation_error_missing(client, auth_headers):
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -54,7 +54,7 @@ def test_validation_error_missing(client, valid_token):
 
 
 # 最大文字数バリデーションエラー
-def test_validation_error_max_length(client, valid_token):
+def test_validation_error_max_length(client, auth_headers):
     big_title = "a" * (Constant.MAX_TITLE_LENGTH + 1)
     big_url = "a" * (Constant.MAX_THUMBNAIL_URL + 1)
     big_content_md = "a" * (Constant.MAX_CONTENT_MARKDOWN_SIZE + 1)
@@ -70,7 +70,7 @@ def test_validation_error_max_length(client, valid_token):
     }
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -87,7 +87,7 @@ def test_validation_error_max_length(client, valid_token):
 
 
 # 配列最大個数バリデーションエラー
-def test_validation_error_max_array(client, valid_token):
+def test_validation_error_max_array(client, auth_headers):
     big_tags = ["a"] * (Constant.MAX_TAGS + 1)
     req = {
         "title": "Test",
@@ -99,7 +99,7 @@ def test_validation_error_max_array(client, valid_token):
     }
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -113,7 +113,7 @@ def test_validation_error_max_array(client, valid_token):
 
 
 # パスパラメータバリデーションエラー（post_id < 1）
-def test_validation_error_min_post_id(client, valid_token):
+def test_validation_error_min_post_id(client, auth_headers):
     req = {
         "title": "Test",
         "content_md": "test_md",
@@ -122,7 +122,7 @@ def test_validation_error_min_post_id(client, valid_token):
     }
     response = client.put(
         "/admin/posts/0",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -142,7 +142,7 @@ def test_validation_error_min_post_id(client, valid_token):
         message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
     ),
 )
-def test_update_post_not_exist(mock_update_all, client, valid_token):
+def test_update_post_not_exist(mock_update_all, client, auth_headers):
     req = {
         "title": "Test",
         "content_md": "test_md",
@@ -151,7 +151,7 @@ def test_update_post_not_exist(mock_update_all, client, valid_token):
     }
     response = client.put(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -171,7 +171,7 @@ def test_update_post_not_exist(mock_update_all, client, valid_token):
         code=ErrorCode.BAD_REQUEST_OF_THUMBNAIL,
     ),
 )
-def test_update_post_bad_request_of_thumbnail(mock_update_all, client, valid_token):
+def test_update_post_bad_request_of_thumbnail(mock_update_all, client, auth_headers):
     req = {
         "title": "Test",
         "content_md": "test_md",
@@ -181,7 +181,7 @@ def test_update_post_bad_request_of_thumbnail(mock_update_all, client, valid_tok
     }
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -201,7 +201,7 @@ def test_update_post_bad_request_of_thumbnail(mock_update_all, client, valid_tok
         code=ErrorCode.INVALID_IMAGE_OWNER,
     ),
 )
-def test_update_post_invalid_image_owner(mock_update_all, client, valid_token):
+def test_update_post_invalid_image_owner(mock_update_all, client, auth_headers):
     req = {
         "title": "Test",
         "content_md": "test_md",
@@ -211,7 +211,7 @@ def test_update_post_invalid_image_owner(mock_update_all, client, valid_token):
     }
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -228,7 +228,7 @@ def test_update_post_invalid_image_owner(mock_update_all, client, valid_token):
     "app.services.post_service.PostService.update_all",
     side_effect=ImageNotExistError(),
 )
-def test_update_post_image_not_exist(mock_update_all, client, valid_token):
+def test_update_post_image_not_exist(mock_update_all, client, auth_headers):
     req = {
         "title": "Test",
         "content_md": "test_md",
@@ -238,7 +238,7 @@ def test_update_post_image_not_exist(mock_update_all, client, valid_token):
     }
     response = client.put(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 

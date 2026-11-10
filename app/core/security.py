@@ -12,19 +12,22 @@ from app.core.exceptions.auth_exceptions import AuthenticationError
 from app.common.message import ErrorMessage
 
 
-def create_access_token(user_id: int, username: str) -> str:
+def create_access_token(
+    user_id: int, username: str, now: datetime | None = None
+) -> str:
     """
     JWTトークンを生成する
 
     Args:
         user_id: ユーザーID
         username: ユーザー名
+        now: 現在時刻（UTC）。省略時は datetime.utcnow()
 
     Returns:
         JWTトークン文字列
     """
     # 有効期限を設定（現在時刻 + 3時間）
-    expire = datetime.utcnow() + timedelta(hours=3)
+    expire = (now or datetime.utcnow()) + timedelta(hours=3)
 
     # ペイロード（クレーム）を設定
     payload = {

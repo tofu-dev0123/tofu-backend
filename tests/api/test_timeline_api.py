@@ -7,7 +7,7 @@ from app.core.exceptions.application_exceptions import ApplicationError
 
 # 正常系: 年表一覧取得
 @patch("app.services.timeline_service.TimelineService.get_timelines")
-def test_get_timelines_success(mock_get, client, valid_token):
+def test_get_timelines_success(mock_get, client, auth_headers):
     mock_get.return_value = TimelineListResponse(
         timelines=[
             Timeline(timeline_id=1, year=2026, title="見出し", body="本文", sort_order=0),
@@ -15,7 +15,7 @@ def test_get_timelines_success(mock_get, client, valid_token):
     )
 
     response = client.get(
-        "/admin/timelines", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/timelines", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -32,13 +32,13 @@ def test_get_timelines_no_token(client):
 
 # 正常系: 年表作成
 @patch("app.services.timeline_service.TimelineService.create_timeline")
-def test_create_timeline_success(mock_create, client, valid_token):
+def test_create_timeline_success(mock_create, client, auth_headers):
     mock_create.return_value = 10
 
     req = {"year": 2026, "title": "t", "body": "b", "sort_order": 1}
     response = client.post(
         "/admin/timelines",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -49,10 +49,10 @@ def test_create_timeline_success(mock_create, client, valid_token):
 
 
 # バリデーションエラー: year 欠落
-def test_create_timeline_validation_year_missing(client, valid_token):
+def test_create_timeline_validation_year_missing(client, auth_headers):
     response = client.post(
         "/admin/timelines",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"title": "t"},
     )
 
@@ -64,10 +64,10 @@ def test_create_timeline_validation_year_missing(client, valid_token):
 
 
 # バリデーションエラー: year 範囲外
-def test_create_timeline_validation_year_range(client, valid_token):
+def test_create_timeline_validation_year_range(client, auth_headers):
     response = client.post(
         "/admin/timelines",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"year": 1000},
     )
 
@@ -79,13 +79,13 @@ def test_create_timeline_validation_year_range(client, valid_token):
 
 # 正常系: 年表更新
 @patch("app.services.timeline_service.TimelineService.update_timeline")
-def test_update_timeline_success(mock_update, client, valid_token):
+def test_update_timeline_success(mock_update, client, auth_headers):
     mock_update.return_value = None
 
     req = {"year": 2025, "title": "t", "body": "b", "sort_order": 0}
     response = client.put(
         "/admin/timelines/5",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -95,7 +95,7 @@ def test_update_timeline_success(mock_update, client, valid_token):
 
 # 異常系: 更新対象が存在しない
 @patch("app.services.timeline_service.TimelineService.update_timeline")
-def test_update_timeline_not_found(mock_update, client, valid_token):
+def test_update_timeline_not_found(mock_update, client, auth_headers):
     mock_update.side_effect = ApplicationError(
         message=ErrorMessage.TIMELINE_NOT_EXIST, code=ErrorCode.NOT_EXIST
     )
@@ -103,7 +103,7 @@ def test_update_timeline_not_found(mock_update, client, valid_token):
     req = {"year": 2025, "sort_order": 0}
     response = client.put(
         "/admin/timelines/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -115,11 +115,11 @@ def test_update_timeline_not_found(mock_update, client, valid_token):
 
 # 正常系: 年表削除
 @patch("app.services.timeline_service.TimelineService.delete_timeline")
-def test_delete_timeline_success(mock_delete, client, valid_token):
+def test_delete_timeline_success(mock_delete, client, auth_headers):
     mock_delete.return_value = None
 
     response = client.delete(
-        "/admin/timelines/3", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/timelines/3", headers=auth_headers
     )
 
     assert response.status_code == 200
