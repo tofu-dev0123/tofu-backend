@@ -8,7 +8,7 @@ class ProductTagRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, product_tag: ProductTag):
+    def create(self, product_tag: ProductTag) -> None:
         self.db.add(product_tag)
 
     def delete_product_tags(self, product_id: int) -> None:

@@ -18,7 +18,7 @@ def get_posts(
     page: Optional[int] = Query(Constant.MIN_PAGE, ge=Constant.MIN_PAGE),
     keyword: Optional[str] = Query(None, max_length=Constant.MAX_KEYWORD_LENGTH),
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostsPublishAtResponse:
 
     if page is None:
         page = 1
@@ -30,7 +30,7 @@ def get_posts(
 @router.get("/slugs", response_model=PostSlugsResponse)
 def get_slugs(
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostSlugsResponse:
     result = service.get_slugs()
     return result
 
@@ -39,6 +39,6 @@ def get_slugs(
 def get_post(
     slug: str = Path(..., description="スラグ"),
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostPublishAtResponse:
     result = service.get_post(slug)
     return result

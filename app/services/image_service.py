@@ -32,7 +32,7 @@ class ImageService:
         self.image_repo = image_repo or ImageRepository(db)
         self.s3 = s3 or S3()
 
-    def validate(self, image_file: UploadFile, alt_text: str | None):
+    def validate(self, image_file: UploadFile, alt_text: str | None) -> None:
         VALUE = "image_file"
         errors = []
 
@@ -113,7 +113,7 @@ class ImageService:
             raise ImageNotExistError
         return image
 
-    def delete_image(self, image_id: int):
+    def delete_image(self, image_id: int) -> None:
         # ストレージから正常に削除できた場合のみデータをコミットする
         with transaction(self.db):
             # 画像データがDBに登録されているかチェック

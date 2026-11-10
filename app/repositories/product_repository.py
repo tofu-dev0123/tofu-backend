@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime
 from sqlalchemy import select, update, delete, exists
 from sqlalchemy.orm import Session, selectinload
@@ -13,7 +14,7 @@ class ProductRepository:
         stmt = select(exists().where(Product.product_id == product_id))
         return bool(self.db.execute(stmt).scalar())
 
-    def find_all(self):
+    def find_all(self) -> Sequence[Product]:
         stmt = (
             select(Product)
             .options(selectinload(Product.tags))
@@ -21,7 +22,7 @@ class ProductRepository:
         )
         return self.db.execute(stmt).scalars().all()
 
-    def find_published(self):
+    def find_published(self) -> Sequence[Product]:
         stmt = (
             select(Product)
             .options(selectinload(Product.tags))

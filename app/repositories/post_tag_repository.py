@@ -8,7 +8,7 @@ class PostTagRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, post_tag: PostTag):
+    def create(self, post_tag: PostTag) -> None:
         self.db.add(post_tag)
 
     def delete_post_tags(self, post_id: int) -> None:

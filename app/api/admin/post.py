@@ -33,7 +33,7 @@ async def get_posts(
     ),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsListGetResponse:
     user_id = current_user.user_id
 
     result = service.get_posts(user_id, offset, limit, keyword, status)
@@ -46,7 +46,7 @@ async def create_posts(
     request: PostsPostRequest,
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsResponse:
     new_post_id = service.create_all(request, current_user.user_id)
 
     return PostsResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
@@ -56,7 +56,7 @@ async def create_posts(
 async def get_summary(
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsSummaryResponse:
     return service.get_summary()
 
 
@@ -65,7 +65,7 @@ async def get_post(
     post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostGetResponse:
     data = service.get_post_detail(post_id)
 
     return data
@@ -77,7 +77,7 @@ async def update_post(
     post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsResponse:
     service.update_all(request, post_id)
 
     return PostsResponse(message=Message.POST_UPDATE_SUCCESS, post_id=post_id)
@@ -88,7 +88,7 @@ async def delete_post(
     post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsDeleteResponse:
     service.delete_all(post_id)
 
     return PostsDeleteResponse(message=Message.POST_DELETE_SUCCESS)
@@ -100,7 +100,7 @@ async def patch_status(
     post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsPatchResponse:
     service.patch_status(request.status, post_id)
 
     return PostsPatchResponse(

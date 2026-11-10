@@ -14,7 +14,7 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 async def login(
     request: LoginRequest,
     service: AuthService = Depends(get_auth_service),
-):
+) -> LoginResponse:
     try:
         # 認証処理を行いtokenを取得する
         token = service.login(request.username, request.password)
@@ -35,14 +35,14 @@ async def login(
 
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(
-    current_user=Depends(get_current_user),
-):
+    current_user: User = Depends(get_current_user),
+) -> LogoutResponse:
 
     return LogoutResponse(message=Message.LOGOUT_SUCCESS)
 
 
 @router.post("/me", response_model=MeResponse)
-async def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: User = Depends(get_current_user)) -> MeResponse:
     return MeResponse(
         user_id=current_user.user_id,
         username=current_user.username,

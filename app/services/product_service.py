@@ -57,7 +57,7 @@ class ProductService:
     中間テーブルにタグを登録する
     """
 
-    def create_product_tag(self, tag_id_list: list[int], product_id: int):
+    def create_product_tag(self, tag_id_list: list[int], product_id: int) -> None:
         for tag_id in tag_id_list:
             self.product_tag_repo.create(
                 ProductTag(product_id=product_id, tag_id=tag_id)

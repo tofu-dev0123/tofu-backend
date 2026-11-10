@@ -18,7 +18,7 @@ router = APIRouter(prefix="/profile", tags=["Profile プロフィール関連"])
 async def get_profile(
     service: ProfileService = Depends(get_profile_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProfileResponse:
     return service.get_profile()
 
 
@@ -27,7 +27,7 @@ async def update_profile(
     request: ProfilePutRequest,
     service: ProfileService = Depends(get_profile_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProfilePutResponse:
     service.update_profile(request)
 
     return ProfilePutResponse(message=Message.PROFILE_UPDATE_SUCCESS)

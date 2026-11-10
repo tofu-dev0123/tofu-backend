@@ -1,9 +1,11 @@
 import boto3
 import logging
 import uuid
+from typing import BinaryIO
 from urllib.parse import urlparse
 from datetime import datetime
 from app.core.config import settings
+from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ class S3:
         self.BUCKET_NAME = settings.S3_BUCKET_NAME
         self.CLOUDFRONT_DOMAIN = settings.CLOUDFRONT_DOMAIN
 
-    def get_s3_client(self):
+    def get_s3_client(self) -> BaseClient:
         kwargs = {
             "service_name": "s3",
             "region_name": self.REGION_NAME,
@@ -40,7 +42,7 @@ class S3:
 
         return boto3.client(**kwargs)
 
-    def upload_fileobj(self, fileobj, key: str, content_type: str):
+    def upload_fileobj(self, fileobj: BinaryIO, key: str, content_type: str) -> None:
         s3 = self.get_s3_client()
 
         try:
@@ -57,7 +59,7 @@ class S3:
             logger.exception("S3 upload failed", extra={"key": key})
             raise
 
-    def delete_object(self, key: str):
+    def delete_object(self, key: str) -> None:
         s3 = self.get_s3_client()
         s3.delete_object(
             Bucket=self.BUCKET_NAME,

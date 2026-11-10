@@ -22,7 +22,7 @@ router = APIRouter(prefix="/products", tags=["Product プロダクト関連"])
 async def get_products(
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProductListResponse:
     return service.get_products()
 
 
@@ -31,7 +31,7 @@ async def create_product(
     request: ProductPostRequest,
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProductResponse:
     product_id = service.create_product(request)
 
     return ProductResponse(
@@ -44,7 +44,7 @@ async def get_product(
     product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
-):
+) -> Product:
     return service.get_product(product_id)
 
 
@@ -54,7 +54,7 @@ async def update_product(
     product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProductResponse:
     service.update_product(product_id, request)
 
     return ProductResponse(
@@ -67,7 +67,7 @@ async def delete_product(
     product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ProductDeleteResponse:
     service.delete_product(product_id)
 
     return ProductDeleteResponse(message=Message.PRODUCT_DELETE_SUCCESS)

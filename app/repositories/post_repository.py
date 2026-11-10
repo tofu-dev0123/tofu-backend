@@ -1,4 +1,6 @@
-from sqlalchemy import select, func, case, update, exists, delete
+from collections.abc import Sequence
+from typing import Any
+from sqlalchemy import Row, select, func, case, update, exists, delete
 from sqlalchemy.orm import Session, selectinload
 from app.models.post import Post, PostStatus
 from datetime import datetime
@@ -9,7 +11,7 @@ class PostRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def exists_by_post_id(self, post_id) -> bool:
+    def exists_by_post_id(self, post_id: int) -> bool:
         stmt = select(exists().where(Post.post_id == post_id))
         return bool(self.db.execute(stmt).scalar())
 
@@ -20,7 +22,7 @@ class PostRepository:
         limit: int,
         keyword: str | None = None,
         status: PostStatus | None = None,
-    ):
+    ) -> Sequence[Post]:
         statement = select(Post).where(Post.user_id == user_id)
 
         # keyword がある場合だけ LIKE 条件を追加
@@ -49,7 +51,7 @@ class PostRepository:
             stmt = stmt.where(Post.status == status)
         return self.db.execute(stmt).scalar() or 0
 
-    def get_post_counts(self):
+    def get_post_counts(self) -> Row[Any]:
         stmt = select(
             func.count(Post.post_id).label("total_count"),
             func.coalesce(
@@ -93,7 +95,7 @@ class PostRepository:
         status: PostStatus,
         published_at: datetime | None,
         thumbnail_url: str | None,
-    ):
+    ) -> None:
         stmt = (
             update(Post)
             .where(Post.post_id == post_id)
@@ -116,7 +118,7 @@ class PostRepository:
         status: PostStatus,
         published_at: datetime | None,
         slug: str | None = None,
-    ):
+    ) -> None:
         values = {
             "status": status,
             "published_at": published_at,
@@ -128,11 +130,13 @@ class PostRepository:
         stmt = update(Post).where(Post.post_id == post_id).values(**values)
         self.db.execute(stmt)
 
-    def delete(self, post_id):
+    def delete(self, post_id: int) -> None:
         stmt = delete(Post).where(Post.post_id == post_id)
         self.db.execute(stmt)
 
-    def find_published_posts(self, offset: int, limit: int, keyword: str | None = None):
+    def find_published_posts(
+        self, offset: int, limit: int, keyword: str | None = None
+    ) -> Sequence[Post]:
         statement = (
             select(Post)
             .options(selectinload(Post.tags))

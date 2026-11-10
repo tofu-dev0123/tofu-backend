@@ -10,5 +10,5 @@ router = APIRouter(prefix="/about", tags=["About 公開About関連"])
 @router.get("", response_model=AboutResponse)
 def get_about(
     service: PublicAboutService = Depends(get_public_about_service),
-):
+) -> AboutResponse:
     return service.get_about()

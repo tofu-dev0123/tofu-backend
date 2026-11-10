@@ -16,7 +16,7 @@ async def upload(
     alt_text: str | None = Form(None),
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ImageUploadResponse:
     service.validate(image_file, alt_text)
 
     result = service.upload_file(image_file, alt_text)
@@ -29,7 +29,7 @@ async def delete(
     image_id: int = Path(..., ge=Constant.MIN_IMAGE_ID, description="画像ID"),
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
-):
+) -> ImageDeleteResponse:
     service.delete_image(image_id)
 
     return ImageDeleteResponse(message=Message.IMAGE_DELETE_SUCCESS)

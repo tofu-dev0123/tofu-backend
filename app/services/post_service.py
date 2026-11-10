@@ -77,7 +77,7 @@ class PostService:
         limit: int,
         keyword: str | None,
         status: PostStatus | None,
-    ):
+    ) -> PostsListGetResponse:
         posts = self.post_repo.find_posts_by_user(
             user_id, offset, limit, keyword, status
         )
@@ -153,7 +153,7 @@ class PostService:
     画像IDがImageテーブルに登録されているをチェックする
     """
 
-    def check_image_list(self, images: list[int]):
+    def check_image_list(self, images: list[int]) -> None:
         for id in images:
             image_data = self.image_repo.find_by_image_id(id)
 
@@ -231,7 +231,7 @@ class PostService:
     PostTagテーブルに登録する  
     """
 
-    def create_post_tag(self, tag_id_list: list[int], post_id: int):
+    def create_post_tag(self, tag_id_list: list[int], post_id: int) -> None:
         for id in tag_id_list:
             post_tag = PostTag(post_id=post_id, tag_id=id)
             self.post_tag_repo.create(post_tag)
@@ -240,7 +240,7 @@ class PostService:
     画像テーブルに記事IDを登録する 
     """
 
-    def attach_post_id_to_image(self, images: list[int], post_id: int):
+    def attach_post_id_to_image(self, images: list[int], post_id: int) -> None:
         for id in images:
             self.image_repo.update_post_id(id, post_id)
 
@@ -372,7 +372,7 @@ class PostService:
     画像の削除処理を行う
     """
 
-    def extract_delete_images(self, post_id: int, images: list[int]):
+    def extract_delete_images(self, post_id: int, images: list[int]) -> None:
         for id in images:
             image = self.image_repo.find_by_image_id(id)
 
@@ -393,7 +393,7 @@ class PostService:
     タグの更新処理をする
     """
 
-    def update_tags(self, tags: list[str], post_id: int):
+    def update_tags(self, tags: list[str], post_id: int) -> None:
         # 新規タグIDリストを生成
         tag_id_list = self.generate_slug_of_tag_and_get_id(tags)
 
@@ -407,7 +407,7 @@ class PostService:
     記事の更新処理をする
     """
 
-    def update_all(self, request: PostsPutRequest, post_id: int):
+    def update_all(self, request: PostsPutRequest, post_id: int) -> None:
         with transaction(self.db):
             ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
@@ -469,7 +469,7 @@ class PostService:
     サムネイルの削除処理をする
     """
 
-    def delete_thumbnail(self, post_id: int):
+    def delete_thumbnail(self, post_id: int) -> None:
         thumbnail = self.post_repo.find_thumbnail_url_by_post_id(post_id)
 
         if thumbnail:
@@ -479,7 +479,7 @@ class PostService:
     記事IDを参照して画像の削除処理をする
     """
 
-    def delete_image_from_post_id(self, post_id: int):
+    def delete_image_from_post_id(self, post_id: int) -> None:
         image_urls = self.image_repo.find_url_by_post_id(post_id)
 
         for url in image_urls:
@@ -489,7 +489,7 @@ class PostService:
     記事の削除処理をする
     """
 
-    def delete_all(self, post_id: int):
+    def delete_all(self, post_id: int) -> None:
         with transaction(self.db):
             ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
@@ -510,7 +510,7 @@ class PostService:
 
         logger.info("post deleted", extra={"post_id": post_id})
 
-    def patch_status(self, status: PostStatus, post_id: int):
+    def patch_status(self, status: PostStatus, post_id: int) -> None:
         with transaction(self.db):
             # 公開ステータスの値によって投稿日時を更新
             published_at = self.set_published_at_from_status(post_id, status)

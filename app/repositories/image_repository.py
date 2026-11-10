@@ -20,7 +20,7 @@ class ImageRepository:
         stmt = select(Image.url).where(Image.post_id == id)
         return list(self.db.execute(stmt).scalars().all())
 
-    def update_post_id(self, image_id: int, post_id: int):
+    def update_post_id(self, image_id: int, post_id: int) -> None:
         image: Image | None = self.db.query(Image).filter(Image.image_id == image_id).first()
         if image:
             image.post_id = post_id
@@ -31,10 +31,10 @@ class ImageRepository:
         self.db.flush()
         return image.image_id
 
-    def delete(self, image_id: int):
+    def delete(self, image_id: int) -> None:
         stmt = delete(Image).where(Image.image_id == image_id)
         self.db.execute(stmt)
 
-    def delete_from_post_id(self, post_id: int):
+    def delete_from_post_id(self, post_id: int) -> None:
         stmt = delete(Image).where(Image.post_id == post_id)
         self.db.execute(stmt)

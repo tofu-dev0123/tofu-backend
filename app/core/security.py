@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any
 import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
@@ -69,7 +70,7 @@ def hash_password(plain_password: str) -> str:
     return bcrypt.hashpw(plain_password.encode("utf-8"), salt).decode("utf-8")
 
 
-def verify_token(token: str):
+def verify_token(token: str) -> dict[str, Any]:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]

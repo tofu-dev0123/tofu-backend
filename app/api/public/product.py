@@ -10,5 +10,5 @@ router = APIRouter(prefix="/products", tags=["Product 公開プロダクト関�
 @router.get("", response_model=ProductListResponse)
 def get_products(
     service: PublicProductService = Depends(get_public_product_service),
-):
+) -> ProductListResponse:
     return service.get_products()

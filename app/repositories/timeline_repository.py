@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime
 from sqlalchemy import select, update, delete, exists
 from sqlalchemy.orm import Session
@@ -13,7 +14,7 @@ class TimelineRepository:
         stmt = select(exists().where(Timeline.timeline_id == timeline_id))
         return bool(self.db.execute(stmt).scalar())
 
-    def find_all(self):
+    def find_all(self) -> Sequence[Timeline]:
         stmt = select(Timeline).order_by(
             Timeline.sort_order.asc(), Timeline.year.desc()
         )

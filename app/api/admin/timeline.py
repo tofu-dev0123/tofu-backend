@@ -21,7 +21,7 @@ router = APIRouter(prefix="/timelines", tags=["Timeline 年表関連"])
 async def get_timelines(
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
-):
+) -> TimelineListResponse:
     return service.get_timelines()
 
 
@@ -30,7 +30,7 @@ async def create_timeline(
     request: TimelinePostRequest,
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
-):
+) -> TimelineResponse:
     timeline_id = service.create_timeline(request)
 
     return TimelineResponse(
@@ -44,7 +44,7 @@ async def update_timeline(
     timeline_id: int = Path(..., ge=Constant.MIN_TIMELINE_ID, description="年表ID"),
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
-):
+) -> TimelineResponse:
     service.update_timeline(timeline_id, request)
 
     return TimelineResponse(
@@ -57,7 +57,7 @@ async def delete_timeline(
     timeline_id: int = Path(..., ge=Constant.MIN_TIMELINE_ID, description="年表ID"),
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
-):
+) -> TimelineDeleteResponse:
     service.delete_timeline(timeline_id)
 
     return TimelineDeleteResponse(message=Message.TIMELINE_DELETE_SUCCESS)
