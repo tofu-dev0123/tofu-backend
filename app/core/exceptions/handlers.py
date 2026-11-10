@@ -195,3 +195,11 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(
             400, "", ErrorCode.VALIDATION_ERROR, [ErrorDetail(**e) for e in exc.errors]
         )
+
+    # 予期しない例外。ServerErrorMiddleware（最外層）で処理されるため、
+    # ERROR ログ（stack 付き）は RequestLoggingMiddleware が 1 回だけ出す。ここでは再ログしない
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        return _error_response(
+            500, ErrorMessage.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR
+        )
