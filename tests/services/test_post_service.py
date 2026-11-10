@@ -1,5 +1,5 @@
 import pytest
-from app.schemas.post import PostsPostRequest, PostGetResponse, PostsPutRequest, PostsListGetResponse, PostsSummaryResponse
+from app.schemas.post import PostsPostRequest, PostGetResponse, PostsPutRequest, PostsSummaryResponse
 from app.models.post import PostStatus
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError

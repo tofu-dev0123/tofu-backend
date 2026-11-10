@@ -1,4 +1,3 @@
-import pytest
 from app.common.message import Message, ErrorMessage
 from app.common.errorcode import ErrorCode
 

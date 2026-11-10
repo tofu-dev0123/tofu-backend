@@ -1,9 +1,7 @@
-import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from datetime import datetime
 from app.common.errorcode import ErrorCode
-from app.common.message import Message, ErrorMessage
-from app.common.constant import Constant
+from app.common.message import ErrorMessage
 from app.models.post import PostStatus
 from app.schemas.post import PostGetResponse
 

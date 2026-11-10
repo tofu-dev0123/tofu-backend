@@ -3,7 +3,6 @@ import re
 import time
 import uuid
 from slugify import slugify
-from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from deep_translator import GoogleTranslator
 

@@ -1,9 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.tag import Tag
 
-from sqlalchemy.orm import Session
-from app.models.tag import Tag
-
 
 class TagRepository:
 

@@ -4,7 +4,6 @@ import logging
 from app.core.exceptions.image_exceptions import (
     ImageUploadValidationError,
     ImageNotExistError,
-    ImageNotExistOnStorageError,
 )
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 from app.repositories.image_repository import ImageRepository
@@ -97,7 +96,7 @@ class ImageService:
             self.db.rollback()
             raise S3FileUploadError()
 
-        except BotoCoreError as e:
+        except BotoCoreError:
             logger.exception("S3 BotoCoreError")
             self.db.rollback()
             raise S3FileUploadError()
@@ -113,10 +112,6 @@ class ImageService:
         if not image:
             raise ImageNotExistError
         return image
-
-    def validate_image_exists(self, image_url: str):
-        if not self.s3.exists_by_url(image_url):
-            raise ImageNotExistOnStorageError
 
     def delete_image(self, image_id: int):
         # ストレージから正常に削除できた場合のみデータをコミットする

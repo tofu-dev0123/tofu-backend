@@ -110,7 +110,3 @@ class S3:
             if error_code in ("404", "NoSuchKey", "NotFound"):
                 return False
             raise
-
-    def exists_by_url(self, url: str) -> bool:
-        key = self.extract_key_from_url(url)
-        return self.exists(key)

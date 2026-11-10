@@ -19,13 +19,6 @@ class TimelineRepository:
         )
         return self.db.execute(stmt).scalars().all()
 
-    def find_by_id(self, timeline_id: int) -> Timeline | None:
-        return (
-            self.db.query(Timeline)
-            .filter(Timeline.timeline_id == timeline_id)
-            .first()
-        )
-
     def create(self, timeline: Timeline) -> int:
         self.db.add(timeline)
         self.db.flush()

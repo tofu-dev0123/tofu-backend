@@ -1,6 +1,3 @@
-import pytest
-
-
 # 正常系
 def test_me_success(client, valid_token):
     response = client.post(
