@@ -4,6 +4,8 @@ from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
     EmailAlreadyExistsError,
+    NewPasswordSameError,
+    NewEmailSameError,
 )
 
 
@@ -103,6 +105,31 @@ def test_change_password_wrong_current_password(account_service):
     assert account_service.user_repo.update_password.call_count == 0
 
 
+def test_change_password_same_as_current(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+    mock_user.password = "hashed_password"
+
+    with patch("app.services.account_service.verify_password", return_value=True):
+        with pytest.raises(NewPasswordSameError):
+            account_service.change_password(mock_user, "same_password", "same_password")
+
+    assert account_service.user_repo.update_password.call_count == 0
+
+
+# 現在のパスワードが誤りなら、同一値でも PasswordMismatchError を優先する
+def test_change_password_wrong_current_password_takes_precedence(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+    mock_user.password = "hashed_password"
+
+    with patch("app.services.account_service.verify_password", return_value=False):
+        with pytest.raises(PasswordMismatchError):
+            account_service.change_password(mock_user, "same_password", "same_password")
+
+    assert account_service.user_repo.update_password.call_count == 0
+
+
 # ==================== change_email ====================
 
 
@@ -196,4 +223,21 @@ def test_change_email_already_exists(account_service):
             )
 
     assert account_service.user_repo.exists_by_username.call_count == 1
+    assert account_service.user_repo.update_email.call_count == 0
+
+
+# 同一メールアドレスは重複チェックより先にエラーにする
+def test_change_email_same_as_current(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+    mock_user.username = "current@example.com"
+    mock_user.password = "hashed_password"
+
+    with patch("app.services.account_service.verify_password", return_value=True):
+        with pytest.raises(NewEmailSameError):
+            account_service.change_email(
+                mock_user, "current@example.com", "current@example.com", "password"
+            )
+
+    assert account_service.user_repo.exists_by_username.call_count == 0
     assert account_service.user_repo.update_email.call_count == 0
