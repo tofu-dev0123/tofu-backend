@@ -12,6 +12,7 @@
 - [テストガイドライン](.claude/rules/testing-guidelines.md) — テストの書き方とディレクトリ構成
 - [ログガイドライン](.claude/rules/logging-guidelines.md) — 構造化ログ基盤、レベル方針、request_id、レイヤー別ログ配置
 - [アカウント管理 API](.claude/rules/api-account.md) — アカウント情報変更、パスワード変更、メールアドレス変更
+- [開発フロー](.claude/rules/dev-flow.md) — Issue 駆動の開発フロー（`/feature` `/bugfix` → `/implement` → `/cleanup`）、ラベル、テスト強制 hook
 
 ## スタック概要
 
@@ -64,6 +65,7 @@
 - **ローカルアプリ起動**: `docker compose up`（api: http://localhost:8000、db: PostgreSQL 16、localstack: S3 互換）
 - **テスト**: Python パッケージはホストに無いため **必ず Docker 上で実行**
   - 例: `docker compose run --rm api pytest`
+  - push / PR 前は `scripts/check.sh`（pyright + pytest。5432 衝突を回避して実行し、成功を記録）
 - **型チェック**: `pyright` をホストで実行 (`nix-direnv` 経由で node が提供される)
 - **インフラ検証**: `cfn-lint infra/cloudformation/*.yaml`（CI でも実行）
 
