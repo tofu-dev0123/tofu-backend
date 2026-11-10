@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.core.security import verify_password, hash_password
+from app.services.transaction import transaction
 from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
@@ -20,7 +21,9 @@ class AccountService:
 
     def update_account_name(self, user: User, account_name: str) -> User:
         """アカウント名を変更する"""
-        updated = self.user_repo.update_account_name(user, account_name)
+        with transaction(self.db):
+            updated = self.user_repo.update_account_name(user, account_name)
+        self.db.refresh(updated)
         logger.info("account name updated", extra={"user_id": user.user_id})
         return updated
 
@@ -34,7 +37,9 @@ class AccountService:
 
         # 新しいパスワードをハッシュ化して更新
         hashed_password = hash_password(new_password)
-        self.user_repo.update_password(user, hashed_password)
+        with transaction(self.db):
+            self.user_repo.update_password(user, hashed_password)
+        self.db.refresh(user)
         logger.info("password changed", extra={"user_id": user.user_id})
 
     def change_email(
@@ -54,6 +59,8 @@ class AccountService:
             raise EmailAlreadyExistsError()
 
         # メールアドレスを更新
-        updated = self.user_repo.update_email(user, new_email)
+        with transaction(self.db):
+            updated = self.user_repo.update_email(user, new_email)
+        self.db.refresh(updated)
         logger.info("email changed", extra={"user_id": user.user_id})
         return updated
