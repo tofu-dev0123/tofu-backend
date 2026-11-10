@@ -11,3 +11,7 @@ class EmailMismatchError(BaseAppError):
 
 class EmailAlreadyExistsError(BaseAppError):
     """メールアドレス重複エラー"""
+
+
+class NewPasswordSameError(BaseAppError):
+    """新しいパスワードが現在と同一のエラー"""
