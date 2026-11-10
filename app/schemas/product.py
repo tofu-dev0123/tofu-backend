@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
-from pydantic_core import PydanticCustomError
 from app.common.constant import Constant
 from app.schemas.tag import Tag
+from app.schemas.validators import empty_string_to_none, validate_tags
 
 
 class Product(BaseModel):
@@ -40,20 +40,10 @@ class _ProductRequestBase(BaseModel):
     sort_order: int = Field(0, ge=Constant.MIN_SORT_ORDER, description="表示順")
     tags: list[str] = Field(default_factory=list, description="技術タグの配列")
 
-    @field_validator("description", "link_url", "github_url")
-    def empty_string_to_null(cls, v):
-        return None if v == "" else v
-
-    @field_validator("tags")
-    def validate_tags(cls, v):
-        if len(v) > Constant.MAX_TAGS:
-            raise PydanticCustomError("list_too_long", "")
-
-        for tag in v:
-            if len(tag) > Constant.MAX_TAG_LENGTH:
-                raise PydanticCustomError("string_too_long", "")
-
-        return v
+    _empty_string_to_none = field_validator("description", "link_url", "github_url")(
+        empty_string_to_none
+    )
+    _validate_tags = field_validator("tags")(validate_tags)
 
 
 class ProductPostRequest(_ProductRequestBase):
