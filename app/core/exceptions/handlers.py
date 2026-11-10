@@ -1,10 +1,11 @@
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Any
 from fastapi import Request
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.core.exceptions.base import BaseAppError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
@@ -13,7 +14,7 @@ from app.core.exceptions.image_exceptions import (
     ImageNotExistOnStorageError,
     ImageUploadValidationError,
 )
-from app.core.exceptions.s3_exceptions import S3FileUploadError
+from app.core.exceptions.s3_exceptions import S3FileDeleteError, S3FileUploadError
 from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
@@ -32,9 +33,11 @@ def _error_response(
     message: str,
     error: str,
     details: list[Any] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
+        headers=headers,
         content=ErrorResponse(
             message=message, error=error, details=details or []
         ).model_dump(),
@@ -57,7 +60,7 @@ def _from_exc_or(default: str) -> Callable[[BaseAppError], str]:
 
 
 # (例外クラス, ステータス, エラーコード, メッセージの取り方, WARNING ログ文言 or None)
-# S3FileUploadError は infra/service 側で ERROR ログ済みのため再ログしない
+# S3FileUploadError / S3FileDeleteError は infra/service 側で ERROR ログ済みのため再ログしない
 _SIMPLE_HANDLERS: list[
     tuple[type[BaseAppError], int, str, Callable[[BaseAppError], str], str | None]
 ] = [
@@ -78,6 +81,7 @@ _SIMPLE_HANDLERS: list[
         "image not exist on storage",
     ),
     (S3FileUploadError, 400, ErrorCode.S3_ERROR, _from_exc, None),
+    (S3FileDeleteError, 400, ErrorCode.S3_ERROR, _from_exc, None),
     (
         PasswordMismatchError,
         400,
@@ -100,6 +104,14 @@ _SIMPLE_HANDLERS: list[
         "email already exists",
     ),
 ]
+
+
+# HTTPException のステータス → エラーコード（未定義のステータスは HTTP_ERROR）
+_HTTP_ERROR_CODES: dict[int, str] = {
+    401: ErrorCode.AUTHENTICATION_ERROR,
+    404: ErrorCode.NOT_FOUND,
+    405: ErrorCode.METHOD_NOT_ALLOWED,
+}
 
 
 def _make_simple_handler(
@@ -162,7 +174,17 @@ def register_exception_handlers(app: FastAPI) -> None:
             return _error_response(
                 401, ErrorMessage.TOKEN_REQUIRED, ErrorCode.AUTHENTICATION_ERROR
             )
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        if exc.status_code < 500:
+            logger.warning(
+                "http error",
+                extra={"path": request.url.path, "status_code": exc.status_code},
+            )
+        return _error_response(
+            exc.status_code,
+            str(exc.detail),
+            _HTTP_ERROR_CODES.get(exc.status_code, ErrorCode.HTTP_ERROR),
+            headers=exc.headers,
+        )
 
     @app.exception_handler(ImageUploadValidationError)
     async def image_upload_validation_error_handler(
@@ -172,4 +194,12 @@ def register_exception_handlers(app: FastAPI) -> None:
 
         return _error_response(
             400, "", ErrorCode.VALIDATION_ERROR, [ErrorDetail(**e) for e in exc.errors]
+        )
+
+    # 予期しない例外。ServerErrorMiddleware（最外層）で処理されるため、
+    # ERROR ログ（stack 付き）は RequestLoggingMiddleware が 1 回だけ出す。ここでは再ログしない
+    @app.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        return _error_response(
+            500, ErrorMessage.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR
         )

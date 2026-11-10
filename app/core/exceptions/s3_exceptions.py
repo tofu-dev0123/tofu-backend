@@ -11,4 +11,4 @@ class S3FileUploadError(BaseAppError):
 class S3FileDeleteError(BaseAppError):
     """S3ファイル削除エラー"""
 
-    default_message = ErrorMessage.S3_FILE_UPLOAD_ERROR
+    default_message = ErrorMessage.S3_FILE_DELETE_ERROR
