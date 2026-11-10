@@ -51,11 +51,7 @@ async def create_posts(
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
-    try:
-        new_post_id = service.create_all(request, current_user.user_id)
-
-    except:
-        raise
+    new_post_id = service.create_all(request, current_user.user_id)
 
     return PostsResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
 

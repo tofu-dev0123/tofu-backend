@@ -2,7 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import ProfileResponse, ProfilePutRequest
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 

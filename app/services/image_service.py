@@ -86,14 +86,8 @@ class ImageService:
                 image_id=new_image_id, url=url, alt_text=alt_text
             )
 
-        except ClientError as e:
-            logger.error(
-                "S3 ClientError",
-                extra={
-                    "error": e.response,
-                    "key": unique_key,
-                },
-            )
+        except ClientError:
+            # 詳細は infra(s3.py) 側で ERROR ログ済み
             self.db.rollback()
             raise S3FileUploadError()
 
@@ -103,8 +97,8 @@ class ImageService:
             raise S3FileUploadError()
 
         except Exception:
+            # 予期しない例外はミドルウェアで ERROR ログされる
             self.db.rollback()
-            logger.exception("Unexpected error during image upload")
             raise
 
     def check_exist_image(self, image_id: int) -> Image:

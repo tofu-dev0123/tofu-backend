@@ -1,8 +1,12 @@
 import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
 from fastapi import Request
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.base import BaseAppError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
 from app.core.exceptions.image_exceptions import (
     ImageNotExistError,
@@ -23,7 +27,103 @@ from app.common.message import ErrorMessage
 logger = logging.getLogger(__name__)
 
 
+def _error_response(
+    status_code: int,
+    message: str,
+    error: str,
+    details: list[Any] | None = None,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content=ErrorResponse(
+            message=message, error=error, details=details or []
+        ).model_dump(),
+    )
+
+
+def _fixed(message: str) -> Callable[[BaseAppError], str]:
+    """例外の内容によらず固定のメッセージを返す"""
+    return lambda exc: message
+
+
+def _from_exc(exc: BaseAppError) -> str:
+    """例外に設定されたメッセージを返す"""
+    return exc.message
+
+
+def _from_exc_or(default: str) -> Callable[[BaseAppError], str]:
+    """例外にメッセージが設定されていればそれを、なければ default を返す"""
+    return lambda exc: exc.message or default
+
+
+# (例外クラス, ステータス, エラーコード, メッセージの取り方, WARNING ログ文言 or None)
+# S3FileUploadError は infra/service 側で ERROR ログ済みのため再ログしない
+_SIMPLE_HANDLERS: list[
+    tuple[type[BaseAppError], int, str, Callable[[BaseAppError], str], str | None]
+] = [
+    (LoginFailError, 400, ErrorCode.LOGIN_FAIL, _fixed(ErrorMessage.LOGIN_FAIL), "login failed"),
+    (
+        AuthenticationError,
+        401,
+        ErrorCode.AUTHENTICATION_ERROR,
+        _from_exc_or(ErrorMessage.AUTHENTICATION_ERROR),
+        "authentication error",
+    ),
+    (ImageNotExistError, 400, ErrorCode.NOT_EXIST, _from_exc, "image not exist"),
+    (
+        ImageNotExistOnStorageError,
+        400,
+        ErrorCode.NOT_EXIST_ON_STORAGE,
+        _from_exc,
+        "image not exist on storage",
+    ),
+    (S3FileUploadError, 400, ErrorCode.S3_ERROR, _from_exc, None),
+    (
+        PasswordMismatchError,
+        400,
+        ErrorCode.PASSWORD_MISMATCH,
+        _fixed(ErrorMessage.PASSWORD_MISMATCH),
+        "password mismatch",
+    ),
+    (
+        EmailMismatchError,
+        400,
+        ErrorCode.EMAIL_MISMATCH,
+        _fixed(ErrorMessage.EMAIL_MISMATCH),
+        "email mismatch",
+    ),
+    (
+        EmailAlreadyExistsError,
+        400,
+        ErrorCode.EMAIL_ALREADY_EXISTS,
+        _fixed(ErrorMessage.EMAIL_ALREADY_EXISTS),
+        "email already exists",
+    ),
+]
+
+
+def _make_simple_handler(
+    status_code: int,
+    error: str,
+    get_message: Callable[[BaseAppError], str],
+    log_message: str | None,
+) -> Callable[[Request, Exception], Awaitable[JSONResponse]]:
+    async def handler(request: Request, exc: Exception) -> JSONResponse:
+        assert isinstance(exc, BaseAppError)
+        if log_message is not None:
+            logger.warning(log_message, extra={"path": request.url.path})
+        return _error_response(status_code, get_message(exc), error)
+
+    return handler
+
+
 def register_exception_handlers(app: FastAPI):
+
+    for exc_class, status_code, error, get_message, log_message in _SIMPLE_HANDLERS:
+        app.add_exception_handler(
+            exc_class,
+            _make_simple_handler(status_code, error, get_message, log_message),
+        )
 
     @app.exception_handler(ApplicationError)
     async def application_error_handler(request: Request, exc: ApplicationError):
@@ -31,12 +131,7 @@ def register_exception_handlers(app: FastAPI):
             "application error",
             extra={"path": request.url.path, "code": exc.code},
         )
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=exc.message, error=exc.code, details=[]
-            ).model_dump(),
-        )
+        return _error_response(400, exc.message, exc.code)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(request: Request, exc: RequestValidationError):
@@ -55,77 +150,15 @@ def register_exception_handlers(app: FastAPI):
             extra={"method": request.method, "path": request.url.path, "fields": [e["value"] for e in errors]},
         )
 
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message="", error=ErrorCode.VALIDATION_ERROR, details=errors
-            ).model_dump(),
-        )
-
-    @app.exception_handler(LoginFailError)
-    async def login_fail_handler(request: Request, exc: LoginFailError):
-        logger.warning("login failed", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=ErrorMessage.LOGIN_FAIL, error=ErrorCode.LOGIN_FAIL, details=[]
-            ).model_dump(),
-        )
+        return _error_response(400, "", ErrorCode.VALIDATION_ERROR, errors)
 
     @app.exception_handler(HTTPException)
     async def no_token_handler(request, exc):
         if exc.status_code == 401 and exc.detail == "Not authenticated":
-            return JSONResponse(
-                status_code=401,
-                content=ErrorResponse(
-                    message=ErrorMessage.TOKEN_REQUIRED,
-                    error=ErrorCode.AUTHENTICATION_ERROR,
-                    details=[],
-                ).model_dump(),
+            return _error_response(
+                401, ErrorMessage.TOKEN_REQUIRED, ErrorCode.AUTHENTICATION_ERROR
             )
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-
-    @app.exception_handler(AuthenticationError)
-    async def authentication_error_handler(request: Request, exc: AuthenticationError):
-        # メッセージが設定されている場合はそれを使用、そうでない場合はデフォルトメッセージ
-        message = exc.message if exc.message else ErrorMessage.AUTHENTICATION_ERROR
-
-        logger.warning("authentication error", extra={"path": request.url.path})
-
-        return JSONResponse(
-            status_code=401,
-            content=ErrorResponse(
-                message=message,
-                error=ErrorCode.AUTHENTICATION_ERROR,
-                details=[],
-            ).model_dump(),
-        )
-
-    @app.exception_handler(ImageNotExistError)
-    async def image_not_found_error_handler(request: Request, exc: ImageNotExistError):
-        logger.warning("image not exist", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=exc.message,
-                error=ErrorCode.NOT_EXIST,
-                details=[],
-            ).model_dump(),
-        )
-
-    @app.exception_handler(ImageNotExistOnStorageError)
-    async def not_exist_on_storage_error_handler(
-        request: Request, exc: ImageNotExistOnStorageError
-    ):
-        logger.warning("image not exist on storage", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=exc.message,
-                error=ErrorCode.NOT_EXIST_ON_STORAGE,
-                details=[],
-            ).model_dump(),
-        )
 
     @app.exception_handler(ImageUploadValidationError)
     async def image_upload_validation_error_handler(
@@ -133,70 +166,6 @@ def register_exception_handlers(app: FastAPI):
     ):
         logger.warning("image upload validation error", extra={"path": request.url.path})
 
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message="", error=ErrorCode.VALIDATION_ERROR, details=[ErrorDetail(**e) for e in exc.errors]
-            ).model_dump(),
+        return _error_response(
+            400, "", ErrorCode.VALIDATION_ERROR, [ErrorDetail(**e) for e in exc.errors]
         )
-
-    @app.exception_handler(S3FileUploadError)
-    async def s3_error_handler(request: Request, exc: S3FileUploadError):
-        # S3 失敗の詳細は infra(s3.py) / service(image_service) 側で ERROR ログ済み
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=exc.message,
-                error=ErrorCode.S3_ERROR,
-                details=[],
-            ).model_dump(),
-        )
-
-    @app.exception_handler(PasswordMismatchError)
-    async def password_mismatch_error_handler(
-        request: Request, exc: PasswordMismatchError
-    ):
-        logger.warning("password mismatch", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=ErrorMessage.PASSWORD_MISMATCH,
-                error=ErrorCode.PASSWORD_MISMATCH,
-                details=[],
-            ).model_dump(),
-        )
-
-    @app.exception_handler(EmailMismatchError)
-    async def email_mismatch_error_handler(request: Request, exc: EmailMismatchError):
-        logger.warning("email mismatch", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=ErrorMessage.EMAIL_MISMATCH,
-                error=ErrorCode.EMAIL_MISMATCH,
-                details=[],
-            ).model_dump(),
-        )
-
-    @app.exception_handler(EmailAlreadyExistsError)
-    async def email_already_exists_error_handler(
-        request: Request, exc: EmailAlreadyExistsError
-    ):
-        logger.warning("email already exists", extra={"path": request.url.path})
-        return JSONResponse(
-            status_code=400,
-            content=ErrorResponse(
-                message=ErrorMessage.EMAIL_ALREADY_EXISTS,
-                error=ErrorCode.EMAIL_ALREADY_EXISTS,
-                details=[],
-            ).model_dump(),
-        )
-
-
-class ApplicationError(Exception):
-    """汎用的なエラークラス"""
-
-    def __init__(self, message, code):
-        self.message = message
-        self.code = code
-        super().__init__(self.message)

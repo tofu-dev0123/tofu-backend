@@ -2,6 +2,7 @@ from unittest.mock import patch
 from app.schemas.image import ImageUploadResponse
 from app.core.exceptions.image_exceptions import ImageUploadValidationError
 from app.common.errorcode import ErrorCode
+from app.common.message import ErrorMessage
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 
 
@@ -94,3 +95,7 @@ def test_image_upload_s3_error(
     )
 
     assert response.status_code == 400
+
+    data = response.json()
+    assert data["error"] == ErrorCode.S3_ERROR
+    assert data["message"] == ErrorMessage.S3_FILE_UPLOAD_ERROR

@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.models.post import PostStatus
 
 

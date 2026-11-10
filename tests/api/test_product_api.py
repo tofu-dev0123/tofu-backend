@@ -3,7 +3,7 @@ from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.schemas.product import Product, ProductListResponse
 from app.schemas.tag import Tag
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 
 
 def _product_schema(product_id=1):

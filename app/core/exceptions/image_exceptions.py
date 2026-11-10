@@ -1,12 +1,11 @@
 from app.common.message import ErrorMessage
+from app.core.exceptions.base import BaseAppError
 
 
-class ImageNotExistError(Exception):
+class ImageNotExistError(BaseAppError):
     """画像IDが存在しないエラー"""
 
-    def __init__(self, message=ErrorMessage.IMAGE_NOT_EXIST):
-        self.message = message
-        super().__init__(self.message)
+    default_message = ErrorMessage.IMAGE_NOT_EXIST
 
 
 class ImageUploadValidationError(Exception):
@@ -17,9 +16,7 @@ class ImageUploadValidationError(Exception):
         super().__init__("Image upload validation error")
 
 
-class ImageNotExistOnStorageError(Exception):
+class ImageNotExistOnStorageError(BaseAppError):
     """画像がストレージに存在しないエラー"""
 
-    def __init__(self, message=ErrorMessage.NOT_EXIST_ON_STORAGE):
-        self.message = message
-        super().__init__(self.message)
+    default_message = ErrorMessage.NOT_EXIST_ON_STORAGE

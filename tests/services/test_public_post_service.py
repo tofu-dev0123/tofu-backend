@@ -12,7 +12,7 @@ from app.schemas.post import (
 )
 from app.schemas.tag import Tag
 from app.common.constant import Constant
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.message import ErrorMessage
 from app.common.errorcode import ErrorCode
 
