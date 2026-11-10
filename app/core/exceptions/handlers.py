@@ -3,6 +3,7 @@ from fastapi import Request
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
 from app.core.exceptions.image_exceptions import (
     ImageNotExistError,
@@ -192,11 +193,3 @@ def register_exception_handlers(app: FastAPI):
             ).model_dump(),
         )
 
-
-class ApplicationError(Exception):
-    """汎用的なエラークラス"""
-
-    def __init__(self, message, code):
-        self.message = message
-        self.code = code
-        super().__init__(self.message)

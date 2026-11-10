@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, Mock
 from app.schemas.timeline import TimelinePostRequest, TimelinePutRequest
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 

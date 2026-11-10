@@ -26,7 +26,7 @@ from app.repositories.queries.post_detail_query import PostDetailQueryRepository
 from app.services.tag_service import TagService
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug

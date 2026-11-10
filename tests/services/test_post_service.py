@@ -3,7 +3,7 @@ from app.schemas.post import PostsPostRequest, PostGetResponse, PostsPutRequest,
 from app.models.post import PostStatus
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import is_draft_generated_slug

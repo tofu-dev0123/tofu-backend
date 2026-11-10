@@ -4,7 +4,7 @@ from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
 from app.core.exceptions.image_exceptions import ImageNotExistError
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 
 
 # 正常系
