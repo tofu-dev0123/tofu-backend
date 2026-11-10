@@ -22,11 +22,17 @@ logger = logging.getLogger(__name__)
 
 class ProductService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        product_repo: ProductRepository | None = None,
+        product_tag_repo: ProductTagRepository | None = None,
+        tag_service: TagService | None = None,
+    ) -> None:
         self.db = db
-        self.product_repo = ProductRepository(db)
-        self.product_tag_repo = ProductTagRepository(db)
-        self.tag_service = TagService(db)
+        self.product_repo = product_repo or ProductRepository(db)
+        self.product_tag_repo = product_tag_repo or ProductTagRepository(db)
+        self.tag_service = tag_service or TagService(db)
 
     """
     プロダクトモデルをスキーマに変換する

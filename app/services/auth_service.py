@@ -9,9 +9,13 @@ logger = logging.getLogger(__name__)
 
 class AuthService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        user_repo: UserRepository | None = None,
+    ) -> None:
         self.db = db
-        self.user_repo = UserRepository(db)
+        self.user_repo = user_repo or UserRepository(db)
 
     def login(self, username: str, password: str) -> str:
         # ユーザー情報を取得

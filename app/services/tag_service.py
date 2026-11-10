@@ -12,9 +12,13 @@ logger = logging.getLogger(__name__)
 
 class TagService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        tag_repo: TagRepository | None = None,
+    ) -> None:
         self.db = db
-        self.tag_repo = TagRepository(db)
+        self.tag_repo = tag_repo or TagRepository(db)
 
     """
     タグ名リストから既存タグIDを取得し、無ければスラグを生成して作成しIDを返す
