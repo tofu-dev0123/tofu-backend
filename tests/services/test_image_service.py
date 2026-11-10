@@ -51,7 +51,6 @@ def test_validate_alt_text_length_error(image_service, upload_file):
 def test_check_exist_image_success(image_service):
     image = MagicMock()
     image.url = "https://cdn.example.com/path/to/image.png"
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = image
 
     result = image_service.check_exist_image(1)
@@ -61,7 +60,6 @@ def test_check_exist_image_success(image_service):
 
 
 def test_check_exist_image_not_found(image_service):
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = None
 
     with pytest.raises(ImageNotExistError):
@@ -69,7 +67,6 @@ def test_check_exist_image_not_found(image_service):
 
 
 def test_validate_image_exists_success(image_service):
-    image_service.s3 = MagicMock()
     image_service.s3.exists_by_url.return_value = True
 
     image_service.validate_image_exists("https://cdn.example.com/img.png")
@@ -80,7 +77,6 @@ def test_validate_image_exists_success(image_service):
 
 
 def test_validate_image_exists_not_found(image_service):
-    image_service.s3 = MagicMock()
     image_service.s3.exists_by_url.return_value = False
 
     with pytest.raises(ImageNotExistOnStorageError):
@@ -88,10 +84,8 @@ def test_validate_image_exists_not_found(image_service):
 
 
 def test_upload_file_success(image_service, upload_file):
-    image_service.image_repo = MagicMock()
     image_service.image_repo.create.return_value = 1
 
-    image_service.s3 = MagicMock()
     image_service.s3.build_unique_key.return_value = "images/2025/01/test.png"
     image_service.s3.build_public_url.return_value = "https://cdn.example.com/test.png"
 
@@ -108,7 +102,6 @@ def test_upload_file_success(image_service, upload_file):
 
 
 def test_upload_file_s3_error(image_service, upload_file):
-    image_service.s3 = MagicMock()
     image_service.s3.build_unique_key.return_value = "key"
     image_service.s3.upload_fileobj.side_effect = ClientError({}, "PutObject")
 
@@ -119,11 +112,9 @@ def test_upload_file_s3_error(image_service, upload_file):
 
 
 def test_upload_file_db_error(image_service, upload_file):
-    image_service.s3 = MagicMock()
     image_service.s3.build_unique_key.return_value = "key"
     image_service.s3.build_public_url.return_value = "url"
 
-    image_service.image_repo = MagicMock()
     image_service.image_repo.create.side_effect = Exception("DB error")
 
     with pytest.raises(Exception):
@@ -136,10 +127,8 @@ def test_delete_image_success(image_service):
     image = MagicMock()
     image.url = "https://cdn.example.com/images/2025/01/test.png"
 
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = image
 
-    image_service.s3 = MagicMock()
     image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
     image_service.s3.exists.return_value = True
 
@@ -157,10 +146,8 @@ def test_delete_image_success_when_not_exists_in_s3(image_service):
     image = MagicMock()
     image.url = "https://cdn.example.com/images/2025/01/test.png"
 
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = image
 
-    image_service.s3 = MagicMock()
     image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
     image_service.s3.exists.return_value = False
 
@@ -171,7 +158,6 @@ def test_delete_image_success_when_not_exists_in_s3(image_service):
 
 
 def test_delete_image_not_found(image_service):
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = None
 
     with pytest.raises(ImageNotExistError):
@@ -185,10 +171,8 @@ def test_delete_image_s3_delete_error(image_service):
     image = MagicMock()
     image.url = "https://cdn.example.com/images/2025/01/test.png"
 
-    image_service.image_repo = MagicMock()
     image_service.image_repo.find_by_image_id.return_value = image
 
-    image_service.s3 = MagicMock()
     image_service.s3.extract_key_from_url.return_value = "images/2025/01/test.png"
     image_service.s3.exists.return_value = True
     image_service.s3.delete_object.side_effect = Exception("s3 error")

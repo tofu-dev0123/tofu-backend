@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from app.schemas.product import ProductPostRequest, ProductPutRequest
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
@@ -26,7 +26,6 @@ def _mock_product(product_id=1, published=True):
 
 # get_products: 正常系
 def test_get_products_success(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.find_all.return_value = [_mock_product()]
 
     result = product_service.get_products()
@@ -38,7 +37,6 @@ def test_get_products_success(product_service):
 
 # get_product: 正常系
 def test_get_product_success(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.find_by_id.return_value = _mock_product(product_id=5)
 
     result = product_service.get_product(5)
@@ -49,7 +47,6 @@ def test_get_product_success(product_service):
 
 # get_product: 存在しない場合
 def test_get_product_not_exist(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.find_by_id.return_value = None
 
     with pytest.raises(ApplicationError) as exc_info:
@@ -61,12 +58,8 @@ def test_get_product_not_exist(product_service):
 
 # create_product: 正常系（タグ登録あり）
 def test_create_product_success(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.create.return_value = 100
-    product_service.product_tag_repo = MagicMock()
-    product_service.tag_service = MagicMock()
     product_service.tag_service.get_or_create_tag_ids.return_value = [10, 20]
-    product_service.db = MagicMock()
 
     req = ProductPostRequest(
         title="新規",
@@ -90,12 +83,8 @@ def test_create_product_success(product_service):
 
 # update_product: 正常系
 def test_update_product_success(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.exist_check.return_value = True
-    product_service.product_tag_repo = MagicMock()
-    product_service.tag_service = MagicMock()
     product_service.tag_service.get_or_create_tag_ids.return_value = [10]
-    product_service.db = MagicMock()
 
     req = ProductPutRequest(
         title="更新",
@@ -119,9 +108,7 @@ def test_update_product_success(product_service):
 
 # update_product: 存在しない場合はロールバック
 def test_update_product_not_exist(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.exist_check.return_value = False
-    product_service.db = MagicMock()
 
     req = ProductPutRequest(
         title="x", description=None, link_url=None, published=False, sort_order=0, tags=[]
@@ -137,10 +124,7 @@ def test_update_product_not_exist(product_service):
 
 # delete_product: 正常系
 def test_delete_product_success(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.exist_check.return_value = True
-    product_service.product_tag_repo = MagicMock()
-    product_service.db = MagicMock()
 
     result = product_service.delete_product(4)
 
@@ -152,9 +136,7 @@ def test_delete_product_success(product_service):
 
 # delete_product: 存在しない場合はロールバック
 def test_delete_product_not_exist(product_service):
-    product_service.product_repo = MagicMock()
     product_service.product_repo.exist_check.return_value = False
-    product_service.db = MagicMock()
 
     with pytest.raises(ApplicationError) as exc_info:
         product_service.delete_product(4)
