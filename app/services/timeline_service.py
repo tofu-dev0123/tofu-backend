@@ -11,6 +11,7 @@ from app.schemas.timeline import (
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.services.transaction import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class TimelineService:
     """
 
     def create_timeline(self, request: TimelinePostRequest) -> int:
-        try:
+        with transaction(self.db):
             timeline = TimelineModel(
                 year=request.year,
                 title=request.title,
@@ -56,22 +57,16 @@ class TimelineService:
 
             timeline_id = self.timeline_repo.create(timeline)
 
-            self.db.commit()
+        logger.info("timeline created", extra={"timeline_id": timeline_id})
 
-            logger.info("timeline created", extra={"timeline_id": timeline_id})
-
-            return timeline_id
-
-        except:
-            self.db.rollback()
-            raise
+        return timeline_id
 
     """
     年表を更新する
     """
 
     def update_timeline(self, timeline_id: int, request: TimelinePutRequest) -> None:
-        try:
+        with transaction(self.db):
             if not self.timeline_repo.exist_check(timeline_id):
                 raise ApplicationError(
                     message=ErrorMessage.TIMELINE_NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -85,20 +80,14 @@ class TimelineService:
                 request.sort_order,
             )
 
-            self.db.commit()
-
-            logger.info("timeline updated", extra={"timeline_id": timeline_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("timeline updated", extra={"timeline_id": timeline_id})
 
     """
     年表を削除する
     """
 
     def delete_timeline(self, timeline_id: int) -> None:
-        try:
+        with transaction(self.db):
             if not self.timeline_repo.exist_check(timeline_id):
                 raise ApplicationError(
                     message=ErrorMessage.TIMELINE_NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -106,10 +95,4 @@ class TimelineService:
 
             self.timeline_repo.delete(timeline_id)
 
-            self.db.commit()
-
-            logger.info("timeline deleted", extra={"timeline_id": timeline_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("timeline deleted", extra={"timeline_id": timeline_id})

@@ -29,6 +29,22 @@ def test_update_account_name_success(account_service):
     account_service.user_repo.update_account_name.assert_called_once_with(
         mock_user, "new_name"
     )
+    account_service.db.commit.assert_called_once()
+    account_service.db.refresh.assert_called_once_with(updated_user)
+
+
+def test_update_account_name_exception_rollback(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+
+    account_service.user_repo = MagicMock()
+    account_service.user_repo.update_account_name.side_effect = Exception("DB error")
+
+    with pytest.raises(Exception):
+        account_service.update_account_name(mock_user, "new_name")
+
+    account_service.db.rollback.assert_called_once()
+    account_service.db.commit.assert_not_called()
 
 
 # ==================== change_password ====================
@@ -53,6 +69,29 @@ def test_change_password_success(account_service):
     account_service.user_repo.update_password.assert_called_once_with(
         mock_user, "hashed_new_password"
     )
+    account_service.db.commit.assert_called_once()
+    account_service.db.refresh.assert_called_once_with(mock_user)
+
+
+def test_change_password_exception_rollback(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+    mock_user.password = "hashed_old_password"
+
+    account_service.user_repo = MagicMock()
+    account_service.user_repo.update_password.side_effect = Exception("DB error")
+
+    with patch(
+        "app.services.account_service.verify_password", return_value=True
+    ), patch(
+        "app.services.account_service.hash_password",
+        return_value="hashed_new_password",
+    ):
+        with pytest.raises(Exception):
+            account_service.change_password(mock_user, "old_password", "new_password")
+
+    account_service.db.rollback.assert_called_once()
+    account_service.db.commit.assert_not_called()
 
 
 def test_change_password_wrong_current_password(account_service):
@@ -94,6 +133,28 @@ def test_change_email_success(account_service):
     assert result.username == "new@example.com"
     assert account_service.user_repo.exists_by_username.call_count == 1
     assert account_service.user_repo.update_email.call_count == 1
+    account_service.db.commit.assert_called_once()
+    account_service.db.refresh.assert_called_once_with(updated_user)
+
+
+def test_change_email_exception_rollback(account_service):
+    mock_user = Mock()
+    mock_user.user_id = 1
+    mock_user.username = "old@example.com"
+    mock_user.password = "hashed_password"
+
+    account_service.user_repo = MagicMock()
+    account_service.user_repo.exists_by_username.return_value = False
+    account_service.user_repo.update_email.side_effect = Exception("DB error")
+
+    with patch("app.services.account_service.verify_password", return_value=True):
+        with pytest.raises(Exception):
+            account_service.change_email(
+                mock_user, "old@example.com", "new@example.com", "password"
+            )
+
+    account_service.db.rollback.assert_called_once()
+    account_service.db.commit.assert_not_called()
 
 
 def test_change_email_wrong_current_email(account_service):

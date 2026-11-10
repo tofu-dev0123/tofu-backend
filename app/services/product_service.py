@@ -15,6 +15,7 @@ from app.schemas.tag import Tag
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.services.transaction import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class ProductService:
     """
 
     def create_product(self, request: ProductPostRequest) -> int:
-        try:
+        with transaction(self.db):
             tag_id_list = self.tag_service.get_or_create_tag_ids(request.tags)
 
             product = ProductModel(
@@ -100,22 +101,16 @@ class ProductService:
 
             self.create_product_tag(tag_id_list, product_id)
 
-            self.db.commit()
+        logger.info("product created", extra={"product_id": product_id})
 
-            logger.info("product created", extra={"product_id": product_id})
-
-            return product_id
-
-        except:
-            self.db.rollback()
-            raise
+        return product_id
 
     """
     プロダクトを更新する
     """
 
     def update_product(self, product_id: int, request: ProductPutRequest) -> None:
-        try:
+        with transaction(self.db):
             if not self.product_repo.exist_check(product_id):
                 raise ApplicationError(
                     message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -136,20 +131,14 @@ class ProductService:
             self.product_tag_repo.delete_product_tags(product_id)
             self.create_product_tag(tag_id_list, product_id)
 
-            self.db.commit()
-
-            logger.info("product updated", extra={"product_id": product_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("product updated", extra={"product_id": product_id})
 
     """
     プロダクトを削除する
     """
 
     def delete_product(self, product_id: int) -> None:
-        try:
+        with transaction(self.db):
             if not self.product_repo.exist_check(product_id):
                 raise ApplicationError(
                     message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -158,10 +147,4 @@ class ProductService:
             self.product_tag_repo.delete_product_tags(product_id)
             self.product_repo.delete(product_id)
 
-            self.db.commit()
-
-            logger.info("product deleted", extra={"product_id": product_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("product deleted", extra={"product_id": product_id})

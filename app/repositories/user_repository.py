@@ -15,20 +15,14 @@ class UserRepository:
 
     def update_account_name(self, user: User, account_name: str) -> User:
         user.account_name = account_name
-        self.db.commit()
-        self.db.refresh(user)
         return user
 
     def update_password(self, user: User, hashed_password: str) -> User:
         user.password = hashed_password
-        self.db.commit()
-        self.db.refresh(user)
         return user
 
     def update_email(self, user: User, new_email: str) -> User:
         user.username = new_email
-        self.db.commit()
-        self.db.refresh(user)
         return user
 
     def exists_by_username(self, username: str) -> bool:

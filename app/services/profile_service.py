@@ -5,6 +5,7 @@ from app.schemas.profile import ProfileResponse, ProfilePutRequest
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.services.transaction import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class ProfileService:
     """
 
     def update_profile(self, request: ProfilePutRequest) -> None:
-        try:
+        with transaction(self.db):
             profile = self.profile_repo.get()
 
             if profile is None:
@@ -53,10 +54,4 @@ class ProfileService:
                 request.site_description,
             )
 
-            self.db.commit()
-
-            logger.info("profile updated", extra={"profile_id": profile.profile_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("profile updated", extra={"profile_id": profile.profile_id})

@@ -30,6 +30,7 @@ from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
+from app.services.transaction import transaction
 
 
 logger = logging.getLogger(__name__)
@@ -421,7 +422,7 @@ class PostService:
     """
 
     def update_all(self, request: PostsPutRequest, post_id: int):
-        try:
+        with transaction(self.db):
             if not self.post_repo.exist_check_by_post_id(post_id):
                 raise ApplicationError(
                     message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -479,13 +480,7 @@ class PostService:
             if request.new_images:
                 self.attach_post_id_to_image(request.new_images, post_id)
 
-            self.db.commit()
-
-            logger.info("post updated", extra={"post_id": post_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("post updated", extra={"post_id": post_id})
 
         return
 
@@ -514,7 +509,7 @@ class PostService:
     """
 
     def delete_all(self, post_id: int):
-        try:
+        with transaction(self.db):
             if not self.post_repo.exist_check_by_post_id(post_id):
                 raise ApplicationError(
                     message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
@@ -535,16 +530,10 @@ class PostService:
             # 記事レコードの削除
             self.post_repo.delete(post_id)
 
-            self.db.commit()
-
-            logger.info("post deleted", extra={"post_id": post_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("post deleted", extra={"post_id": post_id})
 
     def patch_status(self, status: PostStatus, post_id: int):
-        try:
+        with transaction(self.db):
             # 公開ステータスの値によって投稿日時を更新
             published_at = self.set_published_at_from_status(post_id, status)
 
@@ -561,9 +550,4 @@ class PostService:
 
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
-            self.db.commit()
-
-            logger.info("post status changed", extra={"post_id": post_id, "status": status.value})
-        except:
-            self.db.rollback()
-            raise
+        logger.info("post status changed", extra={"post_id": post_id, "status": status.value})

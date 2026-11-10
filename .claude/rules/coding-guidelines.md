@@ -229,19 +229,20 @@ async def create_post(
 
 ### Service 層での管理
 
-トランザクションは Service 層で管理する。
+トランザクションは Service 層で `app/services/transaction.py` の `transaction` を使って管理する。
+ブロックが正常終了すると commit、例外発生時は rollback して再送出する。Repository 層では commit しない。
 
 ```python
+from app.services.transaction import transaction
+
 def create_post(self, request: PostCreateRequest, user_id: int) -> PostResponse:
-    try:
+    with transaction(self.db):
         # DB操作
         post = self.post_repository.create(...)
         self.tag_repository.create_bulk(...)
-        self.db.commit()
-        return PostResponse(...)
-    except:
-        self.db.rollback()
-        raise
+
+    # commit 成功後にログ出力・レスポンス生成を行う
+    return PostResponse(...)
 ```
 
 ## ロギング
