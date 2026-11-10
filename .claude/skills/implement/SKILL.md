@@ -69,6 +69,7 @@ scripts/check.sh
 - 未コミットの変更があると記録されないため、コミット後に実行する
 - 失敗したら原因を調べて修正・コミットし、再実行する
 - `git push` / `gh pr create` は、HEAD で check.sh が成功していないと hook でブロックされる
+  - hook はコマンド実行前に判定するため、`scripts/check.sh && git push` のように 1 コマンドにまとめるとブロックされる。**check.sh と push / PR 作成は別々のコマンドで実行する**
 
 ## 6. レビュー（code-reviewer agent）
 

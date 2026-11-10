@@ -56,6 +56,6 @@
 
 - ブランチ: `develop` から `feature/issue#<番号>`
 - コミット: 日本語、1 コミット 1 論理変更、プレフィックス（`feat:` `fix:` 等）。`git add -A` は使わない
-- テスト: `scripts/check.sh` を HEAD で通してから push / PR 作成する
+- テスト: `scripts/check.sh` を HEAD で通してから push / PR 作成する（hook は実行前に判定するため、check.sh と push は別コマンドで実行する）
 - レビュー↔修正ループは最大 3 回。残った指摘は PR の「未対応事項」に書く
 - PR: base は `develop`、本文に `Closes #<番号>`
