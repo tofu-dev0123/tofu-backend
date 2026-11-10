@@ -98,9 +98,9 @@ class PostService:
                     slug=post.slug,
                     thumbnail_url=post.thumbnail_url,
                     status=post.status,
-                    publishedAt=post.published_at,
-                    createdAt=post.created_at,
-                    updatedAt=post.updated_at,
+                    published_at=post.published_at,
+                    created_at=post.created_at,
+                    updated_at=post.updated_at,
                 )
             )
 
