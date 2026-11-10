@@ -54,9 +54,7 @@ async def get_summary(
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
-    summary = service.get_summary()
-
-    return PostsSummaryResponse(**summary._mapping)
+    return service.get_summary()
 
 
 @router.get("/{post_id}", response_model=PostGetResponse)

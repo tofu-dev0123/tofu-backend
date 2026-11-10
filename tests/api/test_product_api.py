@@ -1,6 +1,7 @@
 from unittest.mock import patch
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
+from app.common.constant import Constant
 from app.schemas.product import Product, ProductListResponse
 from app.schemas.tag import Tag
 from app.core.exceptions.application_exceptions import ApplicationError
@@ -82,6 +83,54 @@ def test_create_product_validation_title_missing(client, valid_token):
     messages = [item["message"] for item in data["details"]]
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.PRODUCT_TITLE_REQUIRED in messages
+
+
+# バリデーションエラー: タグの個数上限超過
+def test_create_product_validation_tags_too_many(client, valid_token):
+    response = client.post(
+        "/admin/products",
+        headers={"Authorization": f"Bearer {valid_token}"},
+        json={"title": "新規", "tags": ["a"] * (Constant.MAX_TAGS + 1)},
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.TAGS_ARRAY_MAX_LENGTH in messages
+
+
+# バリデーションエラー: タグの文字数上限超過
+def test_create_product_validation_tag_too_long(client, valid_token):
+    response = client.post(
+        "/admin/products",
+        headers={"Authorization": f"Bearer {valid_token}"},
+        json={"title": "新規", "tags": ["a" * (Constant.MAX_TAG_LENGTH + 1)]},
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.TAGS_MAX_LENGTH in messages
+
+
+# 空文字の description / link_url / github_url は None に変換される
+@patch("app.services.product_service.ProductService.create_product")
+def test_create_product_empty_string_to_none(mock_create, client, valid_token):
+    mock_create.return_value = 100
+
+    response = client.post(
+        "/admin/products",
+        headers={"Authorization": f"Bearer {valid_token}"},
+        json={"title": "新規", "description": "", "link_url": "", "github_url": ""},
+    )
+
+    assert response.status_code == 200
+    request = mock_create.call_args.args[0]
+    assert request.description is None
+    assert request.link_url is None
+    assert request.github_url is None
 
 
 # 正常系: プロダクト詳細取得

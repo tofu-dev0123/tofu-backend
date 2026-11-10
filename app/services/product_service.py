@@ -11,11 +11,10 @@ from app.schemas.product import (
     ProductPostRequest,
     ProductPutRequest,
 )
-from app.schemas.tag import Tag
-from app.core.exceptions.application_exceptions import ApplicationError
-from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
+from app.services.guards import ensure_exists
+from app.services.mappers import to_product
 
 logger = logging.getLogger(__name__)
 
@@ -35,46 +34,24 @@ class ProductService:
         self.tag_service = tag_service or TagService(db)
 
     """
-    プロダクトモデルをスキーマに変換する
-    """
-
-    def _to_schema(self, product: ProductModel) -> Product:
-        tags = [
-            Tag(tag_id=tag.tag_id, name=tag.name, slug=tag.slug)
-            for tag in product.tags
-        ]
-        return Product(
-            product_id=product.product_id,
-            title=product.title,
-            description=product.description,
-            link_url=product.link_url,
-            github_url=product.github_url,
-            published=product.published,
-            sort_order=product.sort_order,
-            tags=tags,
-        )
-
-    """
     プロダクト一覧を取得する
     """
 
     def get_products(self) -> ProductListResponse:
         products = self.product_repo.find_all()
-        return ProductListResponse(products=[self._to_schema(p) for p in products])
+        return ProductListResponse(products=[to_product(p) for p in products])
 
     """
     プロダクト詳細を取得する
     """
 
     def get_product(self, product_id: int) -> Product:
-        product = self.product_repo.find_by_id(product_id)
+        product = ensure_exists(
+            self.product_repo.find_by_id(product_id),
+            ErrorMessage.PRODUCT_NOT_EXIST,
+        )
 
-        if product is None:
-            raise ApplicationError(
-                message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
-
-        return self._to_schema(product)
+        return to_product(product)
 
     """
     中間テーブルにタグを登録する
@@ -117,10 +94,10 @@ class ProductService:
 
     def update_product(self, product_id: int, request: ProductPutRequest) -> None:
         with transaction(self.db):
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(
+                self.product_repo.exist_check(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_repo.update(
                 product_id,
@@ -145,10 +122,10 @@ class ProductService:
 
     def delete_product(self, product_id: int) -> None:
         with transaction(self.db):
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(
+                self.product_repo.exist_check(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_tag_repo.delete_product_tags(product_id)
             self.product_repo.delete(product_id)
