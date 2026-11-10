@@ -1,4 +1,3 @@
-import math
 from sqlalchemy.orm import Session
 import logging
 from datetime import datetime
@@ -31,6 +30,7 @@ from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
 from app.services.transaction import transaction
 from app.services.guards import ensure_exists
+from app.utils.pagination import calc_total_pages
 from app.services.mappers import parse_images, parse_tags
 
 
@@ -83,7 +83,7 @@ class PostService:
         )
 
         total_count = self.post_repo.count_posts_by_user(user_id, keyword, status)
-        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
+        total_pages = calc_total_pages(total_count, limit)
         posts_list = []
 
         for post in posts:

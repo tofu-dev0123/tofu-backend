@@ -1,4 +1,3 @@
-import math
 from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from app.repositories.post_repository import PostRepository
@@ -10,6 +9,7 @@ from app.schemas.post import (
     PostSlugsResponse,
 )
 from app.services.guards import ensure_exists
+from app.utils.pagination import calc_total_pages
 from app.services.mappers import parse_tags, to_tag
 
 
@@ -31,7 +31,7 @@ class PublicPostService:
         posts = self.post_repo.find_published_posts(offset, limit, keyword)
 
         total_count = self.post_repo.count_published_posts(keyword)
-        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
+        total_pages = calc_total_pages(total_count, limit)
 
         posts_list = []
         for post in posts:
