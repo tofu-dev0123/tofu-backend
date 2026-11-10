@@ -38,14 +38,23 @@ logger = logging.getLogger(__name__)
 
 class PostService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        s3: S3 | None = None,
+        post_repo: PostRepository | None = None,
+        tag_service: TagService | None = None,
+        post_tag_repo: PostTagRepository | None = None,
+        image_repo: ImageRepository | None = None,
+        query_repo: PostDetailQueryRepository | None = None,
+    ) -> None:
         self.db = db
-        self.s3 = S3()
-        self.post_repo = PostRepository(db)
-        self.tag_service = TagService(db)
-        self.post_tag_repo = PostTagRepository(db)
-        self.image_repo = ImageRepository(db)
-        self.query_repo = PostDetailQueryRepository(db)
+        self.s3 = s3 or S3()
+        self.post_repo = post_repo or PostRepository(db)
+        self.tag_service = tag_service or TagService(db)
+        self.post_tag_repo = post_tag_repo or PostTagRepository(db)
+        self.image_repo = image_repo or ImageRepository(db)
+        self.query_repo = query_repo or PostDetailQueryRepository(db)
         self.md = MarkdownIt("gfm-like")
 
     """

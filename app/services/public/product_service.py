@@ -6,9 +6,13 @@ from app.schemas.tag import Tag
 
 class PublicProductService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        product_repo: ProductRepository | None = None,
+    ) -> None:
         self.db = db
-        self.product_repo = ProductRepository(db)
+        self.product_repo = product_repo or ProductRepository(db)
 
     """
     公開中のプロダクト一覧を取得する（sort 順）

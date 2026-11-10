@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.api.deps import get_auth_service
 from app.services.auth_service import AuthService
 from app.models.user import User
 from app.schemas.auth import LoginRequest, LoginResponse, LogoutResponse, MeResponse
@@ -14,10 +13,8 @@ router = APIRouter(prefix="/auth", tags=["Auth 認証機能"])
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
-    db: Session = Depends(get_db),
+    service: AuthService = Depends(get_auth_service),
 ):
-    service = AuthService(db)
-
     try:
         # 認証処理を行いtokenを取得する
         token = service.login(request.username, request.password)

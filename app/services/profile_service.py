@@ -12,9 +12,13 @@ logger = logging.getLogger(__name__)
 
 class ProfileService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        profile_repo: ProfileRepository | None = None,
+    ) -> None:
         self.db = db
-        self.profile_repo = ProfileRepository(db)
+        self.profile_repo = profile_repo or ProfileRepository(db)
 
     """
     プロフィールを取得する

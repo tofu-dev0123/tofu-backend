@@ -18,9 +18,13 @@ logger = logging.getLogger(__name__)
 
 class TimelineService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        timeline_repo: TimelineRepository | None = None,
+    ) -> None:
         self.db = db
-        self.timeline_repo = TimelineRepository(db)
+        self.timeline_repo = timeline_repo or TimelineRepository(db)
 
     """
     年表一覧を取得する

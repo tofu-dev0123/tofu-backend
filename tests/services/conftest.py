@@ -20,42 +20,55 @@ def mock_db():
 
 @pytest.fixture
 def tag_service(mock_db):
-    return TagService(mock_db)
+    return TagService(mock_db, tag_repo=MagicMock())
 
 
 @pytest.fixture
 def profile_service(mock_db):
-    return ProfileService(mock_db)
+    return ProfileService(mock_db, profile_repo=MagicMock())
 
 
 @pytest.fixture
 def timeline_service(mock_db):
-    return TimelineService(mock_db)
+    return TimelineService(mock_db, timeline_repo=MagicMock())
 
 
 @pytest.fixture
 def product_service(mock_db):
-    return ProductService(mock_db)
+    return ProductService(
+        mock_db,
+        product_repo=MagicMock(),
+        product_tag_repo=MagicMock(),
+        tag_service=MagicMock(),
+    )
 
 
 @pytest.fixture
 def auth_service(mock_db):
-    return AuthService(mock_db)
+    return AuthService(mock_db, user_repo=MagicMock())
 
 
 @pytest.fixture
 def post_service(mock_db):
-    return PostService(mock_db)
+    return PostService(
+        mock_db,
+        s3=MagicMock(),
+        post_repo=MagicMock(),
+        tag_service=MagicMock(),
+        post_tag_repo=MagicMock(),
+        image_repo=MagicMock(),
+        query_repo=MagicMock(),
+    )
 
 
 @pytest.fixture
 def image_service(mock_db):
-    return ImageService(mock_db)
+    return ImageService(mock_db, image_repo=MagicMock(), s3=MagicMock())
 
 
 @pytest.fixture
 def account_service(mock_db):
-    return AccountService(mock_db)
+    return AccountService(mock_db, user_repo=MagicMock())
 
 
 @pytest.fixture

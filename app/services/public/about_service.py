@@ -7,10 +7,15 @@ from app.schemas.timeline import Timeline
 
 class PublicAboutService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        profile_repo: ProfileRepository | None = None,
+        timeline_repo: TimelineRepository | None = None,
+    ) -> None:
         self.db = db
-        self.profile_repo = ProfileRepository(db)
-        self.timeline_repo = TimelineRepository(db)
+        self.profile_repo = profile_repo or ProfileRepository(db)
+        self.timeline_repo = timeline_repo or TimelineRepository(db)
 
     """
     About ページ表示用のプロフィールと年表を取得する

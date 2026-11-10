@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from app.schemas.profile import ProfilePutRequest
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
@@ -13,7 +13,6 @@ def test_get_profile_success(profile_service):
     mock_profile.bio = "自己紹介"
     mock_profile.site_description = "サイト説明"
 
-    profile_service.profile_repo = MagicMock()
     profile_service.profile_repo.get.return_value = mock_profile
 
     result = profile_service.get_profile()
@@ -25,7 +24,6 @@ def test_get_profile_success(profile_service):
 
 # get_profile: レコードが存在しない場合
 def test_get_profile_not_exist(profile_service):
-    profile_service.profile_repo = MagicMock()
     profile_service.profile_repo.get.return_value = None
 
     with pytest.raises(ApplicationError) as exc_info:
@@ -40,9 +38,7 @@ def test_update_profile_success(profile_service):
     mock_profile = Mock()
     mock_profile.profile_id = 1
 
-    profile_service.profile_repo = MagicMock()
     profile_service.profile_repo.get.return_value = mock_profile
-    profile_service.db = MagicMock()
 
     req = ProfilePutRequest(
         headline="new headline", bio="new bio", site_description="new desc"
@@ -59,9 +55,7 @@ def test_update_profile_success(profile_service):
 
 # update_profile: レコードが存在しない場合はロールバック
 def test_update_profile_not_exist(profile_service):
-    profile_service.profile_repo = MagicMock()
     profile_service.profile_repo.get.return_value = None
-    profile_service.db = MagicMock()
 
     req = ProfilePutRequest(headline="h", bio="b", site_description="s")
 

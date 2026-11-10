@@ -23,10 +23,15 @@ logger = logging.getLogger(__name__)
 
 
 class ImageService:
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        image_repo: ImageRepository | None = None,
+        s3: S3 | None = None,
+    ) -> None:
         self.db = db
-        self.image_repo = ImageRepository(db)
-        self.s3 = S3()
+        self.image_repo = image_repo or ImageRepository(db)
+        self.s3 = s3 or S3()
 
     def validate(self, image_file: UploadFile, alt_text: str | None):
         VALUE = "image_file"

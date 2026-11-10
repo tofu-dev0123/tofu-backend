@@ -17,10 +17,15 @@ from app.common.errorcode import ErrorCode
 
 class PublicPostService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        post_repo: PostRepository | None = None,
+        query_repo: PostDetailQueryRepository | None = None,
+    ) -> None:
         self.db = db
-        self.post_repo = PostRepository(db)
-        self.query_repo = PostDetailQueryRepository(db)
+        self.post_repo = post_repo or PostRepository(db)
+        self.query_repo = query_repo or PostDetailQueryRepository(db)
 
     def get_posts(self, page: int, keyword: str | None) -> PostsPublishAtResponse:
         limit = Constant.PUBLIC_POST_LIMIT

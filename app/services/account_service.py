@@ -15,9 +15,13 @@ logger = logging.getLogger(__name__)
 
 class AccountService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        user_repo: UserRepository | None = None,
+    ) -> None:
         self.db = db
-        self.user_repo = UserRepository(db)
+        self.user_repo = user_repo or UserRepository(db)
 
     def update_account_name(self, user: User, account_name: str) -> User:
         """アカウント名を変更する"""
