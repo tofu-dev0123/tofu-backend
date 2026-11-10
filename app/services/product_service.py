@@ -12,10 +12,9 @@ from app.schemas.product import (
     ProductPutRequest,
 )
 from app.schemas.tag import Tag
-from app.core.exceptions.application_exceptions import ApplicationError
-from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
+from app.services.guards import ensure_exists
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +66,10 @@ class ProductService:
     """
 
     def get_product(self, product_id: int) -> Product:
-        product = self.product_repo.find_by_id(product_id)
-
-        if product is None:
-            raise ApplicationError(
-                message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
+        product = ensure_exists(
+            self.product_repo.find_by_id(product_id),
+            ErrorMessage.PRODUCT_NOT_EXIST,
+        )
 
         return self._to_schema(product)
 
@@ -117,10 +114,10 @@ class ProductService:
 
     def update_product(self, product_id: int, request: ProductPutRequest) -> None:
         with transaction(self.db):
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(
+                self.product_repo.exist_check(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_repo.update(
                 product_id,
@@ -145,10 +142,10 @@ class ProductService:
 
     def delete_product(self, product_id: int) -> None:
         with transaction(self.db):
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(
+                self.product_repo.exist_check(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_tag_repo.delete_product_tags(product_id)
             self.product_repo.delete(product_id)

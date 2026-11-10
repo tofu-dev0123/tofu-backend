@@ -10,9 +10,7 @@ from app.schemas.post import (
     PostSlugsResponse,
 )
 from app.schemas.tag import Tag
-from app.core.exceptions.application_exceptions import ApplicationError
-from app.common.message import ErrorMessage
-from app.common.errorcode import ErrorCode
+from app.services.guards import ensure_exists
 
 
 class PublicPostService:
@@ -69,14 +67,8 @@ class PublicPostService:
         return PostSlugsResponse(slugs=slugs)
 
     def get_post(self, slug: str) -> PostPublishAtResponse:
-        data = self.query_repo.find_by_slug(slug)
+        data = ensure_exists(self.query_repo.find_by_slug(slug))
         tags = []
-
-        if not data:
-            raise ApplicationError(
-                message=ErrorMessage.NOT_EXIST,
-                code=ErrorCode.NOT_EXIST,
-            )
 
         if data.tags:
             tags = [

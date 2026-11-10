@@ -2,10 +2,9 @@ import logging
 from sqlalchemy.orm import Session
 from app.repositories.profile_repository import ProfileRepository
 from app.schemas.profile import ProfileResponse, ProfilePutRequest
-from app.core.exceptions.application_exceptions import ApplicationError
-from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.services.transaction import transaction
+from app.services.guards import ensure_exists
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +24,7 @@ class ProfileService:
     """
 
     def get_profile(self) -> ProfileResponse:
-        profile = self.profile_repo.get()
-
-        if profile is None:
-            raise ApplicationError(
-                message=ErrorMessage.PROFILE_NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
+        profile = ensure_exists(self.profile_repo.get(), ErrorMessage.PROFILE_NOT_EXIST)
 
         return ProfileResponse(
             headline=profile.headline,
@@ -44,12 +38,10 @@ class ProfileService:
 
     def update_profile(self, request: ProfilePutRequest) -> None:
         with transaction(self.db):
-            profile = self.profile_repo.get()
-
-            if profile is None:
-                raise ApplicationError(
-                    message=ErrorMessage.PROFILE_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            profile = ensure_exists(
+                self.profile_repo.get(),
+                ErrorMessage.PROFILE_NOT_EXIST,
+            )
 
             self.profile_repo.update(
                 profile.profile_id,

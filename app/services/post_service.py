@@ -31,6 +31,7 @@ from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
 from app.services.transaction import transaction
+from app.services.guards import ensure_exists
 
 
 logger = logging.getLogger(__name__)
@@ -118,11 +119,7 @@ class PostService:
     """
 
     def get_post_detail(self, post_id: int) -> PostGetResponse:
-        data = self.query_repo.find_by_post_id(post_id)
-        if data is None:
-            raise ApplicationError(
-                message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
+        data = ensure_exists(self.query_repo.find_by_post_id(post_id))
         images = []
         tags = []
         if data.images:
@@ -318,9 +315,7 @@ class PostService:
     def set_published_at_from_status(
         self, post_id: int, new_status: PostStatus
     ) -> datetime | None:
-        post = self.post_repo.find_by_post_id(post_id)
-        if post is None:
-            raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
+        post = ensure_exists(self.post_repo.find_by_post_id(post_id))
 
         old_status = post.status
 
@@ -432,10 +427,7 @@ class PostService:
 
     def update_all(self, request: PostsPutRequest, post_id: int):
         with transaction(self.db):
-            if not self.post_repo.exist_check_by_post_id(post_id):
-                raise ApplicationError(
-                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(self.post_repo.exist_check_by_post_id(post_id))
 
             # ステータスの値によって投稿日時をセット
             new_published_at = self.set_published_at_from_status(
@@ -443,9 +435,7 @@ class PostService:
             )
 
             # 公開時にドラフトスラグをタイトルベーススラグに上書き
-            current_post = self.post_repo.find_by_post_id(post_id)
-            if current_post is None:
-                raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
+            current_post = ensure_exists(self.post_repo.find_by_post_id(post_id))
             new_slug = current_post.slug
             if (
                 request.status == PostStatus.PUBLISHED
@@ -519,10 +509,7 @@ class PostService:
 
     def delete_all(self, post_id: int):
         with transaction(self.db):
-            if not self.post_repo.exist_check_by_post_id(post_id):
-                raise ApplicationError(
-                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+            ensure_exists(self.post_repo.exist_check_by_post_id(post_id))
 
             #  サムネイルの削除処理
             self.delete_thumbnail(post_id)
