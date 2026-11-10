@@ -7,6 +7,7 @@ from app.core.exceptions.account_exceptions import (
     EmailMismatchError,
     EmailAlreadyExistsError,
 )
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 
 # 正常系
@@ -208,6 +209,25 @@ def test_email_already_exists_error(client, auth_headers):
     data = response.json()
     assert data["message"] == ErrorMessage.EMAIL_ALREADY_EXISTS
     assert data["error"] == ErrorCode.EMAIL_ALREADY_EXISTS
+
+
+# 新しいメールアドレスが現在と同一（実 DB のユーザー）
+def test_new_email_same_error(client, auth_headers, test_user):
+    response = client.patch(
+        "/admin/account/email",
+        headers=auth_headers,
+        json={
+            "current_email": test_user.username,
+            "new_email": test_user.username,
+            "password": TEST_USER_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    assert data["message"] == ErrorMessage.NEW_EMAIL_SAME
+    assert data["error"] == ErrorCode.NEW_EMAIL_SAME
 
 
 # トークンなしによる認証エラー

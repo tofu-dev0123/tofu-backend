@@ -3,6 +3,7 @@ from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
 from app.core.exceptions.account_exceptions import PasswordMismatchError
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 
 # 正常系
@@ -104,6 +105,24 @@ def test_validation_error_max_length(client, auth_headers):
 
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.PASSWORD_MAX_LENGTH in messages
+
+
+# 新しいパスワードが現在と同一（実 DB のユーザー）
+def test_new_password_same_error(client, auth_headers):
+    response = client.patch(
+        "/admin/account/password",
+        headers=auth_headers,
+        json={
+            "current_password": TEST_USER_PASSWORD,
+            "new_password": TEST_USER_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    assert data["message"] == ErrorMessage.NEW_PASSWORD_SAME
+    assert data["error"] == ErrorCode.NEW_PASSWORD_SAME
 
 
 # 現在のパスワード不一致エラー

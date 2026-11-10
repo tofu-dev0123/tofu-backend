@@ -8,6 +8,8 @@ from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
     EmailAlreadyExistsError,
+    NewPasswordSameError,
+    NewEmailSameError,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,10 @@ class AccountService:
         if not verify_password(current_password, user.password):
             raise PasswordMismatchError()
 
+        # 新しいパスワードが現在と同一ならエラー
+        if new_password == current_password:
+            raise NewPasswordSameError()
+
         # 新しいパスワードをハッシュ化して更新
         hashed_password = hash_password(new_password)
         with transaction(self.db):
@@ -57,6 +63,10 @@ class AccountService:
         # パスワードを検証
         if not verify_password(password, user.password):
             raise PasswordMismatchError()
+
+        # 新しいメールアドレスが現在と同一ならエラー（重複チェックより優先）
+        if new_email == user.username:
+            raise NewEmailSameError()
 
         # 新しいメールアドレスの重複チェック
         if self.user_repo.exists_by_username(new_email):
