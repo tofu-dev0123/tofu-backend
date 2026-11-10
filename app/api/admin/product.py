@@ -12,6 +12,7 @@ from app.schemas.product import (
 )
 from app.services.product_service import ProductService
 from app.models.user import User
+from app.common.constant import Constant
 
 
 router = APIRouter(prefix="/products", tags=["Product プロダクト関連"])
@@ -40,7 +41,7 @@ async def create_product(
 
 @router.get("/{product_id}", response_model=Product)
 async def get_product(
-    product_id: int = Path(..., ge=1, description="プロダクトID"),
+    product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -50,7 +51,7 @@ async def get_product(
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
     request: ProductPutRequest,
-    product_id: int = Path(..., ge=1, description="プロダクトID"),
+    product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -63,7 +64,7 @@ async def update_product(
 
 @router.delete("/{product_id}", response_model=ProductDeleteResponse)
 async def delete_product(
-    product_id: int = Path(..., ge=1, description="プロダクトID"),
+    product_id: int = Path(..., ge=Constant.MIN_PRODUCT_ID, description="プロダクトID"),
     service: ProductService = Depends(get_product_service),
     current_user: User = Depends(get_current_user),
 ):

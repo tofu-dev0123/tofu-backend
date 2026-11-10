@@ -11,6 +11,7 @@ from app.schemas.timeline import (
 )
 from app.services.timeline_service import TimelineService
 from app.models.user import User
+from app.common.constant import Constant
 
 
 router = APIRouter(prefix="/timelines", tags=["Timeline 年表関連"])
@@ -40,7 +41,7 @@ async def create_timeline(
 @router.put("/{timeline_id}", response_model=TimelineResponse)
 async def update_timeline(
     request: TimelinePutRequest,
-    timeline_id: int = Path(..., ge=1, description="年表ID"),
+    timeline_id: int = Path(..., ge=Constant.MIN_TIMELINE_ID, description="年表ID"),
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -53,7 +54,7 @@ async def update_timeline(
 
 @router.delete("/{timeline_id}", response_model=TimelineDeleteResponse)
 async def delete_timeline(
-    timeline_id: int = Path(..., ge=1, description="年表ID"),
+    timeline_id: int = Path(..., ge=Constant.MIN_TIMELINE_ID, description="年表ID"),
     service: TimelineService = Depends(get_timeline_service),
     current_user: User = Depends(get_current_user),
 ):

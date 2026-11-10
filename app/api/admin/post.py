@@ -17,6 +17,7 @@ from app.schemas.post import (
 from app.services.post_service import PostService
 from app.models.user import User
 from app.models.post import PostStatus
+from app.common.constant import Constant
 
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
@@ -24,10 +25,12 @@ router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
 @router.get("", response_model=PostsListGetResponse)
 async def get_posts(
-    keyword: Optional[str] = Query(None, max_length=1000),
+    keyword: Optional[str] = Query(None, max_length=Constant.MAX_KEYWORD_LENGTH),
     status: Optional[PostStatus] = Query(None),
-    offset: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=30),
+    offset: int = Query(Constant.MIN_OFFSET, ge=Constant.MIN_OFFSET),
+    limit: int = Query(
+        Constant.DEFAULT_LIMIT, ge=Constant.MIN_LIMIT, le=Constant.MAX_LIMIT
+    ),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -59,7 +62,7 @@ async def get_summary(
 
 @router.get("/{post_id}", response_model=PostGetResponse)
 async def get_post(
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -71,7 +74,7 @@ async def get_post(
 @router.put("/{post_id}", response_model=PostsResponse)
 async def update_post(
     request: PostsPutRequest,
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -82,7 +85,7 @@ async def update_post(
 
 @router.delete("/{post_id}", response_model=PostsDeleteResponse)
 async def delete_post(
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
@@ -94,7 +97,7 @@ async def delete_post(
 @router.patch("/{post_id}", response_model=PostsPatchResponse)
 async def patch_status(
     request: PostsPatchRequest,
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):

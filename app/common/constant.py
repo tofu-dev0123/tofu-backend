@@ -4,6 +4,7 @@ class Constant:
     MAX_USERNAME_LENGTH = 50
     MAX_PASSWORD_LENGTH = 50
     MIN_PASSWORD_LENGTH = 8
+    MIN_ACCOUNT_NAME_LENGTH = 1
     MAX_ACCOUNT_NAME_LENGTH = 30
 
     # 記事関連
@@ -17,6 +18,7 @@ class Constant:
     MIN_OFFSET = 0
     MIN_LIMIT = 1
     MAX_LIMIT = 30
+    DEFAULT_LIMIT = 10
     MIN_POST_ID = 1
     MIN_PAGE = 1
 

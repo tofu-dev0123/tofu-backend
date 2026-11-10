@@ -8,7 +8,7 @@ class UpdateAccountNameRequest(BaseModel):
     account_name: str = Field(
         ...,
         description="アカウント名",
-        min_length=1,
+        min_length=Constant.MIN_ACCOUNT_NAME_LENGTH,
         max_length=Constant.MAX_ACCOUNT_NAME_LENGTH,
     )
 

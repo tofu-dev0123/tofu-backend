@@ -5,6 +5,7 @@ from app.core.security import get_current_user
 from app.schemas.image import ImageUploadResponse, ImageDeleteResponse
 from app.services.image_service import ImageService
 from app.models.user import User
+from app.common.constant import Constant
 
 router = APIRouter(prefix="/images", tags=["Image 画像関連"])
 
@@ -25,7 +26,7 @@ async def upload(
 
 @router.delete("/{image_id}", response_model=ImageDeleteResponse)
 async def delete(
-    image_id: int = Path(..., ge=1, description="記事ID"),
+    image_id: int = Path(..., ge=Constant.MIN_IMAGE_ID, description="画像ID"),
     service: ImageService = Depends(get_image_service),
     current_user: User = Depends(get_current_user),
 ):
