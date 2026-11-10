@@ -9,6 +9,7 @@ from app.schemas.post import (
     PostsPutRequest,
     PostsListGetResponse,
     PostGetResponse,
+    PostsSummaryResponse,
 )
 from botocore.exceptions import (
     ClientError,
@@ -108,10 +109,14 @@ class PostService:
     記事のサマリを取得する
     """
 
-    def get_summary(self):
+    def get_summary(self) -> PostsSummaryResponse:
         summary = self.post_repo.get_post_counts()
 
-        return summary
+        return PostsSummaryResponse(
+            total_count=summary.total_count,
+            published_count=summary.published_count,
+            draft_count=summary.draft_count,
+        )
 
     """
     記事詳細を取得する

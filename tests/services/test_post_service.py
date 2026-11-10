@@ -1,5 +1,5 @@
 import pytest
-from app.schemas.post import PostsPostRequest, PostGetResponse, PostsPutRequest, PostsListGetResponse
+from app.schemas.post import PostsPostRequest, PostGetResponse, PostsPutRequest, PostsListGetResponse, PostsSummaryResponse
 from app.models.post import PostStatus
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
@@ -37,6 +37,22 @@ def test_get_posts_success(post_service):
     assert result.total_pages == 1
     assert len(result.posts) == 1
     post_service.post_repo.count_posts_by_user.assert_called_once_with(1, None, None)
+
+
+# 記事サマリ取得正常系: 集計結果をレスポンススキーマに変換する
+def test_get_summary_success(post_service):
+    summary_row = Mock()
+    summary_row.total_count = 3
+    summary_row.published_count = 2
+    summary_row.draft_count = 1
+    post_service.post_repo.get_post_counts.return_value = summary_row
+
+    result = post_service.get_summary()
+
+    assert result == PostsSummaryResponse(
+        total_count=3, published_count=2, draft_count=1
+    )
+    assert post_service.post_repo.get_post_counts.call_count == 1
 
 
 # 記事詳細取得正常系
