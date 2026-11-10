@@ -40,7 +40,7 @@ def test_get_posts_response_keys_snake_case(mock_get_posts, client, auth_headers
                 slug="test",
                 thumbnail_url=None,
                 status=PostStatus.PUBLISHED,
-                published_at=datetime(2025, 1, 1),
+                published_at=datetime(2025, 1, 3),
                 created_at=datetime(2025, 1, 1),
                 updated_at=datetime(2025, 1, 2),
             )
@@ -52,7 +52,7 @@ def test_get_posts_response_keys_snake_case(mock_get_posts, client, auth_headers
     assert response.status_code == 200
 
     post = response.json()["posts"][0]
-    assert post["published_at"] == "2025-01-01T00:00:00"
+    assert post["published_at"] == "2025-01-03T00:00:00"
     assert post["created_at"] == "2025-01-01T00:00:00"
     assert post["updated_at"] == "2025-01-02T00:00:00"
     assert "publishedAt" not in post

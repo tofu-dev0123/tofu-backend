@@ -22,9 +22,9 @@ def test_get_posts_success(post_service):
     mock_post.slug = "test"
     mock_post.thumbnail_url = None
     mock_post.status = PostStatus.PUBLISHED
-    mock_post.published_at = datetime(2025, 1, 1)
+    mock_post.published_at = datetime(2025, 1, 3)
     mock_post.created_at = datetime(2025, 1, 1)
-    mock_post.updated_at = datetime(2025, 1, 1)
+    mock_post.updated_at = datetime(2025, 1, 2)
 
     post_service.post_repo.find_posts_by_user.return_value = [mock_post]
     post_service.post_repo.count_posts_by_user.return_value = 1
