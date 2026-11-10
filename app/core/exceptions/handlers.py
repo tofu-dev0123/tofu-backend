@@ -13,7 +13,7 @@ from app.core.exceptions.image_exceptions import (
     ImageNotExistOnStorageError,
     ImageUploadValidationError,
 )
-from app.core.exceptions.s3_exceptions import S3FileUploadError
+from app.core.exceptions.s3_exceptions import S3FileDeleteError, S3FileUploadError
 from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
@@ -57,7 +57,7 @@ def _from_exc_or(default: str) -> Callable[[BaseAppError], str]:
 
 
 # (例外クラス, ステータス, エラーコード, メッセージの取り方, WARNING ログ文言 or None)
-# S3FileUploadError は infra/service 側で ERROR ログ済みのため再ログしない
+# S3FileUploadError / S3FileDeleteError は infra/service 側で ERROR ログ済みのため再ログしない
 _SIMPLE_HANDLERS: list[
     tuple[type[BaseAppError], int, str, Callable[[BaseAppError], str], str | None]
 ] = [
@@ -78,6 +78,7 @@ _SIMPLE_HANDLERS: list[
         "image not exist on storage",
     ),
     (S3FileUploadError, 400, ErrorCode.S3_ERROR, _from_exc, None),
+    (S3FileDeleteError, 400, ErrorCode.S3_ERROR, _from_exc, None),
     (
         PasswordMismatchError,
         400,
