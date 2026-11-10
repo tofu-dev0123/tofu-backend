@@ -3,6 +3,6 @@ class BaseAppError(Exception):
 
     default_message: str = ""
 
-    def __init__(self, message: str | None = None):
+    def __init__(self, message: str | None = None) -> None:
         self.message: str = self.default_message if message is None else message
         super().__init__(self.message)

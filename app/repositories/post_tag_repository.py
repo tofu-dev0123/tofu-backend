@@ -5,10 +5,10 @@ from app.models.post_tag import PostTag
 
 class PostTagRepository:
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
-    def create(self, post_tag: PostTag):
+    def create(self, post_tag: PostTag) -> None:
         self.db.add(post_tag)
 
     def delete_post_tags(self, post_id: int) -> None:

@@ -57,7 +57,7 @@ class ProductService:
     中間テーブルにタグを登録する
     """
 
-    def create_product_tag(self, tag_id_list: list[int], product_id: int):
+    def create_product_tag(self, tag_id_list: list[int], product_id: int) -> None:
         for tag_id in tag_id_list:
             self.product_tag_repo.create(
                 ProductTag(product_id=product_id, tag_id=tag_id)
@@ -95,7 +95,7 @@ class ProductService:
     def update_product(self, product_id: int, request: ProductPutRequest) -> None:
         with transaction(self.db):
             ensure_exists(
-                self.product_repo.exist_check(product_id),
+                self.product_repo.exists_by_id(product_id),
                 ErrorMessage.PRODUCT_NOT_EXIST,
             )
 
@@ -123,7 +123,7 @@ class ProductService:
     def delete_product(self, product_id: int) -> None:
         with transaction(self.db):
             ensure_exists(
-                self.product_repo.exist_check(product_id),
+                self.product_repo.exists_by_id(product_id),
                 ErrorMessage.PRODUCT_NOT_EXIST,
             )
 

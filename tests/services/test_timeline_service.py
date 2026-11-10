@@ -38,7 +38,7 @@ def test_create_timeline_success(timeline_service):
 
 # update_timeline: 正常系
 def test_update_timeline_success(timeline_service):
-    timeline_service.timeline_repo.exist_check.return_value = True
+    timeline_service.timeline_repo.exists_by_id.return_value = True
 
     req = TimelinePutRequest(year=2025, title="t2", body="b2", sort_order=2)
 
@@ -53,7 +53,7 @@ def test_update_timeline_success(timeline_service):
 
 # update_timeline: 存在しない場合はロールバック
 def test_update_timeline_not_exist(timeline_service):
-    timeline_service.timeline_repo.exist_check.return_value = False
+    timeline_service.timeline_repo.exists_by_id.return_value = False
 
     req = TimelinePutRequest(year=2025, title="t", body="b", sort_order=0)
 
@@ -68,7 +68,7 @@ def test_update_timeline_not_exist(timeline_service):
 
 # delete_timeline: 正常系
 def test_delete_timeline_success(timeline_service):
-    timeline_service.timeline_repo.exist_check.return_value = True
+    timeline_service.timeline_repo.exists_by_id.return_value = True
 
     result = timeline_service.delete_timeline(3)
 
@@ -79,7 +79,7 @@ def test_delete_timeline_success(timeline_service):
 
 # delete_timeline: 存在しない場合はロールバック
 def test_delete_timeline_not_exist(timeline_service):
-    timeline_service.timeline_repo.exist_check.return_value = False
+    timeline_service.timeline_repo.exists_by_id.return_value = False
 
     with pytest.raises(ApplicationError) as exc_info:
         timeline_service.delete_timeline(3)

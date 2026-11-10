@@ -1,4 +1,3 @@
-from typing import Optional
 from datetime import datetime
 from sqlalchemy import BigInteger, String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship

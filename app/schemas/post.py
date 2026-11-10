@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
-from typing import Self
+from typing import Any, Self
 from datetime import datetime
 from app.common.constant import Constant
 from app.models.post import PostStatus
@@ -87,7 +87,7 @@ class PostsPostRequest(BaseModel):
 
     @field_validator("title", mode="before")
     @classmethod
-    def empty_title_to_none(cls, v):
+    def empty_title_to_none(cls, v: Any) -> Any:
         """空文字列を None に変換（DRAFT でのタイトル未入力を許容）"""
         return None if v == "" else v
 

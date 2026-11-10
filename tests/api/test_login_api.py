@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.errorcode import ErrorCode

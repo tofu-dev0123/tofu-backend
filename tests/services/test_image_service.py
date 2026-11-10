@@ -4,11 +4,9 @@ from fastapi import UploadFile
 from starlette.datastructures import Headers
 from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
-from app.services.image_service import ImageService
 from app.core.exceptions.image_exceptions import (
     ImageUploadValidationError,
     ImageNotExistError,
-    ImageNotExistOnStorageError,
 )
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 from app.schemas.image import ImageUploadResponse
@@ -64,23 +62,6 @@ def test_check_exist_image_not_found(image_service):
 
     with pytest.raises(ImageNotExistError):
         image_service.check_exist_image(1)
-
-
-def test_validate_image_exists_success(image_service):
-    image_service.s3.exists_by_url.return_value = True
-
-    image_service.validate_image_exists("https://cdn.example.com/img.png")
-
-    image_service.s3.exists_by_url.assert_called_once_with(
-        "https://cdn.example.com/img.png"
-    )
-
-
-def test_validate_image_exists_not_found(image_service):
-    image_service.s3.exists_by_url.return_value = False
-
-    with pytest.raises(ImageNotExistOnStorageError):
-        image_service.validate_image_exists("https://cdn.example.com/img.png")
 
 
 def test_upload_file_success(image_service, upload_file):

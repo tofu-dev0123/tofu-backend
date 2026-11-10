@@ -1,5 +1,5 @@
 from app.common.constant import Constant
-from app.utils.format_utils import extension_formatter
+from app.utils.format_utils import format_extensions
 
 
 class Message:
@@ -116,7 +116,7 @@ class ErrorMessage:
 
     # 画像関連
     MAX_FILE_SIZE = f"アップロードできる画像ファイルは{Constant.MAX_FILE_SIZE / (1024 * 1024)}MBまでです"
-    ALLOWED_EXTENSIONS = f"アップロードできる画像ファイルの拡張子は{extension_formatter(Constant.ALLOWED_EXTENSIONS)}です"
+    ALLOWED_EXTENSIONS = f"アップロードできる画像ファイルの拡張子は{format_extensions(Constant.ALLOWED_EXTENSIONS)}です"
     MAX_ALT_TEXT_LENGTH = (
         f"代替テキストは{Constant.MAX_ALT_TEXT_LENGTH}文字以内で入力してください"
     )

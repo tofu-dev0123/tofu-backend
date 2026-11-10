@@ -1,4 +1,5 @@
-from sqlalchemy import select, func
+from typing import Any
+from sqlalchemy import Row, select, func
 from sqlalchemy.orm import Session
 
 from app.models.post import Post, PostStatus
@@ -8,10 +9,10 @@ from app.models.tag import Tag
 
 
 class PostDetailQueryRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
-    def find_by_post_id(self, post_id: int):
+    def find_by_post_id(self, post_id: int) -> Row[Any] | None:
         stmt = (
             select(
                 Post.post_id,
@@ -51,7 +52,7 @@ class PostDetailQueryRepository:
 
         return self.db.execute(stmt).one_or_none()
 
-    def find_by_slug(self, slug: str):
+    def find_by_slug(self, slug: str) -> Row[Any] | None:
         stmt = (
             select(
                 Post.post_id,

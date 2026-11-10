@@ -21,7 +21,7 @@ async def update_account_name(
     request: UpdateAccountNameRequest,
     current_user: User = Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
-):
+) -> UpdateAccountNameResponse:
     """アカウント名を変更する"""
     updated_user = service.update_account_name(current_user, request.account_name)
 
@@ -37,7 +37,7 @@ async def change_password(
     request: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
-):
+) -> ChangePasswordResponse:
     """パスワードを変更する"""
     service.change_password(
         current_user, request.current_password, request.new_password
@@ -51,7 +51,7 @@ async def change_email(
     request: ChangeEmailRequest,
     current_user: User = Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
-):
+) -> ChangeEmailResponse:
     """メールアドレスを変更する"""
     updated_user = service.change_email(
         current_user, request.current_email, request.new_email, request.password

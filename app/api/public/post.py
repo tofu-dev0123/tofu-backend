@@ -7,6 +7,7 @@ from app.schemas.post import (
 )
 from app.services.public.post_service import PublicPostService
 from app.api.deps import get_public_post_service
+from app.common.constant import Constant
 
 
 router = APIRouter(prefix="/posts", tags=["Post 公開記事関連"])
@@ -14,13 +15,13 @@ router = APIRouter(prefix="/posts", tags=["Post 公開記事関連"])
 
 @router.get("", response_model=PostsPublishAtResponse)
 def get_posts(
-    page: Optional[int] = Query(1, ge=1),
-    keyword: Optional[str] = Query(None, max_length=1000),
+    page: Optional[int] = Query(Constant.MIN_PAGE, ge=Constant.MIN_PAGE),
+    keyword: Optional[str] = Query(None, max_length=Constant.MAX_KEYWORD_LENGTH),
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostsPublishAtResponse:
 
     if page is None:
-        page = 1
+        page = Constant.MIN_PAGE
 
     result = service.get_posts(page, keyword)
     return result
@@ -29,7 +30,7 @@ def get_posts(
 @router.get("/slugs", response_model=PostSlugsResponse)
 def get_slugs(
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostSlugsResponse:
     result = service.get_slugs()
     return result
 
@@ -38,6 +39,6 @@ def get_slugs(
 def get_post(
     slug: str = Path(..., description="スラグ"),
     service: PublicPostService = Depends(get_public_post_service),
-):
+) -> PostPublishAtResponse:
     result = service.get_post(slug)
     return result

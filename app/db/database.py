@@ -1,7 +1,7 @@
+from collections.abc import Iterator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import settings
-from app.db.base_class import Base
 
 # エンジンの作成
 engine = create_engine(
@@ -23,7 +23,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 # 依存性注入用の関数
-def get_db():
+def get_db() -> Iterator[Session]:
     db = SessionLocal()
     try:
         yield db

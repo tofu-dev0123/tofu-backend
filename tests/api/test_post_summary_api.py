@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from app.schemas.post import PostsSummaryResponse
 

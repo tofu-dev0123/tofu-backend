@@ -117,7 +117,7 @@ def _make_simple_handler(
     return handler
 
 
-def register_exception_handlers(app: FastAPI):
+def register_exception_handlers(app: FastAPI) -> None:
 
     for exc_class, status_code, error, get_message, log_message in _SIMPLE_HANDLERS:
         app.add_exception_handler(
@@ -126,7 +126,9 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(ApplicationError)
-    async def application_error_handler(request: Request, exc: ApplicationError):
+    async def application_error_handler(
+        request: Request, exc: ApplicationError
+    ) -> JSONResponse:
         logger.warning(
             "application error",
             extra={"path": request.url.path, "code": exc.code},
@@ -134,7 +136,9 @@ def register_exception_handlers(app: FastAPI):
         return _error_response(400, exc.message, exc.code)
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error_handler(request: Request, exc: RequestValidationError):
+    async def validation_error_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         errors = []
 
         for error in exc.errors():
@@ -153,7 +157,7 @@ def register_exception_handlers(app: FastAPI):
         return _error_response(400, "", ErrorCode.VALIDATION_ERROR, errors)
 
     @app.exception_handler(HTTPException)
-    async def no_token_handler(request, exc):
+    async def no_token_handler(request: Request, exc: HTTPException) -> JSONResponse:
         if exc.status_code == 401 and exc.detail == "Not authenticated":
             return _error_response(
                 401, ErrorMessage.TOKEN_REQUIRED, ErrorCode.AUTHENTICATION_ERROR
@@ -163,7 +167,7 @@ def register_exception_handlers(app: FastAPI):
     @app.exception_handler(ImageUploadValidationError)
     async def image_upload_validation_error_handler(
         request: Request, exc: ImageUploadValidationError
-    ):
+    ) -> JSONResponse:
         logger.warning("image upload validation error", extra={"path": request.url.path})
 
         return _error_response(

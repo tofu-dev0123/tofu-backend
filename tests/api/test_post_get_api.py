@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
