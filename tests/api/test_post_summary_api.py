@@ -4,7 +4,7 @@ from app.schemas.post import PostsSummaryResponse
 
 # 正常系
 @patch("app.services.post_service.PostService.get_summary")
-def test_get_posts_success(mock_get_summary, client, valid_token):
+def test_get_posts_success(mock_get_summary, client, auth_headers):
     mock_get_summary.return_value = PostsSummaryResponse(
         total_count=2,
         published_count=1,
@@ -13,7 +13,7 @@ def test_get_posts_success(mock_get_summary, client, valid_token):
 
     response = client.get(
         "/admin/posts/summary",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200

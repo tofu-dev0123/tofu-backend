@@ -12,7 +12,7 @@ def test_image_upload_success(
     mock_validate,
     mock_upload_file,
     client,
-    valid_token,
+    auth_headers,
 ):
     mock_validate.return_value = None
     mock_upload_file.return_value = ImageUploadResponse(
@@ -30,7 +30,7 @@ def test_image_upload_success(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
         data=data,
     )
@@ -55,7 +55,7 @@ def test_image_upload_success(
 def test_image_upload_validation_error(
     mock_validate,
     client,
-    valid_token,
+    auth_headers,
 ):
     files = {
         "image_file": ("test.png", b"dummy image", "image/png"),
@@ -63,7 +63,7 @@ def test_image_upload_validation_error(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
     )
 
@@ -82,7 +82,7 @@ def test_image_upload_s3_error(
     mock_validate,
     mock_upload_file,
     client,
-    valid_token,
+    auth_headers,
 ):
     files = {
         "image_file": ("test.png", b"dummy image", "image/png"),
@@ -90,7 +90,7 @@ def test_image_upload_s3_error(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
     )
 

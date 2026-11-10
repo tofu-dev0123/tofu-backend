@@ -6,14 +6,14 @@ from app.core.exceptions.account_exceptions import PasswordMismatchError
 
 
 # 正常系
-def test_change_password_success(client, valid_token):
+def test_change_password_success(client, auth_headers):
     with patch(
         "app.services.account_service.AccountService.change_password",
         return_value=None,
     ):
         response = client.patch(
             "/admin/account/password",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_password": "oldpassword123",
                 "new_password": "newpassword456",
@@ -27,10 +27,10 @@ def test_change_password_success(client, valid_token):
 
 
 # 必須項目バリデーション
-def test_validation_error_missing(client, valid_token):
+def test_validation_error_missing(client, auth_headers):
     response = client.patch(
         "/admin/account/password",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -44,11 +44,11 @@ def test_validation_error_missing(client, valid_token):
 
 
 # 最小文字数バリデーション（current_password）
-def test_validation_error_current_password_min_length(client, valid_token):
+def test_validation_error_current_password_min_length(client, auth_headers):
     small_password = "a" * (Constant.MIN_PASSWORD_LENGTH - 1)
     response = client.patch(
         "/admin/account/password",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_password": small_password,
             "new_password": "newpassword456",
@@ -65,11 +65,11 @@ def test_validation_error_current_password_min_length(client, valid_token):
 
 
 # 最小文字数バリデーション（new_password）
-def test_validation_error_new_password_min_length(client, valid_token):
+def test_validation_error_new_password_min_length(client, auth_headers):
     small_password = "a" * (Constant.MIN_PASSWORD_LENGTH - 1)
     response = client.patch(
         "/admin/account/password",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_password": "oldpassword123",
             "new_password": small_password,
@@ -86,11 +86,11 @@ def test_validation_error_new_password_min_length(client, valid_token):
 
 
 # 最大文字数バリデーション
-def test_validation_error_max_length(client, valid_token):
+def test_validation_error_max_length(client, auth_headers):
     big_password = "a" * (Constant.MAX_PASSWORD_LENGTH + 1)
     response = client.patch(
         "/admin/account/password",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_password": big_password,
             "new_password": big_password,
@@ -107,14 +107,14 @@ def test_validation_error_max_length(client, valid_token):
 
 
 # 現在のパスワード不一致エラー
-def test_password_mismatch_error(client, valid_token):
+def test_password_mismatch_error(client, auth_headers):
     with patch(
         "app.services.account_service.AccountService.change_password",
         side_effect=PasswordMismatchError,
     ):
         response = client.patch(
             "/admin/account/password",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_password": "wrongpassword",
                 "new_password": "newpassword456",

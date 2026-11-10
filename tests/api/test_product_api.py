@@ -22,11 +22,11 @@ def _product_schema(product_id=1):
 
 # 正常系: プロダクト一覧取得
 @patch("app.services.product_service.ProductService.get_products")
-def test_get_products_success(mock_get, client, valid_token):
+def test_get_products_success(mock_get, client, auth_headers):
     mock_get.return_value = ProductListResponse(products=[_product_schema()])
 
     response = client.get(
-        "/admin/products", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/products", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -46,7 +46,7 @@ def test_get_products_no_token(client):
 
 # 正常系: プロダクト作成
 @patch("app.services.product_service.ProductService.create_product")
-def test_create_product_success(mock_create, client, valid_token):
+def test_create_product_success(mock_create, client, auth_headers):
     mock_create.return_value = 100
 
     req = {
@@ -60,7 +60,7 @@ def test_create_product_success(mock_create, client, valid_token):
     }
     response = client.post(
         "/admin/products",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -71,10 +71,10 @@ def test_create_product_success(mock_create, client, valid_token):
 
 
 # バリデーションエラー: title 欠落
-def test_create_product_validation_title_missing(client, valid_token):
+def test_create_product_validation_title_missing(client, auth_headers):
     response = client.post(
         "/admin/products",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -86,10 +86,10 @@ def test_create_product_validation_title_missing(client, valid_token):
 
 
 # バリデーションエラー: タグの個数上限超過
-def test_create_product_validation_tags_too_many(client, valid_token):
+def test_create_product_validation_tags_too_many(client, auth_headers):
     response = client.post(
         "/admin/products",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"title": "新規", "tags": ["a"] * (Constant.MAX_TAGS + 1)},
     )
 
@@ -101,10 +101,10 @@ def test_create_product_validation_tags_too_many(client, valid_token):
 
 
 # バリデーションエラー: タグの文字数上限超過
-def test_create_product_validation_tag_too_long(client, valid_token):
+def test_create_product_validation_tag_too_long(client, auth_headers):
     response = client.post(
         "/admin/products",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"title": "新規", "tags": ["a" * (Constant.MAX_TAG_LENGTH + 1)]},
     )
 
@@ -117,12 +117,12 @@ def test_create_product_validation_tag_too_long(client, valid_token):
 
 # 空文字の description / link_url / github_url は None に変換される
 @patch("app.services.product_service.ProductService.create_product")
-def test_create_product_empty_string_to_none(mock_create, client, valid_token):
+def test_create_product_empty_string_to_none(mock_create, client, auth_headers):
     mock_create.return_value = 100
 
     response = client.post(
         "/admin/products",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"title": "新規", "description": "", "link_url": "", "github_url": ""},
     )
 
@@ -135,11 +135,11 @@ def test_create_product_empty_string_to_none(mock_create, client, valid_token):
 
 # 正常系: プロダクト詳細取得
 @patch("app.services.product_service.ProductService.get_product")
-def test_get_product_success(mock_get, client, valid_token):
+def test_get_product_success(mock_get, client, auth_headers):
     mock_get.return_value = _product_schema(product_id=5)
 
     response = client.get(
-        "/admin/products/5", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/products/5", headers=auth_headers
     )
 
     assert response.status_code == 200
@@ -148,13 +148,13 @@ def test_get_product_success(mock_get, client, valid_token):
 
 # 異常系: プロダクト詳細が存在しない
 @patch("app.services.product_service.ProductService.get_product")
-def test_get_product_not_found(mock_get, client, valid_token):
+def test_get_product_not_found(mock_get, client, auth_headers):
     mock_get.side_effect = ApplicationError(
         message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
     )
 
     response = client.get(
-        "/admin/products/999", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/products/999", headers=auth_headers
     )
 
     assert response.status_code == 400
@@ -165,13 +165,13 @@ def test_get_product_not_found(mock_get, client, valid_token):
 
 # 正常系: プロダクト更新
 @patch("app.services.product_service.ProductService.update_product")
-def test_update_product_success(mock_update, client, valid_token):
+def test_update_product_success(mock_update, client, auth_headers):
     mock_update.return_value = None
 
     req = {"title": "更新", "published": False, "sort_order": 0, "tags": []}
     response = client.put(
         "/admin/products/7",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -183,11 +183,11 @@ def test_update_product_success(mock_update, client, valid_token):
 
 # 正常系: プロダクト削除
 @patch("app.services.product_service.ProductService.delete_product")
-def test_delete_product_success(mock_delete, client, valid_token):
+def test_delete_product_success(mock_delete, client, auth_headers):
     mock_delete.return_value = None
 
     response = client.delete(
-        "/admin/products/4", headers={"Authorization": f"Bearer {valid_token}"}
+        "/admin/products/4", headers=auth_headers
     )
 
     assert response.status_code == 200

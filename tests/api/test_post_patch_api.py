@@ -7,12 +7,12 @@ from app.models.post import PostStatus
 
 # 正常系
 @patch("app.services.post_service.PostService.patch_status")
-def test_patch_status_success(mock_patch_status, client, valid_token):
+def test_patch_status_success(mock_patch_status, client, auth_headers):
     mock_patch_status.return_value = None
     req = {"status": "PUBLISHED"}
     response = client.patch(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -24,10 +24,10 @@ def test_patch_status_success(mock_patch_status, client, valid_token):
 
 
 # 必須項目バリデーションエラー（statusが未指定）
-def test_validation_error_missing_status(client, valid_token):
+def test_validation_error_missing_status(client, auth_headers):
     response = client.patch(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -41,11 +41,11 @@ def test_validation_error_missing_status(client, valid_token):
 
 
 # パスパラメータバリデーションエラー（post_id < 1）
-def test_validation_error_min_post_id(client, valid_token):
+def test_validation_error_min_post_id(client, auth_headers):
     req = {"status": "PUBLISHED"}
     response = client.patch(
         "/admin/posts/0",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -65,11 +65,11 @@ def test_validation_error_min_post_id(client, valid_token):
         message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
     ),
 )
-def test_patch_status_not_exist(mock_patch_status, client, valid_token):
+def test_patch_status_not_exist(mock_patch_status, client, auth_headers):
     req = {"status": "PUBLISHED"}
     response = client.patch(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -83,12 +83,12 @@ def test_patch_status_not_exist(mock_patch_status, client, valid_token):
 
 # 正常系: DRAFTステータス
 @patch("app.services.post_service.PostService.patch_status")
-def test_patch_status_draft_success(mock_patch_status, client, valid_token):
+def test_patch_status_draft_success(mock_patch_status, client, auth_headers):
     mock_patch_status.return_value = None
     req = {"status": "DRAFT"}
     response = client.patch(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 

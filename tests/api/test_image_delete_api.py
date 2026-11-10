@@ -12,13 +12,13 @@ from app.core.exceptions.image_exceptions import (
 def test_image_delete_success(
     mock_delete_image,
     client,
-    valid_token,
+    auth_headers,
 ):
     mock_delete_image.return_value = None
 
     response = client.delete(
         "admin/images/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -35,11 +35,11 @@ def test_image_delete_success(
 def test_image_delete_not_found(
     mock_delete_image,
     client,
-    valid_token,
+    auth_headers,
 ):
     response = client.delete(
         "admin/images/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 400
@@ -56,11 +56,11 @@ def test_image_delete_not_found(
 def test_image_delete_not_exist_on_storage(
     mock_delete_image,
     client,
-    valid_token,
+    auth_headers,
 ):
     response = client.delete(
         "admin/images/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 400

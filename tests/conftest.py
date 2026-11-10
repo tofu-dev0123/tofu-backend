@@ -8,7 +8,7 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 from app.main import create_app
-from app.core.security import create_access_token
+from app.core.security import create_access_token, get_current_user, hash_password
 from app.db.database import get_db
 
 # Base.metadata にテーブルを登録するため、全モデルを import しておく
@@ -19,6 +19,9 @@ from app.models.post_tag import PostTag  # noqa: F401
 from app.models.image import Image  # noqa: F401
 
 TEST_DATABASE_URL = "postgresql+psycopg://blog_user:password@db:5432/test_db"
+
+# test_user の平文パスワード（DB には bcrypt ハッシュを保存する）
+TEST_USER_PASSWORD = "password"
 
 
 @pytest.fixture(scope="session")
@@ -73,12 +76,18 @@ def db(
     Base.metadata.drop_all(bind=test_engine)
 
 
+@pytest.fixture(scope="session")
+def test_user_password_hash() -> str:
+    """bcrypt は低速なため、ハッシュはセッションで 1 回だけ計算する"""
+    return hash_password(TEST_USER_PASSWORD)
+
+
 @pytest.fixture
-def test_user(db: Session) -> User:
+def test_user(db: Session, test_user_password_hash: str) -> User:
     user = User(
         user_id=1,
         username="test@example.com",
-        password="password",
+        password=test_user_password_hash,
         account_name="testuser",
     )
     db.add(user)
@@ -91,3 +100,22 @@ def test_user(db: Session) -> User:
 def valid_token(test_user: User) -> str:
     token = create_access_token(user_id=test_user.user_id, username=test_user.username)
     return token
+
+
+@pytest.fixture
+def auth_headers(valid_token: str) -> dict[str, str]:
+    """実 DB のユーザーで認証する Authorization ヘッダ"""
+    return {"Authorization": f"Bearer {valid_token}"}
+
+
+@pytest.fixture
+def override_current_user(app: FastAPI) -> User:
+    """DB を使わずに get_current_user を固定ユーザーへ差し替える"""
+    user = User(
+        user_id=1,
+        username="test@example.com",
+        password="",
+        account_name="testuser",
+    )
+    app.dependency_overrides[get_current_user] = lambda: user
+    return user

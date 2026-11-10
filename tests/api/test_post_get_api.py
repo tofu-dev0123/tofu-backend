@@ -6,13 +6,13 @@ from app.common.constant import Constant
 
 # 正常系
 @patch("app.services.post_service.PostService.get_posts")
-def test_get_posts_success(mock_create_all, client, valid_token):
+def test_get_posts_success(mock_create_all, client, auth_headers):
     res = {"total_count": 1, "total_pages": 1, "posts": []}
     mock_create_all.return_value = res
 
     response = client.get(
         "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -24,10 +24,10 @@ def test_get_posts_success(mock_create_all, client, valid_token):
 
 
 # 最大文字数バリデーションエラー
-def test_validation_error_max_length(client, valid_token):
+def test_validation_error_max_length(client, auth_headers):
     response = client.get(
         "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         params={
             "keyword": "a" * (Constant.MAX_KEYWORD_LENGTH + 1),
             "limit": Constant.MAX_LIMIT + 1,
@@ -45,10 +45,10 @@ def test_validation_error_max_length(client, valid_token):
 
 
 # 最小文字数バリデーションエラー
-def test_validation_error_min_length(client, valid_token):
+def test_validation_error_min_length(client, auth_headers):
     response = client.get(
         "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         params={"offset": Constant.MIN_OFFSET - 1, "limit": Constant.MIN_LIMIT - 1},
     )
 

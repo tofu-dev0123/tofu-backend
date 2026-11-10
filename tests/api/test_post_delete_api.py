@@ -6,12 +6,12 @@ from app.core.exceptions.application_exceptions import ApplicationError
 
 # 正常系
 @patch("app.services.post_service.PostService.delete_all")
-def test_delete_post_success(mock_delete_all, client, valid_token):
+def test_delete_post_success(mock_delete_all, client, auth_headers):
     mock_delete_all.return_value = None
 
     response = client.delete(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -22,10 +22,10 @@ def test_delete_post_success(mock_delete_all, client, valid_token):
 
 
 # パスパラメータバリデーションエラー（post_id < 1）
-def test_validation_error_min_post_id(client, valid_token):
+def test_validation_error_min_post_id(client, auth_headers):
     response = client.delete(
         "/admin/posts/0",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 400
@@ -44,10 +44,10 @@ def test_validation_error_min_post_id(client, valid_token):
         message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
     ),
 )
-def test_delete_post_not_exist(mock_delete_all, client, valid_token):
+def test_delete_post_not_exist(mock_delete_all, client, auth_headers):
     response = client.delete(
         "/admin/posts/999",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 400
