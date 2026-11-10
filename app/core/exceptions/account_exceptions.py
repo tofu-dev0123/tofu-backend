@@ -15,3 +15,7 @@ class EmailAlreadyExistsError(BaseAppError):
 
 class NewPasswordSameError(BaseAppError):
     """新しいパスワードが現在と同一のエラー"""
+
+
+class NewEmailSameError(BaseAppError):
+    """新しいメールアドレスが現在と同一のエラー"""

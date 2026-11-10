@@ -20,6 +20,7 @@ from app.core.exceptions.account_exceptions import (
     EmailMismatchError,
     EmailAlreadyExistsError,
     NewPasswordSameError,
+    NewEmailSameError,
 )
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse, ErrorDetail
@@ -110,6 +111,13 @@ _SIMPLE_HANDLERS: list[
         ErrorCode.NEW_PASSWORD_SAME,
         _fixed(ErrorMessage.NEW_PASSWORD_SAME),
         "new password same as current",
+    ),
+    (
+        NewEmailSameError,
+        400,
+        ErrorCode.NEW_EMAIL_SAME,
+        _fixed(ErrorMessage.NEW_EMAIL_SAME),
+        "new email same as current",
     ),
 ]
 
