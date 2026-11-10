@@ -5,6 +5,7 @@ from app.core.config import settings
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 from app.models.user import User
+from app.repositories.user_repository import UserRepository
 from app.db.database import get_db
 from app.core.exceptions.auth_exceptions import AuthenticationError
 from app.common.message import ErrorMessage
@@ -120,7 +121,7 @@ def get_current_user(
     except (TypeError, ValueError):
         raise AuthenticationError
 
-    user = db.query(User).filter(User.user_id == user_id).first()
+    user = UserRepository(db).find_by_id(user_id)
     if not user:
         raise AuthenticationError
 

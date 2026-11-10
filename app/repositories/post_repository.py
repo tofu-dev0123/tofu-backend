@@ -67,8 +67,8 @@ class PostRepository:
         return result
 
     def find_slugs_like(self, slug: str) -> list[str]:
-        result = self.db.query(Post.slug).filter(Post.slug.like(f"{slug}%")).all()
-        return [row[0] for row in result]
+        stmt = select(Post.slug).where(Post.slug.like(f"{slug}%"))
+        return list(self.db.execute(stmt).scalars().all())
 
     def create(self, post: Post) -> int:
         self.db.add(post)
@@ -76,7 +76,8 @@ class PostRepository:
         return post.post_id
 
     def find_by_post_id(self, id: int) -> Post | None:
-        return self.db.query(Post).filter(Post.post_id == id).first()
+        stmt = select(Post).where(Post.post_id == id)
+        return self.db.execute(stmt).scalars().first()
 
     def find_thumbnail_url_by_post_id(self, id: int) -> str | None:
         stmt = select(Post.thumbnail_url).where(Post.post_id == id)

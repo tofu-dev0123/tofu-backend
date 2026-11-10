@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models.user import User
 
@@ -8,10 +9,12 @@ class UserRepository:
         self.db = db
 
     def find_by_username(self, username: str) -> User | None:
-        return self.db.query(User).filter(User.username == username).first()
+        stmt = select(User).where(User.username == username)
+        return self.db.execute(stmt).scalars().first()
 
     def find_by_id(self, user_id: int) -> User | None:
-        return self.db.query(User).filter(User.user_id == user_id).first()
+        stmt = select(User).where(User.user_id == user_id)
+        return self.db.execute(stmt).scalars().first()
 
     def update_account_name(self, user: User, account_name: str) -> User:
         user.account_name = account_name
@@ -26,4 +29,5 @@ class UserRepository:
         return user
 
     def exists_by_username(self, username: str) -> bool:
-        return self.db.query(User).filter(User.username == username).first() is not None
+        stmt = select(User.user_id).where(User.username == username)
+        return self.db.execute(stmt).first() is not None
