@@ -1,10 +1,11 @@
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Any
 from fastapi import Request
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
 from app.core.exceptions.application_exceptions import ApplicationError
 from app.core.exceptions.base import BaseAppError
 from app.core.exceptions.auth_exceptions import LoginFailError, AuthenticationError
@@ -32,9 +33,11 @@ def _error_response(
     message: str,
     error: str,
     details: list[Any] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
+        headers=headers,
         content=ErrorResponse(
             message=message, error=error, details=details or []
         ).model_dump(),
@@ -103,6 +106,14 @@ _SIMPLE_HANDLERS: list[
 ]
 
 
+# HTTPException のステータス → エラーコード（未定義のステータスは HTTP_ERROR）
+_HTTP_ERROR_CODES: dict[int, str] = {
+    401: ErrorCode.AUTHENTICATION_ERROR,
+    404: ErrorCode.NOT_FOUND,
+    405: ErrorCode.METHOD_NOT_ALLOWED,
+}
+
+
 def _make_simple_handler(
     status_code: int,
     error: str,
@@ -163,7 +174,17 @@ def register_exception_handlers(app: FastAPI) -> None:
             return _error_response(
                 401, ErrorMessage.TOKEN_REQUIRED, ErrorCode.AUTHENTICATION_ERROR
             )
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+        if exc.status_code < 500:
+            logger.warning(
+                "http error",
+                extra={"path": request.url.path, "status_code": exc.status_code},
+            )
+        return _error_response(
+            exc.status_code,
+            str(exc.detail),
+            _HTTP_ERROR_CODES.get(exc.status_code, ErrorCode.HTTP_ERROR),
+            headers=exc.headers,
+        )
 
     @app.exception_handler(ImageUploadValidationError)
     async def image_upload_validation_error_handler(
