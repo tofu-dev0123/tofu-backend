@@ -171,7 +171,6 @@ def test_check_status_and_setting_date_with_DRAFT(post_service):
 
 
 # 記事の登録処理
-@patch("app.services.post_service.PostService.db", create=True)
 @patch("app.services.post_service.PostService.attach_post_id_to_image")
 @patch("app.services.post_service.PostService.create_post_tag")
 @patch("app.services.post_service.PostService.create_post")
@@ -223,7 +222,6 @@ def test_create_all_success_with_tags_and_images(
     # 記事の登録→例外スロー
 
 
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.check_image_list",
     side_effect=ImageNotExistError("not found"),
@@ -538,7 +536,6 @@ def test_update_tags_success(mock_create_post_tag, mock_generate_slug, post_serv
 
 
 # update_all: 正常系（全項目更新）
-@patch("app.services.post_service.PostService.db", create=True)
 @patch("app.services.post_service.PostService.attach_post_id_to_image")
 @patch("app.services.post_service.PostService.update_tags")
 @patch("app.services.post_service.PostService.extract_delete_images")
@@ -599,7 +596,6 @@ def test_update_all_success_full_update(
 
 
 # update_all: 正常系（最小限の更新）
-@patch("app.services.post_service.PostService.db", create=True)
 @patch("app.services.post_service.PostService.update_thumbnail")
 @patch("app.services.post_service.PostService.set_published_at_from_status")
 def test_update_all_success_minimal_update(
@@ -633,7 +629,6 @@ def test_update_all_success_minimal_update(
 
 
 # update_all: 記事が存在しない
-@patch("app.services.post_service.PostService.db", create=True)
 def test_update_all_post_not_exist(mock_db, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = False
@@ -658,7 +653,6 @@ def test_update_all_post_not_exist(mock_db, post_service):
 
 
 # update_all: 画像削除でImageNotExistError
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.extract_delete_images",
     side_effect=ImageNotExistError(),
@@ -695,7 +689,6 @@ def test_update_all_image_not_exist_error(
 
 
 # update_all: 画像削除でINVALID_IMAGE_OWNER
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.extract_delete_images",
     side_effect=ApplicationError(
@@ -736,7 +729,6 @@ def test_update_all_invalid_image_owner(
 
 
 # update_all: サムネイル更新でBAD_REQUEST_OF_THUMBNAIL
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.update_thumbnail",
     side_effect=ApplicationError(
@@ -831,7 +823,6 @@ def test_delete_image_from_post_id_empty_list(post_service):
 
 
 # delete_all: 正常系
-@patch("app.services.post_service.PostService.db", create=True)
 @patch("app.services.post_service.PostService.delete_image_from_post_id")
 @patch("app.services.post_service.PostService.delete_thumbnail")
 def test_delete_all_success(
@@ -858,7 +849,6 @@ def test_delete_all_success(
 
 
 # delete_all: 記事が存在しない場合
-@patch("app.services.post_service.PostService.db", create=True)
 def test_delete_all_post_not_exist(mock_db, post_service):
     post_service.post_repo = MagicMock()
     post_service.post_repo.exist_check_by_post_id.return_value = False
@@ -873,7 +863,6 @@ def test_delete_all_post_not_exist(mock_db, post_service):
 
 
 # delete_all: 例外発生時にrollbackが呼ばれる
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.delete_thumbnail",
     side_effect=Exception("Error"),
@@ -891,7 +880,6 @@ def test_delete_all_exception_rollback(mock_delete_thumbnail, mock_db, post_serv
 
 
 # patch_status: 正常系
-@patch("app.services.post_service.PostService.db", create=True)
 @patch("app.services.post_service.PostService.set_published_at_from_status")
 def test_patch_status_success(mock_set_published_at, mock_db, post_service):
     post_service.post_repo = MagicMock()
@@ -913,7 +901,6 @@ def test_patch_status_success(mock_set_published_at, mock_db, post_service):
 
 
 # patch_status: 例外発生時にrollbackが呼ばれる
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.set_published_at_from_status",
     side_effect=Exception("Error"),
@@ -940,7 +927,6 @@ def test_generate_slug_of_title_fallback_to_draft_slug(mock_gen, post_service):
 
 
 # patch_status: 公開時にドラフトスラグをタイトルベースのスラグへ上書きする
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.generate_slug_of_title",
     return_value="test-title",
@@ -965,7 +951,6 @@ def test_patch_status_overwrites_draft_slug(
 
 
 # patch_status: 公開時にスラグ生成が失敗→既存のドラフトスラグを維持する
-@patch("app.services.post_service.PostService.db", create=True)
 @patch(
     "app.services.post_service.PostService.generate_slug_of_title",
     return_value="draft-9f8e7d6c",
