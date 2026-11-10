@@ -1,8 +1,11 @@
 from unittest.mock import patch
+import pytest
+from pydantic import ValidationError
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
-from app.schemas.product import Product, ProductListResponse
+from app.core.validation import VALIDATION_MESSAGES
+from app.schemas.product import Product, ProductListResponse, ProductPostRequest
 from app.schemas.tag import Tag
 from app.core.exceptions.application_exceptions import ApplicationError
 
@@ -83,6 +86,49 @@ def test_create_product_validation_title_missing(client, auth_headers):
     messages = [item["message"] for item in data["details"]]
     assert data["error"] == ErrorCode.VALIDATION_ERROR
     assert ErrorMessage.PRODUCT_TITLE_REQUIRED in messages
+
+
+# バリデーションエラー: タイトルの文字数上限超過（記事用ではなくプロダクト用のメッセージ）
+def test_create_product_validation_title_too_long(client, auth_headers):
+    response = client.post(
+        "/admin/products",
+        headers=auth_headers,
+        json={"title": "a" * (Constant.MAX_PRODUCT_TITLE_LENGTH + 1)},
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.PRODUCT_TITLE_MAX_LENGTH in messages
+
+
+# タイトル超過のエラー type がプロダクト固有である
+# （現状は記事と上限・文言が同じため、type で記事用メッセージと区別されることを確認する）
+def test_product_title_too_long_error_type():
+    with pytest.raises(ValidationError) as exc_info:
+        ProductPostRequest(title="a" * (Constant.MAX_PRODUCT_TITLE_LENGTH + 1))
+
+    errors = exc_info.value.errors()
+    assert errors[0]["loc"] == ("title",)
+    assert errors[0]["type"] == "product_title_too_long"
+    assert VALIDATION_MESSAGES[("title", "product_title_too_long")] == (
+        ErrorMessage.PRODUCT_TITLE_MAX_LENGTH
+    )
+
+
+# 正常系: タイトルが文字数上限ちょうど
+@patch("app.services.product_service.ProductService.create_product")
+def test_create_product_title_max_length_boundary(mock_create, client, auth_headers):
+    mock_create.return_value = 100
+
+    response = client.post(
+        "/admin/products",
+        headers=auth_headers,
+        json={"title": "a" * Constant.MAX_PRODUCT_TITLE_LENGTH},
+    )
+
+    assert response.status_code == 200
 
 
 # バリデーションエラー: タグの個数上限超過
