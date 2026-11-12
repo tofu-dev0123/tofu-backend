@@ -4,6 +4,7 @@ from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 
 
 # 正常系
@@ -277,3 +278,83 @@ def test_update_post_image_not_exist(mock_update_all, client, auth_headers):
     data = response.json()
     assert data["error"] == ErrorCode.NOT_EXIST
     mock_update_all.assert_called_once()
+
+
+# スラグ指定ありの正常系
+@patch("app.services.post_service.PostService.update_all")
+def test_update_post_with_slug_success(mock_update_all, client, auth_headers):
+    req = {
+        "title": "Updated Test",
+        "slug": "updated-slug",
+        "content_md": "updated_md",
+        "thumbnail_delete_flag": False,
+        "status": "PUBLISHED",
+    }
+    response = client.put("/admin/posts/1", headers=auth_headers, json=req)
+
+    assert response.status_code == 200
+    request = mock_update_all.call_args.args[0]
+    assert request.slug == "updated-slug"
+    assert "slug" in request.model_fields_set
+
+
+# スラグ空文字は再生成指定（None）として受け付ける
+@patch("app.services.post_service.PostService.update_all")
+def test_update_post_with_empty_slug(mock_update_all, client, auth_headers):
+    req = {
+        "title": "Updated Test",
+        "slug": "",
+        "content_md": "updated_md",
+        "thumbnail_delete_flag": False,
+        "status": "PUBLISHED",
+    }
+    response = client.put("/admin/posts/1", headers=auth_headers, json=req)
+
+    assert response.status_code == 200
+    request = mock_update_all.call_args.args[0]
+    assert request.slug is None
+    assert "slug" in request.model_fields_set
+
+
+# スラグ形式・最大文字数バリデーションエラー
+def test_validation_error_slug(client, auth_headers):
+    base = {
+        "title": "Updated Test",
+        "content_md": "updated_md",
+        "thumbnail_delete_flag": False,
+        "status": "PUBLISHED",
+    }
+    for slug, expected in [
+        ("Invalid_Slug", ErrorMessage.SLUG_FORMAT),
+        ("a" * (Constant.MAX_SLUG_LENGTH + 1), ErrorMessage.SLUG_MAX_LENGTH),
+    ]:
+        response = client.put(
+            "/admin/posts/1", headers=auth_headers, json={**base, "slug": slug}
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        messages = [item["message"] for item in data["details"]]
+        assert data["error"] == ErrorCode.VALIDATION_ERROR
+        assert expected in messages
+
+
+# スラグ重複エラー
+@patch(
+    "app.services.post_service.PostService.update_all",
+    side_effect=SlugAlreadyExistsError,
+)
+def test_update_post_slug_already_exists(mock_update_all, client, auth_headers):
+    req = {
+        "title": "Updated Test",
+        "slug": "dup",
+        "content_md": "updated_md",
+        "thumbnail_delete_flag": False,
+        "status": "PUBLISHED",
+    }
+    response = client.put("/admin/posts/1", headers=auth_headers, json=req)
+
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"] == ErrorCode.SLUG_ALREADY_EXISTS
+    assert data["message"] == ErrorMessage.SLUG_ALREADY_EXISTS
