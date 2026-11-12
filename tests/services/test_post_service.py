@@ -335,6 +335,31 @@ def test_create_all_image_not_exist_error(
     post_service.check_image_list.assert_called_once_with([1, 2])
 
 
+# create_all: 他の記事に紐づく画像を指定した場合は INVALID_IMAGE_OWNER で rollback
+def test_create_all_image_attached_to_other_post(mock_db, post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1),
+        _mock_image(2, post_id=5),
+    ]
+
+    req = PostsPostRequest(
+        title="Test",
+        content_md="test_md",
+        thumbnail_url="test_thumb",
+        status=PostStatus.PUBLISHED,
+        tags=[],
+        images=[1, 2],
+    )
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.create_all(req, user_id=123)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    post_service.post_repo.create.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
 # set_published_at_from_status: DRAFT → PUBLISHED（初公開）
 def test_set_published_at_from_status_draft_to_published(post_service, fixed_now):
     mock_post = Mock()
