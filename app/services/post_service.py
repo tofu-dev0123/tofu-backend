@@ -163,11 +163,11 @@ class PostService:
         if not set(images) <= image_map.keys():
             raise ImageNotExistError()
 
-        for id in dict.fromkeys(images):
-            owner_post_id = image_map[id].post_id
+        for image_id in dict.fromkeys(images):
+            owner_post_id = image_map[image_id].post_id
             if owner_post_id is not None and owner_post_id != post_id:
                 raise ApplicationError(
-                    message=ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=id),
+                    message=ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=image_id),
                     code=ErrorCode.INVALID_IMAGE_OWNER,
                 )
 
