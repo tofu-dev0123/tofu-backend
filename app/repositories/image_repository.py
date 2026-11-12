@@ -12,6 +12,10 @@ class ImageRepository:
         stmt = select(Image).where(Image.image_id == id)
         return self.db.execute(stmt).scalars().first()
 
+    def find_by_image_ids(self, ids: list[int]) -> list[Image]:
+        stmt = select(Image).where(Image.image_id.in_(ids))
+        return list(self.db.execute(stmt).scalars().all())
+
     def find_by_url(self, url: str) -> Image | None:
         stmt = select(Image).where(Image.url == url)
         return self.db.execute(stmt).scalars().first()
@@ -31,6 +35,10 @@ class ImageRepository:
 
     def delete(self, image_id: int) -> None:
         stmt = delete(Image).where(Image.image_id == image_id)
+        self.db.execute(stmt)
+
+    def delete_by_image_ids(self, ids: list[int]) -> None:
+        stmt = delete(Image).where(Image.image_id.in_(ids))
         self.db.execute(stmt)
 
     def delete_from_post_id(self, post_id: int) -> None:

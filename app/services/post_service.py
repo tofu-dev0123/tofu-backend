@@ -157,11 +157,10 @@ class PostService:
     """
 
     def check_image_list(self, images: list[int]) -> None:
-        for id in images:
-            image_data = self.image_repo.find_by_image_id(id)
+        found_ids = {image.image_id for image in self.image_repo.find_by_image_ids(images)}
 
-            if image_data is None:
-                raise ImageNotExistError()
+        if not set(images) <= found_ids:
+            raise ImageNotExistError()
 
     """
     タイトルからスラグを生成する
@@ -375,8 +374,13 @@ class PostService:
     """
 
     def extract_delete_images(self, post_id: int, images: list[int]) -> None:
-        for id in images:
-            image = self.image_repo.find_by_image_id(id)
+        # 重複を除いた ID をリクエスト順に並べる
+        image_ids = list(dict.fromkeys(images))
+        image_map = {image.image_id: image for image in self.image_repo.find_by_image_ids(image_ids)}
+
+        # 全件をチェックしてから削除する（エラー時に一部だけ削除されないようにする）
+        for id in image_ids:
+            image = image_map.get(id)
 
             if not image:
                 raise ImageNotExistError()
@@ -387,9 +391,10 @@ class PostService:
                     code=ErrorCode.INVALID_IMAGE_OWNER,
                 )
 
-            self.delete_image_from_s3(image.url)
+        for id in image_ids:
+            self.delete_image_from_s3(image_map[id].url)
 
-            self.image_repo.delete(id)
+        self.image_repo.delete_by_image_ids(image_ids)
 
     """
     タグの更新処理をする

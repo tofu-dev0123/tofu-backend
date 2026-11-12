@@ -44,6 +44,30 @@ def test_update_post_id_by_image_ids_does_not_commit(db, make_post):
     assert repo.find_url_by_post_id(post.post_id) == []
 
 
+def test_find_by_image_ids(db):
+    repo = ImageRepository(db)
+    a = repo.create(Image(url="https://cdn/a.png"))
+    b = repo.create(Image(url="https://cdn/b.png"))
+    repo.create(Image(url="https://cdn/c.png"))
+
+    result = repo.find_by_image_ids([a, b, b + 100])
+
+    assert sorted(image.image_id for image in result) == [a, b]
+    assert repo.find_by_image_ids([]) == []
+
+
+def test_delete_by_image_ids(db):
+    repo = ImageRepository(db)
+    a = repo.create(Image(url="https://cdn/a.png"))
+    b = repo.create(Image(url="https://cdn/b.png"))
+    other = repo.create(Image(url="https://cdn/c.png"))
+
+    repo.delete_by_image_ids([a, b])
+
+    assert repo.find_by_image_ids([a, b]) == []
+    assert repo.find_by_image_id(other) is not None
+
+
 def test_delete(db):
     repo = ImageRepository(db)
     image_id = repo.create(Image(url="https://cdn/a.png"))
