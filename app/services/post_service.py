@@ -26,6 +26,7 @@ from app.services.tag_service import TagService
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
@@ -175,7 +176,9 @@ class PostService:
     タイトルからスラグを生成する
     """
 
-    def generate_slug_of_title(self, title: str | None) -> str:
+    def generate_slug_of_title(
+        self, title: str | None, exclude_slug: str | None = None
+    ) -> str:
         if not title:
             return generate_draft_slug()
 
@@ -185,8 +188,12 @@ class PostService:
         if not base_slug:
             return generate_draft_slug()
 
-        # DBから同一prefixのスラグ取得
-        existing_slugs = self.post_repo.find_slugs_like(base_slug)
+        # DBから同一prefixのスラグ取得（更新時は自記事の現スラグを重複対象から除く）
+        existing_slugs = [
+            slug
+            for slug in self.post_repo.find_slugs_like(base_slug)
+            if slug != exclude_slug
+        ]
 
         # 同じものがなければそのまま返す
         if base_slug not in existing_slugs:
@@ -196,6 +203,16 @@ class PostService:
         title_slug = increment_slug_suffix(base_slug, existing_slugs)
 
         return title_slug
+
+    """
+    指定されたスラグが他の記事で使われていないかチェックする
+    """
+
+    def ensure_slug_available(
+        self, slug: str, exclude_post_id: int | None = None
+    ) -> None:
+        if self.post_repo.exists_by_slug(slug, exclude_post_id):
+            raise SlugAlreadyExistsError()
 
     """
     タグからスラグを生成してtag_idを取得する
@@ -264,8 +281,12 @@ class PostService:
             if request.images:
                 self.check_image_list(request.images)
 
-            # タイトルからスラグを生成
-            unique_slug = self.generate_slug_of_title(request.title)
+            # スラグの指定があれば重複チェックして採用し、なければタイトルから生成
+            if request.slug:
+                self.ensure_slug_available(request.slug)
+                unique_slug = request.slug
+            else:
+                unique_slug = self.generate_slug_of_title(request.title)
 
             # タグからスラグを生成し登録するIDを取得
             tag_id_list = []
@@ -441,6 +462,43 @@ class PostService:
         self.create_post_tag(tag_id_list, post_id)
 
     """
+    更新後のスラグを決定する
+    """
+
+    def resolve_update_slug(
+        self, request: PostsPutRequest, post_id: int, current_slug: str
+    ) -> str:
+        # スラグ省略時は現在の値を維持（公開時のみドラフトスラグをタイトルベーススラグに上書き）
+        if "slug" not in request.model_fields_set:
+            if request.status == PostStatus.PUBLISHED and is_draft_generated_slug(
+                current_slug
+            ):
+                generated_slug = self.generate_slug_of_title(request.title)
+
+                # 生成に失敗した場合は既存のドラフトスラグを維持する
+                if not is_draft_generated_slug(generated_slug):
+                    return generated_slug
+            return current_slug
+
+        # スラグの指定があれば自記事を除いて重複チェックして採用する
+        if request.slug:
+            self.ensure_slug_available(request.slug, exclude_post_id=post_id)
+            return request.slug
+
+        # 空文字・null の場合はタイトルから再生成する
+        generated_slug = self.generate_slug_of_title(
+            request.title, exclude_slug=current_slug
+        )
+
+        # 再生成でもドラフトスラグになる場合、現在のドラフトスラグは振り直さない
+        if is_draft_generated_slug(generated_slug) and is_draft_generated_slug(
+            current_slug
+        ):
+            return current_slug
+
+        return generated_slug
+
+    """
     記事の更新処理をする
     """
 
@@ -457,18 +515,8 @@ class PostService:
                 post_id, request.status
             )
 
-            # 公開時にドラフトスラグをタイトルベーススラグに上書き
             current_post = ensure_exists(self.post_repo.find_by_post_id(post_id))
-            new_slug = current_post.slug
-            if (
-                request.status == PostStatus.PUBLISHED
-                and is_draft_generated_slug(current_post.slug)
-            ):
-                generated_slug = self.generate_slug_of_title(request.title)
-
-                # 生成に失敗した場合は既存のドラフトスラグを維持する
-                if not is_draft_generated_slug(generated_slug):
-                    new_slug = generated_slug
+            new_slug = self.resolve_update_slug(request, post_id, current_post.slug)
 
             # 更新するサムネイルURLをセット
             update_url = self.update_thumbnail(
