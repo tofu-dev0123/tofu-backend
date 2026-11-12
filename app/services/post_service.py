@@ -153,14 +153,23 @@ class PostService:
         return result
 
     """
-    画像IDがImageテーブルに登録されているをチェックする
+    画像IDがImageテーブルに登録されており、他の記事に紐づいていないかをチェックする
+    post_id を省略した場合（記事作成時）は未紐付けの画像のみ許可する
     """
 
-    def check_image_list(self, images: list[int]) -> None:
-        found_ids = {image.image_id for image in self.image_repo.find_by_image_ids(images)}
+    def check_image_list(self, images: list[int], post_id: int | None = None) -> None:
+        image_map = {image.image_id: image for image in self.image_repo.find_by_image_ids(images)}
 
-        if not set(images) <= found_ids:
+        if not set(images) <= image_map.keys():
             raise ImageNotExistError()
+
+        for id in dict.fromkeys(images):
+            owner_post_id = image_map[id].post_id
+            if owner_post_id is not None and owner_post_id != post_id:
+                raise ApplicationError(
+                    message=ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=id),
+                    code=ErrorCode.INVALID_IMAGE_OWNER,
+                )
 
     """
     タイトルからスラグを生成する
@@ -251,7 +260,7 @@ class PostService:
 
     def create_all(self, request: PostsPostRequest, user_id: int) -> int:
         try:
-            # 画像IDの存在チェック
+            # 画像IDの存在・所有者チェック
             if request.images:
                 self.check_image_list(request.images)
 
@@ -438,6 +447,10 @@ class PostService:
     def update_all(self, request: PostsPutRequest, post_id: int) -> None:
         with transaction(self.db):
             ensure_exists(self.post_repo.exists_by_post_id(post_id))
+
+            # 紐づける画像IDの存在・所有者チェック（S3 削除を伴う処理より前に行う）
+            if request.new_images:
+                self.check_image_list(request.new_images, post_id)
 
             # ステータスの値によって投稿日時をセット
             new_published_at = self.set_published_at_from_status(
