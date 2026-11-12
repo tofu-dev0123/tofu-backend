@@ -103,6 +103,24 @@ def test_create_product_validation_title_too_long(client, auth_headers):
     assert ErrorMessage.PRODUCT_TITLE_MAX_LENGTH in messages
 
 
+# バリデーションエラー: GitHubリンクURLの文字数上限超過
+def test_create_product_validation_github_url_too_long(client, auth_headers):
+    response = client.post(
+        "/admin/products",
+        headers=auth_headers,
+        json={
+            "title": "プロダクト",
+            "github_url": "a" * (Constant.MAX_LINK_URL_LENGTH + 1),
+        },
+    )
+
+    assert response.status_code == 400
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.GITHUB_URL_MAX_LENGTH in messages
+
+
 # タイトル超過のエラー type がプロダクト固有である
 # （現状は記事と上限・文言が同じため、type で記事用メッセージと区別されることを確認する）
 def test_product_title_too_long_error_type():
