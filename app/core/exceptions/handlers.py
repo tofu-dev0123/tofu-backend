@@ -22,6 +22,7 @@ from app.core.exceptions.account_exceptions import (
     NewPasswordSameError,
     NewEmailSameError,
 )
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 from app.core.validation import VALIDATION_MESSAGES
 from app.schemas.errors import ErrorResponse, ErrorDetail
 from app.common.errorcode import ErrorCode
@@ -118,6 +119,13 @@ _SIMPLE_HANDLERS: list[
         ErrorCode.NEW_EMAIL_SAME,
         _fixed(ErrorMessage.NEW_EMAIL_SAME),
         "new email same as current",
+    ),
+    (
+        SlugAlreadyExistsError,
+        400,
+        ErrorCode.SLUG_ALREADY_EXISTS,
+        _fixed(ErrorMessage.SLUG_ALREADY_EXISTS),
+        "slug already exists",
     ),
 ]
 

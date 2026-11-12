@@ -10,6 +10,7 @@ class Constant:
     # 記事関連
     MAX_CONTENT_MARKDOWN_SIZE = 1 * 1024 * 1024  # 1MB
     MAX_SLUG_LENGTH = 50
+    SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
     MAX_TITLE_LENGTH = 255
     MAX_THUMBNAIL_URL = 500
     MAX_TAGS = 20
