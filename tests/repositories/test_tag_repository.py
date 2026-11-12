@@ -1,13 +1,18 @@
 from app.repositories.tag_repository import TagRepository
 
 
-def test_create_and_find_id_by_name(db):
+def test_create_and_find_ids_by_names(db):
     repo = TagRepository(db)
 
-    tag_id = repo.create("Python", "python")
+    python_id = repo.create("Python", "python")
+    fastapi_id = repo.create("FastAPI", "fastapi")
 
-    assert repo.find_id_by_name("Python") == tag_id
-    assert repo.find_id_by_name("Go") is None
+    assert repo.find_ids_by_names(["Python", "FastAPI", "Go"]) == {
+        "Python": python_id,
+        "FastAPI": fastapi_id,
+    }
+    assert repo.find_ids_by_names(["Go"]) == {}
+    assert repo.find_ids_by_names([]) == {}
 
 
 def test_find_slugs_starting_with(db, make_tag):

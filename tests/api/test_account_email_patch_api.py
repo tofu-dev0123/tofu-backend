@@ -142,6 +142,50 @@ def test_validation_error_password_max_length(client, auth_headers):
     assert ErrorMessage.PASSWORD_MAX_LENGTH in messages
 
 
+# 現在のメールアドレス最大文字数バリデーション
+def test_validation_error_current_email_max_length(client, auth_headers):
+    local_part = "a" * (Constant.MAX_USERNAME_LENGTH + 1 - len("@example.com"))
+    response = client.patch(
+        "/admin/account/email",
+        headers=auth_headers,
+        json={
+            "current_email": f"{local_part}@example.com",
+            "new_email": "new-email@example.com",
+            "password": TEST_USER_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.USERNAME_MAX_LENGTH in messages
+
+
+# 新しいメールアドレス最大文字数バリデーション
+def test_validation_error_new_email_max_length(client, auth_headers):
+    local_part = "a" * (Constant.MAX_USERNAME_LENGTH + 1 - len("@example.com"))
+    response = client.patch(
+        "/admin/account/email",
+        headers=auth_headers,
+        json={
+            "current_email": "old-email@example.com",
+            "new_email": f"{local_part}@example.com",
+            "password": TEST_USER_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    messages = [item["message"] for item in data["details"]]
+
+    assert data["error"] == ErrorCode.VALIDATION_ERROR
+    assert ErrorMessage.USERNAME_MAX_LENGTH in messages
+
+
 # 現在のメールアドレス不一致エラー
 def test_email_mismatch_error(client, auth_headers):
     with patch(

@@ -176,3 +176,14 @@ def test_find_and_count_published_posts(db, make_post, make_tag):
     assert repo.count_published_posts() == 2
     assert repo.count_published_posts("old") == 1
     assert sorted(repo.find_published_slugs()) == ["new", "old"]
+
+
+def test_exists_by_slug(db, make_post):
+    post = make_post("hello")
+    repo = PostRepository(db)
+
+    assert repo.exists_by_slug("hello") is True
+    assert repo.exists_by_slug("world") is False
+    # 自記事を除外すると重複なし
+    assert repo.exists_by_slug("hello", exclude_post_id=post.post_id) is False
+    assert repo.exists_by_slug("hello", exclude_post_id=post.post_id + 1) is True

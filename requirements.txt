@@ -14,7 +14,7 @@ pytest
 httpx
 sqlalchemy-utils
 python-slugify
-deep-translator
+pykakasi
 python-multipart
 boto3
 sqlalchemy-utils

@@ -118,7 +118,7 @@ PATCH /admin/account/password
 | 400        | PASSWORD_MISMATCH    | 現在のパスワードが一致しない   |
 | 400        | NEW_PASSWORD_SAME    | 新しいパスワードが現在と同一   |
 | 401        | AUTHENTICATION_ERROR | 認証に失敗した                 |
-| 422        | VALIDATION_ERROR     | バリデーションエラー           |
+| 400        | VALIDATION_ERROR     | バリデーションエラー           |
 
 ## メールアドレス変更
 
@@ -178,7 +178,7 @@ PATCH /admin/account/email
 | 400        | EMAIL_ALREADY_EXISTS | メールアドレスが既に使用されている     |
 | 400        | NEW_EMAIL_SAME       | 新しいメールアドレスが現在と同一       |
 | 401        | AUTHENTICATION_ERROR | 認証に失敗した                         |
-| 422        | VALIDATION_ERROR     | バリデーションエラー                   |
+| 400        | VALIDATION_ERROR     | バリデーションエラー                   |
 
 ## バリデーションルール
 

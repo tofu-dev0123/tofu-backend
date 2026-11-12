@@ -4,6 +4,7 @@ from app.models.post import PostStatus
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import is_draft_generated_slug
@@ -113,26 +114,109 @@ def test_get_post_detail_no_images_no_tags(post_service):
     assert result.tags == []
 
 
-# 画像の存在チェック正常系
+def _mock_image(image_id: int, post_id: int | None = None, url: str = "") -> Mock:
+    image = Mock()
+    image.image_id = image_id
+    image.post_id = post_id
+    image.url = url or f"https://example.com/img{image_id}.png"
+    return image
+
+
+# 画像の存在チェック正常系: 件数によらず SELECT は 1 回
 def test_check_image_list_success(post_service):
-    mock_image = Mock()
-    post_service.image_repo.find_by_image_id.return_value = mock_image
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1),
+        _mock_image(2),
+        _mock_image(3),
+    ]
 
-    images = [1, 2, 3]
+    result = post_service.check_image_list([1, 2, 3])
 
-    result = post_service.check_image_list(images)
     assert result is None
-    assert post_service.image_repo.find_by_image_id.call_count == len(images)
+    post_service.image_repo.find_by_image_ids.assert_called_once_with([1, 2, 3])
+
+
+# 画像の存在チェック: 重複 ID があっても存在すれば正常
+def test_check_image_list_with_duplicate_ids(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1)]
+
+    result = post_service.check_image_list([1, 1])
+
+    assert result is None
 
 
 # 指定した画像が存在しない
 def test_image_not_exist(post_service):
-    post_service.image_repo.find_by_image_id.return_value = None
-
-    images = [1]
+    post_service.image_repo.find_by_image_ids.return_value = []
 
     with pytest.raises(ImageNotExistError):
-        post_service.check_image_list(images)
+        post_service.check_image_list([1])
+
+
+# 一部の画像が存在しない
+def test_image_not_exist_partially(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1)]
+
+    with pytest.raises(ImageNotExistError):
+        post_service.check_image_list([1, 2])
+
+
+# 作成時（post_id 省略）: 未紐付けの画像は許可
+def test_check_image_list_unattached_without_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1), _mock_image(2)]
+
+    result = post_service.check_image_list([1, 2])
+
+    assert result is None
+
+
+# 作成時（post_id 省略）: 他の記事に紐づく画像は INVALID_IMAGE_OWNER
+def test_check_image_list_attached_without_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1),
+        _mock_image(2, post_id=5),
+    ]
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.check_image_list([1, 2])
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=2)
+
+
+# 更新時（post_id 指定）: 自分の記事の画像・未紐付けの画像は許可
+def test_check_image_list_own_and_unattached_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1, post_id=10),
+        _mock_image(2),
+    ]
+
+    result = post_service.check_image_list([1, 2], 10)
+
+    assert result is None
+    post_service.image_repo.find_by_image_ids.assert_called_once_with([1, 2])
+
+
+# 更新時（post_id 指定）: 他の記事に紐づく画像は INVALID_IMAGE_OWNER
+def test_check_image_list_other_post_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1, post_id=10),
+        _mock_image(2, post_id=20),
+    ]
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.check_image_list([1, 2], 10)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=2)
+
+
+# 更新時（post_id 指定）: 存在しない画像は ImageNotExistError
+def test_check_image_list_not_exist_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1, post_id=10)]
+
+    with pytest.raises(ImageNotExistError):
+        post_service.check_image_list([1, 2], 10)
 
 
 # タイトルスラグ衝突なし→新規作成
@@ -250,6 +334,31 @@ def test_create_all_image_not_exist_error(
         post_service.create_all(req, user_id=123)
 
     post_service.check_image_list.assert_called_once_with([1, 2])
+
+
+# create_all: 他の記事に紐づく画像を指定した場合は INVALID_IMAGE_OWNER で rollback
+def test_create_all_image_attached_to_other_post(mock_db, post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1),
+        _mock_image(2, post_id=5),
+    ]
+
+    req = PostsPostRequest(
+        title="Test",
+        content_md="test_md",
+        thumbnail_url="test_thumb",
+        status=PostStatus.PUBLISHED,
+        tags=[],
+        images=[1, 2],
+    )
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.create_all(req, user_id=123)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    post_service.post_repo.create.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
+    post_service.db.rollback.assert_called_once()
 
 
 # set_published_at_from_status: DRAFT → PUBLISHED（初公開）
@@ -452,29 +561,39 @@ def test_update_thumbnail_flag_false_new_url(post_service):
     assert result == new_url
 
 
-# extract_delete_images: 正常系
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+# extract_delete_images: 正常系（SELECT・DELETE は 1 回ずつ）
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_extract_delete_images_success(mock_delete, post_service):
-    mock_image1 = Mock()
-    mock_image1.post_id = 1
-    mock_image1.url = "https://example.com/img1.png"
-    mock_image2 = Mock()
-    mock_image2.post_id = 1
-    mock_image2.url = "https://example.com/img2.png"
-
-    post_service.image_repo.find_by_image_id.side_effect = [mock_image1, mock_image2]
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(10, post_id=1),
+        _mock_image(20, post_id=1),
+    ]
 
     result = post_service.extract_delete_images(1, [10, 20])
 
     assert result is None
-    assert post_service.image_repo.find_by_image_id.call_count == 2
-    assert post_service.image_repo.delete.call_count == 2
-    assert mock_delete.call_count == 2
+    post_service.image_repo.find_by_image_ids.assert_called_once_with([10, 20])
+    post_service.image_repo.delete_by_image_ids.assert_called_once_with([10, 20])
+    mock_delete.assert_called_once_with(
+        ["https://example.com/img10.png", "https://example.com/img20.png"]
+    )
+
+
+# extract_delete_images: 重複 ID は 1 件として扱う
+@patch("app.services.post_service.PostService.delete_images_from_s3")
+def test_extract_delete_images_with_duplicate_ids(mock_delete, post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=1)]
+
+    post_service.extract_delete_images(1, [10, 10])
+
+    post_service.image_repo.find_by_image_ids.assert_called_once_with([10])
+    post_service.image_repo.delete_by_image_ids.assert_called_once_with([10])
+    mock_delete.assert_called_once_with(["https://example.com/img10.png"])
 
 
 # extract_delete_images: 画像が存在しない
 def test_extract_delete_images_not_exist(post_service):
-    post_service.image_repo.find_by_image_id.return_value = None
+    post_service.image_repo.find_by_image_ids.return_value = []
 
     with pytest.raises(ImageNotExistError):
         post_service.extract_delete_images(1, [10])
@@ -482,10 +601,9 @@ def test_extract_delete_images_not_exist(post_service):
 
 # extract_delete_images: 画像の所有者が異なる
 def test_extract_delete_images_invalid_owner(post_service):
-    mock_image = Mock()
-    mock_image.post_id = 999  # 異なるpost_id
-
-    post_service.image_repo.find_by_image_id.return_value = mock_image
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(10, post_id=999)  # 異なるpost_id
+    ]
 
     with pytest.raises(ApplicationError) as exc_info:
         post_service.extract_delete_images(1, [10])
@@ -494,6 +612,41 @@ def test_extract_delete_images_invalid_owner(post_service):
         image_id=10
     )
     assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+
+
+# extract_delete_images: エラー時は先に正常な画像があっても S3・DB とも削除しない
+@patch("app.services.post_service.PostService.delete_images_from_s3")
+def test_extract_delete_images_no_side_effect_on_error(mock_delete, post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=1)]
+
+    with pytest.raises(ImageNotExistError):
+        post_service.extract_delete_images(1, [10, 20])
+
+    mock_delete.assert_not_called()
+    post_service.image_repo.delete_by_image_ids.assert_not_called()
+
+
+# extract_delete_images: 存在しない画像と所有者違いが混在→リクエスト順で先のエラーを返す
+def test_extract_delete_images_error_in_request_order(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(10, post_id=999)
+    ]
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.extract_delete_images(1, [10, 20])
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+
+
+# attach_post_id_to_image: 一括 UPDATE を 1 回だけ実行し、commit しない
+def test_attach_post_id_to_image_success(post_service):
+    result = post_service.attach_post_id_to_image([1, 2, 3], 10)
+
+    assert result is None
+    post_service.image_repo.update_post_id_by_image_ids.assert_called_once_with(
+        [1, 2, 3], 10
+    )
+    post_service.db.commit.assert_not_called()
 
 
 # update_tags: 正常系
@@ -516,7 +669,9 @@ def test_update_tags_success(mock_create_post_tag, mock_generate_slug, post_serv
 @patch("app.services.post_service.PostService.extract_delete_images")
 @patch("app.services.post_service.PostService.update_thumbnail")
 @patch("app.services.post_service.PostService.set_published_at_from_status")
+@patch("app.services.post_service.PostService.check_image_list")
 def test_update_all_success_full_update(
+    mock_check_image_list,
     mock_set_published_at,
     mock_update_thumbnail,
     mock_extract_delete_images,
@@ -549,6 +704,7 @@ def test_update_all_success_full_update(
 
     assert result is None
     post_service.post_repo.exists_by_post_id.assert_called_once_with(999)
+    mock_check_image_list.assert_called_once_with([3, 4], 999)
     mock_set_published_at.assert_called_once_with(999, PostStatus.PUBLISHED)
     mock_update_thumbnail.assert_called_once_with(
         999, "https://example.com/new-thumb.png", False
@@ -698,6 +854,68 @@ def test_update_all_invalid_image_owner(
     post_service.db.rollback.assert_called_once()
 
 
+# update_all: 紐づける画像が存在しない場合は削除・更新前に rollback
+@patch("app.services.post_service.PostService.extract_delete_images")
+def test_update_all_new_images_not_exist(
+    mock_extract_delete_images,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.image_repo.find_by_image_ids.return_value = []
+
+    req = PostsPutRequest(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_url=None,
+        thumbnail_delete_flag=False,
+        status=PostStatus.DRAFT,
+        delete_images=[1],
+        new_images=[999],
+        tags=[],
+    )
+
+    with pytest.raises(ImageNotExistError):
+        post_service.update_all(req, post_id=1)
+
+    mock_extract_delete_images.assert_not_called()
+    post_service.post_repo.update_post.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
+# update_all: 他の記事に紐づく画像を指定した場合は削除・更新前に rollback
+@patch("app.services.post_service.PostService.extract_delete_images")
+def test_update_all_new_images_attached_to_other_post(
+    mock_extract_delete_images,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=2)]
+
+    req = PostsPutRequest(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_url=None,
+        thumbnail_delete_flag=False,
+        status=PostStatus.DRAFT,
+        delete_images=[1],
+        new_images=[10],
+        tags=[],
+    )
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.update_all(req, post_id=1)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=10)
+    mock_extract_delete_images.assert_not_called()
+    post_service.post_repo.update_post.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
 # update_all: サムネイル更新でBAD_REQUEST_OF_THUMBNAIL
 @patch(
     "app.services.post_service.PostService.update_thumbnail",
@@ -758,26 +976,24 @@ def test_delete_thumbnail_no_thumbnail(post_service):
     post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
 
 
-# delete_image_from_post_id: 正常系（画像URLが複数ある場合）
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+# delete_image_from_post_id: 正常系（画像URLが複数ある場合はまとめて削除する）
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_delete_image_from_post_id_success(mock_delete, post_service):
-    post_service.image_repo.find_url_by_post_id.return_value = [
+    urls = [
         "https://example.com/img1.png",
         "https://example.com/img2.png",
         "https://example.com/img3.png",
     ]
+    post_service.image_repo.find_url_by_post_id.return_value = urls
 
     result = post_service.delete_image_from_post_id(1)
 
     assert result is None
     post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
-    assert mock_delete.call_count == 3
-    mock_delete.assert_any_call("https://example.com/img1.png")
-    mock_delete.assert_any_call("https://example.com/img2.png")
-    mock_delete.assert_any_call("https://example.com/img3.png")
+    mock_delete.assert_called_once_with(urls)
 
 
-# delete_image_from_post_id: 正常系（画像URLが空の場合）
+# delete_image_from_post_id: 正常系（画像URLが空の場合は S3 を呼ばない）
 def test_delete_image_from_post_id_empty_list(post_service):
     post_service.image_repo.find_url_by_post_id.return_value = []
 
@@ -785,6 +1001,54 @@ def test_delete_image_from_post_id_empty_list(post_service):
 
     assert result is None
     post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+    post_service.s3.delete_objects.assert_not_called()
+
+
+# delete_images_from_s3: 正常系（1 回の delete_objects でまとめて削除する）
+def test_delete_images_from_s3_success(post_service):
+    post_service.s3.extract_key_from_url.side_effect = ["key1", "key2"]
+    post_service.s3.delete_objects.return_value = []
+
+    result = post_service.delete_images_from_s3(
+        ["https://example.com/img1.png", "https://example.com/img2.png"]
+    )
+
+    assert result is None
+    post_service.s3.delete_objects.assert_called_once_with(["key1", "key2"])
+
+
+# delete_images_from_s3: 一部のキーの削除に失敗した場合
+def test_delete_images_from_s3_partial_failure(post_service, caplog):
+    post_service.s3.extract_key_from_url.side_effect = ["key1", "key2"]
+    post_service.s3.delete_objects.return_value = ["key2"]
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(
+            ["https://example.com/img1.png", "https://example.com/img2.png"]
+        )
+
+    assert any(
+        r.levelname == "ERROR" and r.getMessage() == "S3 delete failed"
+        for r in caplog.records
+    )
+
+
+# delete_images_from_s3: ClientError が発生した場合
+def test_delete_images_from_s3_client_error(post_service):
+    post_service.s3.extract_key_from_url.return_value = "key1"
+    post_service.s3.delete_objects.side_effect = ClientError({}, "DeleteObjects")
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(["https://example.com/img1.png"])
+
+
+# delete_images_from_s3: BotoCoreError が発生した場合
+def test_delete_images_from_s3_botocore_error(post_service):
+    post_service.s3.extract_key_from_url.return_value = "key1"
+    post_service.s3.delete_objects.side_effect = BotoCoreError()
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(["https://example.com/img1.png"])
 
 
 # delete_all: 正常系
@@ -927,3 +1191,174 @@ def test_patch_status_keeps_draft_slug_when_generation_failed(
     post_service.post_repo.update_status_and_published_at.assert_called_once_with(
         1, PostStatus.PUBLISHED, fixed_time, slug=None
     )
+
+
+# ---- スラグ任意入力 ----
+
+
+def _put_request(**kwargs):
+    base = dict(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_delete_flag=False,
+        status=PostStatus.PUBLISHED,
+    )
+    base.update(kwargs)
+    return PostsPutRequest(**base)
+
+
+# 指定スラグが未使用なら例外にならない
+def test_ensure_slug_available_ok(post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+
+    post_service.ensure_slug_available("my-slug", exclude_post_id=1)
+
+    post_service.post_repo.exists_by_slug.assert_called_once_with("my-slug", 1)
+
+
+# 指定スラグが使用済みなら SlugAlreadyExistsError
+def test_ensure_slug_available_raises(post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.ensure_slug_available("my-slug")
+
+
+# 自記事の現スラグは重複候補から除外される
+@patch("app.services.post_service.generate_slug", return_value="test-title")
+def test_generate_slug_of_title_excludes_own_slug(mock_gen, post_service):
+    post_service.post_repo.find_slugs_like.return_value = ["test-title"]
+
+    result = post_service.generate_slug_of_title("Test Title", exclude_slug="test-title")
+
+    assert result == "test-title"
+
+
+# 作成時にスラグ指定があれば重複チェックして採用する
+@patch("app.services.post_service.PostService.create_post", return_value=999)
+@patch("app.services.post_service.PostService.generate_slug_of_title")
+def test_create_all_with_slug(mock_generate_slug_of_title, mock_create_post, mock_db, post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+    req = PostsPostRequest(
+        title="Test", slug="my-slug", content_md="md", status=PostStatus.DRAFT
+    )
+
+    post_service.create_all(req, user_id=1)
+
+    post_service.post_repo.exists_by_slug.assert_called_once_with("my-slug", None)
+    mock_generate_slug_of_title.assert_not_called()
+    assert mock_create_post.call_args.args[2] == "my-slug"
+
+
+# 作成時にスラグが重複していれば例外となりロールバックする
+@patch("app.services.post_service.PostService.create_post")
+def test_create_all_slug_already_exists(mock_create_post, mock_db, post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+    req = PostsPostRequest(
+        title="Test", slug="dup", content_md="md", status=PostStatus.DRAFT
+    )
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.create_all(req, user_id=1)
+
+    mock_create_post.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
+# 作成時にスラグ未入力ならタイトルから生成する
+@patch("app.services.post_service.PostService.create_post", return_value=999)
+@patch("app.services.post_service.PostService.generate_slug_of_title", return_value="test")
+def test_create_all_without_slug(mock_generate_slug_of_title, mock_create_post, mock_db, post_service):
+    req = PostsPostRequest(title="Test", slug="", content_md="md", status=PostStatus.DRAFT)
+
+    post_service.create_all(req, user_id=1)
+
+    mock_generate_slug_of_title.assert_called_once_with("Test")
+    post_service.post_repo.exists_by_slug.assert_not_called()
+    assert mock_create_post.call_args.args[2] == "test"
+
+
+# 更新時: スラグ省略なら現在の値を維持する
+def test_resolve_update_slug_omitted_keeps_current(post_service):
+    req = _put_request()
+
+    result = post_service.resolve_update_slug(req, 1, "existing-slug")
+
+    assert result == "existing-slug"
+    post_service.post_repo.exists_by_slug.assert_not_called()
+
+
+# 更新時: スラグ省略で公開かつドラフトスラグならタイトルから振り直す
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="updated-title",
+)
+def test_resolve_update_slug_omitted_overwrites_draft_slug(mock_gen, post_service):
+    req = _put_request()
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "updated-title"
+    mock_gen.assert_called_once_with("Updated Title")
+
+
+# 更新時: スラグ指定ありなら自記事を除いて重複チェックし採用する
+def test_resolve_update_slug_specified(post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+    req = _put_request(slug="new-slug")
+
+    result = post_service.resolve_update_slug(req, 1, "existing-slug")
+
+    assert result == "new-slug"
+    post_service.post_repo.exists_by_slug.assert_called_once_with("new-slug", 1)
+
+
+# 更新時: 指定スラグが他記事と重複していれば例外
+def test_resolve_update_slug_already_exists(post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+    req = _put_request(slug="dup")
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.resolve_update_slug(req, 1, "existing-slug")
+
+
+# 更新時: 空文字ならタイトルから再生成する（自記事の現スラグは除外）
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="updated-title",
+)
+def test_resolve_update_slug_empty_regenerates(mock_gen, post_service):
+    req = _put_request(slug="")
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "updated-title"
+    mock_gen.assert_called_once_with("Updated Title", exclude_slug="draft-0a1b2c3d")
+
+
+# 更新時: 再生成でもドラフトスラグになる場合は現在のドラフトスラグを維持する
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="draft-ffffffff",
+)
+def test_resolve_update_slug_empty_keeps_current_draft(mock_gen, post_service):
+    req = _put_request(title="", slug="", status=PostStatus.DRAFT)
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "draft-0a1b2c3d"
+
+
+# 更新処理で決定したスラグが update_post に渡る
+@patch("app.services.post_service.PostService.update_thumbnail", return_value=None)
+@patch("app.services.post_service.PostService.set_published_at_from_status", return_value=None)
+def test_update_all_with_slug(mock_set_published_at, mock_update_thumbnail, mock_db, post_service):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.post_repo.exists_by_slug.return_value = False
+    mock_current_post = Mock()
+    mock_current_post.slug = "existing-slug"
+    post_service.post_repo.find_by_post_id.return_value = mock_current_post
+
+    post_service.update_all(_put_request(slug="new-slug"), post_id=1)
+
+    assert post_service.post_repo.update_post.call_args.kwargs["slug"] == "new-slug"
