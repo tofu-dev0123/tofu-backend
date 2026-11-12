@@ -4,6 +4,7 @@ from app.models.post import PostStatus
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import is_draft_generated_slug
@@ -1190,3 +1191,174 @@ def test_patch_status_keeps_draft_slug_when_generation_failed(
     post_service.post_repo.update_status_and_published_at.assert_called_once_with(
         1, PostStatus.PUBLISHED, fixed_time, slug=None
     )
+
+
+# ---- スラグ任意入力 ----
+
+
+def _put_request(**kwargs):
+    base = dict(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_delete_flag=False,
+        status=PostStatus.PUBLISHED,
+    )
+    base.update(kwargs)
+    return PostsPutRequest(**base)
+
+
+# 指定スラグが未使用なら例外にならない
+def test_ensure_slug_available_ok(post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+
+    post_service.ensure_slug_available("my-slug", exclude_post_id=1)
+
+    post_service.post_repo.exists_by_slug.assert_called_once_with("my-slug", 1)
+
+
+# 指定スラグが使用済みなら SlugAlreadyExistsError
+def test_ensure_slug_available_raises(post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.ensure_slug_available("my-slug")
+
+
+# 自記事の現スラグは重複候補から除外される
+@patch("app.services.post_service.generate_slug", return_value="test-title")
+def test_generate_slug_of_title_excludes_own_slug(mock_gen, post_service):
+    post_service.post_repo.find_slugs_like.return_value = ["test-title"]
+
+    result = post_service.generate_slug_of_title("Test Title", exclude_slug="test-title")
+
+    assert result == "test-title"
+
+
+# 作成時にスラグ指定があれば重複チェックして採用する
+@patch("app.services.post_service.PostService.create_post", return_value=999)
+@patch("app.services.post_service.PostService.generate_slug_of_title")
+def test_create_all_with_slug(mock_generate_slug_of_title, mock_create_post, mock_db, post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+    req = PostsPostRequest(
+        title="Test", slug="my-slug", content_md="md", status=PostStatus.DRAFT
+    )
+
+    post_service.create_all(req, user_id=1)
+
+    post_service.post_repo.exists_by_slug.assert_called_once_with("my-slug", None)
+    mock_generate_slug_of_title.assert_not_called()
+    assert mock_create_post.call_args.args[2] == "my-slug"
+
+
+# 作成時にスラグが重複していれば例外となりロールバックする
+@patch("app.services.post_service.PostService.create_post")
+def test_create_all_slug_already_exists(mock_create_post, mock_db, post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+    req = PostsPostRequest(
+        title="Test", slug="dup", content_md="md", status=PostStatus.DRAFT
+    )
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.create_all(req, user_id=1)
+
+    mock_create_post.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
+# 作成時にスラグ未入力ならタイトルから生成する
+@patch("app.services.post_service.PostService.create_post", return_value=999)
+@patch("app.services.post_service.PostService.generate_slug_of_title", return_value="test")
+def test_create_all_without_slug(mock_generate_slug_of_title, mock_create_post, mock_db, post_service):
+    req = PostsPostRequest(title="Test", slug="", content_md="md", status=PostStatus.DRAFT)
+
+    post_service.create_all(req, user_id=1)
+
+    mock_generate_slug_of_title.assert_called_once_with("Test")
+    post_service.post_repo.exists_by_slug.assert_not_called()
+    assert mock_create_post.call_args.args[2] == "test"
+
+
+# 更新時: スラグ省略なら現在の値を維持する
+def test_resolve_update_slug_omitted_keeps_current(post_service):
+    req = _put_request()
+
+    result = post_service.resolve_update_slug(req, 1, "existing-slug")
+
+    assert result == "existing-slug"
+    post_service.post_repo.exists_by_slug.assert_not_called()
+
+
+# 更新時: スラグ省略で公開かつドラフトスラグならタイトルから振り直す
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="updated-title",
+)
+def test_resolve_update_slug_omitted_overwrites_draft_slug(mock_gen, post_service):
+    req = _put_request()
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "updated-title"
+    mock_gen.assert_called_once_with("Updated Title")
+
+
+# 更新時: スラグ指定ありなら自記事を除いて重複チェックし採用する
+def test_resolve_update_slug_specified(post_service):
+    post_service.post_repo.exists_by_slug.return_value = False
+    req = _put_request(slug="new-slug")
+
+    result = post_service.resolve_update_slug(req, 1, "existing-slug")
+
+    assert result == "new-slug"
+    post_service.post_repo.exists_by_slug.assert_called_once_with("new-slug", 1)
+
+
+# 更新時: 指定スラグが他記事と重複していれば例外
+def test_resolve_update_slug_already_exists(post_service):
+    post_service.post_repo.exists_by_slug.return_value = True
+    req = _put_request(slug="dup")
+
+    with pytest.raises(SlugAlreadyExistsError):
+        post_service.resolve_update_slug(req, 1, "existing-slug")
+
+
+# 更新時: 空文字ならタイトルから再生成する（自記事の現スラグは除外）
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="updated-title",
+)
+def test_resolve_update_slug_empty_regenerates(mock_gen, post_service):
+    req = _put_request(slug="")
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "updated-title"
+    mock_gen.assert_called_once_with("Updated Title", exclude_slug="draft-0a1b2c3d")
+
+
+# 更新時: 再生成でもドラフトスラグになる場合は現在のドラフトスラグを維持する
+@patch(
+    "app.services.post_service.PostService.generate_slug_of_title",
+    return_value="draft-ffffffff",
+)
+def test_resolve_update_slug_empty_keeps_current_draft(mock_gen, post_service):
+    req = _put_request(title="", slug="", status=PostStatus.DRAFT)
+
+    result = post_service.resolve_update_slug(req, 1, "draft-0a1b2c3d")
+
+    assert result == "draft-0a1b2c3d"
+
+
+# 更新処理で決定したスラグが update_post に渡る
+@patch("app.services.post_service.PostService.update_thumbnail", return_value=None)
+@patch("app.services.post_service.PostService.set_published_at_from_status", return_value=None)
+def test_update_all_with_slug(mock_set_published_at, mock_update_thumbnail, mock_db, post_service):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.post_repo.exists_by_slug.return_value = False
+    mock_current_post = Mock()
+    mock_current_post.slug = "existing-slug"
+    post_service.post_repo.find_by_post_id.return_value = mock_current_post
+
+    post_service.update_all(_put_request(slug="new-slug"), post_id=1)
+
+    assert post_service.post_repo.update_post.call_args.kwargs["slug"] == "new-slug"

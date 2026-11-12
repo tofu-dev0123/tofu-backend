@@ -45,6 +45,9 @@ class ErrorMessage:
     TITLE_MAX_LENGTH = (
         f"タイトルは{Constant.MAX_TITLE_LENGTH}文字以内で入力してください"
     )
+    SLUG_MAX_LENGTH = f"スラグは{Constant.MAX_SLUG_LENGTH}文字以内で入力してください"
+    SLUG_FORMAT = "スラグは小文字英数字とハイフンで入力してください"
+    SLUG_ALREADY_EXISTS = "このスラグは既に使用されています"
     CONTENT_MARKDOWN_REQUIRED = "マークダウン本文は必須項目です"
     CONTENT_MARKDOWN_SIZE_OVER = f"マークダウン本文のサイズは{(Constant.MAX_CONTENT_MARKDOWN_SIZE / (1024 * 1024))}MB以内で入力してください"
     CONTENT_HTML_REQUIRED = "HTML本文は必須項目です"

@@ -77,6 +77,12 @@ class PostsPostRequest(BaseModel):
     title: str | None = Field(
         None, max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
     )
+    slug: str | None = Field(
+        None,
+        max_length=Constant.MAX_SLUG_LENGTH,
+        pattern=Constant.SLUG_PATTERN,
+        description="スラグ（未入力時はタイトルから自動生成）",
+    )
     content_md: str = Field(..., description="マークダウン本文")
     thumbnail_url: str | None = Field(
         None, max_length=Constant.MAX_THUMBNAIL_URL, description="サムネイル画像URL"
@@ -93,6 +99,8 @@ class PostsPostRequest(BaseModel):
 
     _validate_content_md_size = field_validator("content_md")(validate_content_md_size)
     _empty_string_to_none = field_validator("thumbnail_url")(empty_string_to_none)
+    # 空文字は形式チェック前に None（自動生成）へ変換する
+    _empty_slug_to_none = field_validator("slug", mode="before")(empty_string_to_none)
     _validate_tags = field_validator("tags")(validate_tags)
 
     @model_validator(mode="after")
@@ -108,6 +116,12 @@ class PostsPutRequest(BaseModel):
 
     title: str = Field(
         ..., max_length=Constant.MAX_TITLE_LENGTH, description="タイトル"
+    )
+    slug: str | None = Field(
+        None,
+        max_length=Constant.MAX_SLUG_LENGTH,
+        pattern=Constant.SLUG_PATTERN,
+        description="スラグ（省略時は現在の値を維持、空文字・null の場合はタイトルから再生成）",
     )
     content_md: str = Field(..., description="マークダウン本文")
     thumbnail_url: str | None = Field(
@@ -125,6 +139,8 @@ class PostsPutRequest(BaseModel):
 
     _validate_content_md_size = field_validator("content_md")(validate_content_md_size)
     _empty_string_to_none = field_validator("thumbnail_url")(empty_string_to_none)
+    # 空文字は形式チェック前に None（再生成指定）へ変換する
+    _empty_slug_to_none = field_validator("slug", mode="before")(empty_string_to_none)
     _validate_tags = field_validator("tags")(validate_tags)
 
 

@@ -72,6 +72,13 @@ class PostRepository:
         stmt = select(Post.slug).where(Post.slug.like(f"{slug}%"))
         return list(self.db.execute(stmt).scalars().all())
 
+    def exists_by_slug(self, slug: str, exclude_post_id: int | None = None) -> bool:
+        condition = Post.slug == slug
+        if exclude_post_id is not None:
+            condition = condition & (Post.post_id != exclude_post_id)
+        stmt = select(exists().where(condition))
+        return bool(self.db.execute(stmt).scalar())
+
     def create(self, post: Post) -> int:
         self.db.add(post)
         self.db.flush()

@@ -29,6 +29,8 @@ VALIDATION_MESSAGES = {
     ("title", "missing"): ErrorMessage.TITLE_REQUIRED,
     ("body", "title_required_for_published"): ErrorMessage.TITLE_REQUIRED_FOR_PUBLISHED,
     ("title", "string_too_long"): ErrorMessage.TITLE_MAX_LENGTH,
+    ("slug", "string_too_long"): ErrorMessage.SLUG_MAX_LENGTH,
+    ("slug", "string_pattern_mismatch"): ErrorMessage.SLUG_FORMAT,
     ("content_md", "missing"): ErrorMessage.CONTENT_MARKDOWN_REQUIRED,
     ("content_md", "size_over"): ErrorMessage.CONTENT_MARKDOWN_SIZE_OVER,
     ("content_html", "missing"): ErrorMessage.CONTENT_HTML_REQUIRED,
