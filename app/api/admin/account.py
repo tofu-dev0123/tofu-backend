@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.db.database import get_db
+from app.api.deps import get_account_service
 from app.services.account_service import AccountService
 from app.models.user import User
 from app.schemas.account import (
@@ -21,10 +20,9 @@ router = APIRouter(prefix="/account", tags=["Account アカウント管理"])
 async def update_account_name(
     request: UpdateAccountNameRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
+    service: AccountService = Depends(get_account_service),
+) -> UpdateAccountNameResponse:
     """アカウント名を変更する"""
-    service = AccountService(db)
     updated_user = service.update_account_name(current_user, request.account_name)
 
     return UpdateAccountNameResponse(
@@ -38,10 +36,9 @@ async def update_account_name(
 async def change_password(
     request: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
+    service: AccountService = Depends(get_account_service),
+) -> ChangePasswordResponse:
     """パスワードを変更する"""
-    service = AccountService(db)
     service.change_password(
         current_user, request.current_password, request.new_password
     )
@@ -53,10 +50,9 @@ async def change_password(
 async def change_email(
     request: ChangeEmailRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
+    service: AccountService = Depends(get_account_service),
+) -> ChangeEmailResponse:
     """メールアドレスを変更する"""
-    service = AccountService(db)
     updated_user = service.change_email(
         current_user, request.current_email, request.new_email, request.password
     )

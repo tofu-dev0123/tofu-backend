@@ -2,6 +2,8 @@ import logging
 import time
 import uuid
 
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
 from app.core.logging.context import request_id_ctx
 
 logger = logging.getLogger("app.request")
@@ -21,10 +23,10 @@ class RequestLoggingMiddleware:
     - 秘匿情報を避けるため body / query string / ヘッダはログに含めない。
     """
 
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -37,7 +39,7 @@ class RequestLoggingMiddleware:
         start = time.perf_counter()
         status_code = 500
 
-        async def send_wrapper(message):
+        async def send_wrapper(message: Message) -> None:
             nonlocal status_code
             if message["type"] == "http.response.start":
                 status_code = message["status"]

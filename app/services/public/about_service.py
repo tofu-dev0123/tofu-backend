@@ -2,15 +2,20 @@ from sqlalchemy.orm import Session
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.schemas.profile import ProfileResponse, AboutResponse
-from app.schemas.timeline import Timeline
+from app.services.mappers import to_profile, to_timeline
 
 
 class PublicAboutService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        profile_repo: ProfileRepository | None = None,
+        timeline_repo: TimelineRepository | None = None,
+    ) -> None:
         self.db = db
-        self.profile_repo = ProfileRepository(db)
-        self.timeline_repo = TimelineRepository(db)
+        self.profile_repo = profile_repo or ProfileRepository(db)
+        self.timeline_repo = timeline_repo or TimelineRepository(db)
 
     """
     About ページ表示用のプロフィールと年表を取得する
@@ -22,22 +27,9 @@ class PublicAboutService:
         if profile is None:
             profile_data = ProfileResponse(headline="", bio="", site_description="")
         else:
-            profile_data = ProfileResponse(
-                headline=profile.headline,
-                bio=profile.bio,
-                site_description=profile.site_description,
-            )
+            profile_data = to_profile(profile)
 
         timelines = self.timeline_repo.find_all()
-        timeline_list = [
-            Timeline(
-                timeline_id=t.timeline_id,
-                year=t.year,
-                title=t.title,
-                body=t.body,
-                sort_order=t.sort_order,
-            )
-            for t in timelines
-        ]
+        timeline_list = [to_timeline(t) for t in timelines]
 
         return AboutResponse(profile=profile_data, timelines=timeline_list)

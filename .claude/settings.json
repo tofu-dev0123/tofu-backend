@@ -34,7 +34,11 @@
       "Bash(gh issue view:*)",
       "Bash(gh pr list:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(scripts/check.sh)",
+      "Bash(./scripts/check.sh)",
+      "Bash(gh label list:*)",
+      "Bash(gh repo view:*)"
     ],
     "deny": [
       "Read(./.env)",
@@ -49,6 +53,15 @@
           {
             "type": "command",
             "command": "fp=$(jq -r '.tool_input.file_path // empty'); base=$(basename \"$fp\"); case \"$base\" in .env.example|.env.local) exit 0 ;; .env|.env.*) echo \"Writes to $base are blocked. Allowed: .env.example, .env.local\" >&2; exit 2 ;; esac; exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/require-check.sh"
           }
         ]
       }

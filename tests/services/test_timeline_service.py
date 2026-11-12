@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from app.schemas.timeline import TimelinePostRequest, TimelinePutRequest
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 
@@ -15,7 +15,6 @@ def test_get_timelines_success(timeline_service):
     mock_timeline.body = "本文"
     mock_timeline.sort_order = 0
 
-    timeline_service.timeline_repo = MagicMock()
     timeline_service.timeline_repo.find_all.return_value = [mock_timeline]
 
     result = timeline_service.get_timelines()
@@ -27,9 +26,7 @@ def test_get_timelines_success(timeline_service):
 
 # create_timeline: 正常系
 def test_create_timeline_success(timeline_service):
-    timeline_service.timeline_repo = MagicMock()
     timeline_service.timeline_repo.create.return_value = 10
-    timeline_service.db = MagicMock()
 
     req = TimelinePostRequest(year=2026, title="t", body="b", sort_order=1)
 
@@ -41,9 +38,7 @@ def test_create_timeline_success(timeline_service):
 
 # update_timeline: 正常系
 def test_update_timeline_success(timeline_service):
-    timeline_service.timeline_repo = MagicMock()
-    timeline_service.timeline_repo.exist_check.return_value = True
-    timeline_service.db = MagicMock()
+    timeline_service.timeline_repo.exists_by_id.return_value = True
 
     req = TimelinePutRequest(year=2025, title="t2", body="b2", sort_order=2)
 
@@ -58,9 +53,7 @@ def test_update_timeline_success(timeline_service):
 
 # update_timeline: 存在しない場合はロールバック
 def test_update_timeline_not_exist(timeline_service):
-    timeline_service.timeline_repo = MagicMock()
-    timeline_service.timeline_repo.exist_check.return_value = False
-    timeline_service.db = MagicMock()
+    timeline_service.timeline_repo.exists_by_id.return_value = False
 
     req = TimelinePutRequest(year=2025, title="t", body="b", sort_order=0)
 
@@ -75,9 +68,7 @@ def test_update_timeline_not_exist(timeline_service):
 
 # delete_timeline: 正常系
 def test_delete_timeline_success(timeline_service):
-    timeline_service.timeline_repo = MagicMock()
-    timeline_service.timeline_repo.exist_check.return_value = True
-    timeline_service.db = MagicMock()
+    timeline_service.timeline_repo.exists_by_id.return_value = True
 
     result = timeline_service.delete_timeline(3)
 
@@ -88,9 +79,7 @@ def test_delete_timeline_success(timeline_service):
 
 # delete_timeline: 存在しない場合はロールバック
 def test_delete_timeline_not_exist(timeline_service):
-    timeline_service.timeline_repo = MagicMock()
-    timeline_service.timeline_repo.exist_check.return_value = False
-    timeline_service.db = MagicMock()
+    timeline_service.timeline_repo.exists_by_id.return_value = False
 
     with pytest.raises(ApplicationError) as exc_info:
         timeline_service.delete_timeline(3)

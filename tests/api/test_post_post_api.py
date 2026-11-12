@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
@@ -7,7 +6,7 @@ from app.common.constant import Constant
 
 # 正常系
 @patch("app.services.post_service.PostService.create_all")
-def test_login_success(mock_create_all, client, valid_token):
+def test_create_post_success(mock_create_all, client, auth_headers):
     mock_create_all.return_value = 1
     req = {
         "title": "Test",
@@ -19,7 +18,7 @@ def test_login_success(mock_create_all, client, valid_token):
     }
     response = client.post(
         "/admin/posts",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json=req,
     )
 
@@ -31,9 +30,9 @@ def test_login_success(mock_create_all, client, valid_token):
 
 
 # 必須項目バリデーションエラー
-def test_validation_error_missing(client, valid_token):
+def test_validation_error_missing(client, auth_headers):
     response = client.post(
-        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json={}
+        "/admin/posts", headers=auth_headers, json={}
     )
 
     assert response.status_code == 400
@@ -47,7 +46,7 @@ def test_validation_error_missing(client, valid_token):
 
 
 # 最大文字数バリデーションエラー
-def test_validation_error_max_length(client, valid_token):
+def test_validation_error_max_length(client, auth_headers):
     big_title = "a" * (Constant.MAX_TITLE_LENGTH + 1)
     big_url = "a" * (Constant.MAX_THUMBNAIL_URL + 1)
     big_content_md = "a" * (Constant.MAX_CONTENT_MARKDOWN_SIZE + 1)
@@ -61,7 +60,7 @@ def test_validation_error_max_length(client, valid_token):
         "tags": big_tags,
     }
     response = client.post(
-        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json=req
+        "/admin/posts", headers=auth_headers, json=req
     )
 
     assert response.status_code == 400
@@ -77,7 +76,7 @@ def test_validation_error_max_length(client, valid_token):
 
 
 # 配列最大個数バリデーションエラー
-def test_validation_error_max_array(client, valid_token):
+def test_validation_error_max_array(client, auth_headers):
     big_tags = ["a"] * (Constant.MAX_TAGS + 1)
     req = {
         "title": "Test",
@@ -87,7 +86,7 @@ def test_validation_error_max_array(client, valid_token):
         "tags": big_tags,
     }
     response = client.post(
-        "/admin/posts", headers={"Authorization": f"Bearer {valid_token}"}, json=req
+        "/admin/posts", headers=auth_headers, json=req
     )
 
     assert response.status_code == 400

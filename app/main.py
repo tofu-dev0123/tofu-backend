@@ -6,31 +6,39 @@ from app.core.exceptions.handlers import register_exception_handlers
 from app.core.logging.config import setup_logging
 from app.core.logging.middleware import RequestLoggingMiddleware
 
+# root ロガーのハンドラを差し替えるため、プロセスで 1 回だけ初期化する
 setup_logging(is_local=settings.is_local)
 
 
-if not settings.is_local:
-    app = FastAPI(
-        docs_url=None,
-        redoc_url=None,
-        openapi_url=None,
+def create_app() -> FastAPI:
+    """FastAPI アプリケーションを組み立てる"""
+    if not settings.is_local:
+        app = FastAPI(
+            docs_url=None,
+            redoc_url=None,
+            openapi_url=None,
+        )
+    else:
+        app = FastAPI()
+
+    register_exception_handlers(app)
+
+    # CORS設定
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ALLOW_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["*"],
     )
-else:
-    app = FastAPI()
 
-register_exception_handlers(app)
+    # リクエストログ / request_id 採番 (最外層に置き全処理を包む)
+    app.add_middleware(RequestLoggingMiddleware)
 
-# CORS設定
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ALLOW_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["*"],
-)
+    # ルーターの登録
+    app.include_router(api_router)
 
-# リクエストログ / request_id 採番 (最外層に置き全処理を包む)
-app.add_middleware(RequestLoggingMiddleware)
+    return app
 
-# ルーターの登録
-app.include_router(api_router)
+
+app = create_app()

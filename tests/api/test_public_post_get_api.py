@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from datetime import datetime
 from app.common.errorcode import ErrorCode
@@ -239,7 +238,7 @@ def test_get_post_success_without_tags(mock_get_post, client):
 # 異常系: 記事が存在しない場合
 @patch("app.services.public.post_service.PublicPostService.get_post")
 def test_get_post_not_found(mock_get_post, client):
-    from app.core.exceptions.handlers import ApplicationError
+    from app.core.exceptions.application_exceptions import ApplicationError
 
     mock_get_post.side_effect = ApplicationError(
         message=ErrorMessage.NOT_EXIST,

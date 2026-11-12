@@ -1,14 +1,13 @@
-import pytest
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
 
 
 # 正常系
-def test_update_account_name_success(client, valid_token):
+def test_update_account_name_success(client, auth_headers):
     response = client.patch(
         "/admin/account",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"account_name": "新しいアカウント名"},
     )
 
@@ -21,10 +20,10 @@ def test_update_account_name_success(client, valid_token):
 
 
 # 必須項目バリデーション
-def test_validation_error_missing(client, valid_token):
+def test_validation_error_missing(client, auth_headers):
     response = client.patch(
         "/admin/account",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -38,11 +37,11 @@ def test_validation_error_missing(client, valid_token):
 
 
 # 最大文字数バリデーション
-def test_validation_error_max_length(client, valid_token):
+def test_validation_error_max_length(client, auth_headers):
     big_account_name = "あ" * (Constant.MAX_ACCOUNT_NAME_LENGTH + 1)
     response = client.patch(
         "/admin/account",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"account_name": big_account_name},
     )
 
@@ -56,10 +55,10 @@ def test_validation_error_max_length(client, valid_token):
 
 
 # 空白のみバリデーション
-def test_validation_error_blank_only(client, valid_token):
+def test_validation_error_blank_only(client, auth_headers):
     response = client.patch(
         "/admin/account",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={"account_name": "   "},
     )
 

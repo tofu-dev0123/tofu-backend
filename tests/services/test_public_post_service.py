@@ -1,18 +1,15 @@
 import pytest
-import math
 from unittest.mock import Mock, MagicMock
 from datetime import datetime
 from app.services.public.post_service import PublicPostService
-from app.models.post import Post, PostStatus
+from app.models.post import Post
 from app.schemas.post import (
     PostsPublishAtResponse,
-    PostPublishAt,
     PostPublishAtResponse,
     PostSlugsResponse,
 )
-from app.schemas.tag import Tag
 from app.common.constant import Constant
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.message import ErrorMessage
 from app.common.errorcode import ErrorCode
 

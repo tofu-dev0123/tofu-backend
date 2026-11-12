@@ -1,6 +1,6 @@
-import math
 from sqlalchemy.orm import Session
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from markdown_it import MarkdownIt
 from app.schemas.post import (
@@ -9,14 +9,13 @@ from app.schemas.post import (
     PostsPutRequest,
     PostsListGetResponse,
     PostGetResponse,
+    PostsSummaryResponse,
 )
 from botocore.exceptions import (
     ClientError,
     BotoCoreError,
 )
 from app.infra.storage.s3 import S3
-from app.schemas.image import Image
-from app.schemas.tag import Tag
 from app.models.post import Post as PostModel, PostStatus
 from app.models.post_tag import PostTag
 from app.repositories.post_repository import PostRepository
@@ -26,10 +25,14 @@ from app.repositories.queries.post_detail_query import PostDetailQueryRepository
 from app.services.tag_service import TagService
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
-from app.core.exceptions.handlers import ApplicationError
+from app.core.exceptions.application_exceptions import ApplicationError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
+from app.services.transaction import transaction
+from app.services.guards import ensure_exists
+from app.utils.pagination import calc_total_pages
+from app.services.mappers import parse_images, parse_tags
 
 
 logger = logging.getLogger(__name__)
@@ -37,15 +40,26 @@ logger = logging.getLogger(__name__)
 
 class PostService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        s3: S3 | None = None,
+        post_repo: PostRepository | None = None,
+        tag_service: TagService | None = None,
+        post_tag_repo: PostTagRepository | None = None,
+        image_repo: ImageRepository | None = None,
+        query_repo: PostDetailQueryRepository | None = None,
+        now: Callable[[], datetime] = datetime.now,
+    ) -> None:
         self.db = db
-        self.s3 = S3()
-        self.post_repo = PostRepository(db)
-        self.tag_service = TagService(db)
-        self.post_tag_repo = PostTagRepository(db)
-        self.image_repo = ImageRepository(db)
-        self.query_repo = PostDetailQueryRepository(db)
+        self.s3 = s3 or S3()
+        self.post_repo = post_repo or PostRepository(db)
+        self.tag_service = tag_service or TagService(db)
+        self.post_tag_repo = post_tag_repo or PostTagRepository(db)
+        self.image_repo = image_repo or ImageRepository(db)
+        self.query_repo = query_repo or PostDetailQueryRepository(db)
         self.md = MarkdownIt("gfm-like")
+        self.now = now
 
     """
     MarkdownからHTMLへの変換処理
@@ -66,13 +80,13 @@ class PostService:
         limit: int,
         keyword: str | None,
         status: PostStatus | None,
-    ):
+    ) -> PostsListGetResponse:
         posts = self.post_repo.find_posts_by_user(
             user_id, offset, limit, keyword, status
         )
 
         total_count = self.post_repo.count_posts_by_user(user_id, keyword, status)
-        total_pages = math.ceil(total_count / limit) if total_count > 0 else 0
+        total_pages = calc_total_pages(total_count, limit)
         posts_list = []
 
         for post in posts:
@@ -84,9 +98,9 @@ class PostService:
                     slug=post.slug,
                     thumbnail_url=post.thumbnail_url,
                     status=post.status,
-                    publishedAt=post.published_at,
-                    createdAt=post.created_at,
-                    updatedAt=post.updated_at,
+                    published_at=post.published_at,
+                    created_at=post.created_at,
+                    updated_at=post.updated_at,
                 )
             )
 
@@ -98,43 +112,21 @@ class PostService:
     記事のサマリを取得する
     """
 
-    def get_summary(self):
+    def get_summary(self) -> PostsSummaryResponse:
         summary = self.post_repo.get_post_counts()
 
-        return summary
+        return PostsSummaryResponse(
+            total_count=summary.total_count,
+            published_count=summary.published_count,
+            draft_count=summary.draft_count,
+        )
 
     """
     記事詳細を取得する
     """
 
     def get_post_detail(self, post_id: int) -> PostGetResponse:
-        data = self.query_repo.find_by_post_id(post_id)
-        if data is None:
-            raise ApplicationError(
-                message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
-        images = []
-        tags = []
-        if data.images:
-            images = [
-                Image(
-                    image_id=int(i[0]),
-                    url=i[1],
-                    alt_text=i[2],
-                )
-                for i in (img.split("|") for img in data.images.split(","))
-            ]
-
-        if data.tags:
-            tags = [
-                Tag(
-                    tag_id=int(t[0]),
-                    name=t[1],
-                    slug=t[2],
-                )
-                for t in (tag.split("|") for tag in data.tags.split(","))
-            ]
-
+        data = ensure_exists(self.query_repo.find_by_post_id(post_id))
         #  サムネイルURLが存在する場合はサムネイルを取得する
         if data.thumbnail_url:
             thumbnail = self.image_repo.find_by_url(data.thumbnail_url)
@@ -151,8 +143,8 @@ class PostService:
             thumbnail_url=data.thumbnail_url,
             thumbnail_alt_text=thumbnail.alt_text if thumbnail else None,
             status=data.status,
-            images=images,
-            tags=tags,
+            images=parse_images(data.images),
+            tags=parse_tags(data.tags),
             published_at=data.published_at,
             created_at=data.created_at,
             updated_at=data.updated_at,
@@ -164,7 +156,7 @@ class PostService:
     画像IDがImageテーブルに登録されているをチェックする
     """
 
-    def check_image_list(self, images: list[int]):
+    def check_image_list(self, images: list[int]) -> None:
         for id in images:
             image_data = self.image_repo.find_by_image_id(id)
 
@@ -210,7 +202,7 @@ class PostService:
 
     def check_status_and_setting_date(self, status: PostStatus) -> datetime | None:
         if status == PostStatus.PUBLISHED:
-            return datetime.now()
+            return self.now()
         return None
 
     """
@@ -242,7 +234,7 @@ class PostService:
     PostTagテーブルに登録する  
     """
 
-    def create_post_tag(self, tag_id_list: list[int], post_id: int):
+    def create_post_tag(self, tag_id_list: list[int], post_id: int) -> None:
         for id in tag_id_list:
             post_tag = PostTag(post_id=post_id, tag_id=id)
             self.post_tag_repo.create(post_tag)
@@ -251,7 +243,7 @@ class PostService:
     画像テーブルに記事IDを登録する 
     """
 
-    def attach_post_id_to_image(self, images: list[int], post_id: int):
+    def attach_post_id_to_image(self, images: list[int], post_id: int) -> None:
         for id in images:
             self.image_repo.update_post_id(id, post_id)
 
@@ -308,15 +300,13 @@ class PostService:
     def set_published_at_from_status(
         self, post_id: int, new_status: PostStatus
     ) -> datetime | None:
-        post = self.post_repo.find_by_post_id(post_id)
-        if post is None:
-            raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
+        post = ensure_exists(self.post_repo.find_by_post_id(post_id))
 
         old_status = post.status
 
         # DRAFT → PUBLISHED（初公開）
         if old_status == PostStatus.DRAFT and new_status == PostStatus.PUBLISHED:
-            return datetime.now()
+            return self.now()
 
         # PUBLISHED → DRAFT（公開解除）
         if old_status == PostStatus.PUBLISHED and new_status == PostStatus.DRAFT:
@@ -326,7 +316,7 @@ class PostService:
         if new_status == PostStatus.PUBLISHED:
             # published_atが未設定の場合は現在日時を設定（不整合データのフォールバック）
             return (
-                post.published_at if post.published_at is not None else datetime.now()
+                post.published_at if post.published_at is not None else self.now()
             )
 
         # DRAFT → DRAFT
@@ -385,7 +375,7 @@ class PostService:
     画像の削除処理を行う
     """
 
-    def extract_delete_images(self, post_id: int, images: list[int]):
+    def extract_delete_images(self, post_id: int, images: list[int]) -> None:
         for id in images:
             image = self.image_repo.find_by_image_id(id)
 
@@ -406,7 +396,7 @@ class PostService:
     タグの更新処理をする
     """
 
-    def update_tags(self, tags: list[str], post_id: int):
+    def update_tags(self, tags: list[str], post_id: int) -> None:
         # 新規タグIDリストを生成
         tag_id_list = self.generate_slug_of_tag_and_get_id(tags)
 
@@ -420,12 +410,9 @@ class PostService:
     記事の更新処理をする
     """
 
-    def update_all(self, request: PostsPutRequest, post_id: int):
-        try:
-            if not self.post_repo.exist_check_by_post_id(post_id):
-                raise ApplicationError(
-                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+    def update_all(self, request: PostsPutRequest, post_id: int) -> None:
+        with transaction(self.db):
+            ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
             # ステータスの値によって投稿日時をセット
             new_published_at = self.set_published_at_from_status(
@@ -433,9 +420,7 @@ class PostService:
             )
 
             # 公開時にドラフトスラグをタイトルベーススラグに上書き
-            current_post = self.post_repo.find_by_post_id(post_id)
-            if current_post is None:
-                raise ApplicationError(message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST)
+            current_post = ensure_exists(self.post_repo.find_by_post_id(post_id))
             new_slug = current_post.slug
             if (
                 request.status == PostStatus.PUBLISHED
@@ -479,13 +464,7 @@ class PostService:
             if request.new_images:
                 self.attach_post_id_to_image(request.new_images, post_id)
 
-            self.db.commit()
-
-            logger.info("post updated", extra={"post_id": post_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("post updated", extra={"post_id": post_id})
 
         return
 
@@ -493,7 +472,7 @@ class PostService:
     サムネイルの削除処理をする
     """
 
-    def delete_thumbnail(self, post_id: int):
+    def delete_thumbnail(self, post_id: int) -> None:
         thumbnail = self.post_repo.find_thumbnail_url_by_post_id(post_id)
 
         if thumbnail:
@@ -503,7 +482,7 @@ class PostService:
     記事IDを参照して画像の削除処理をする
     """
 
-    def delete_image_from_post_id(self, post_id: int):
+    def delete_image_from_post_id(self, post_id: int) -> None:
         image_urls = self.image_repo.find_url_by_post_id(post_id)
 
         for url in image_urls:
@@ -513,12 +492,9 @@ class PostService:
     記事の削除処理をする
     """
 
-    def delete_all(self, post_id: int):
-        try:
-            if not self.post_repo.exist_check_by_post_id(post_id):
-                raise ApplicationError(
-                    message=ErrorMessage.NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+    def delete_all(self, post_id: int) -> None:
+        with transaction(self.db):
+            ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
             #  サムネイルの削除処理
             self.delete_thumbnail(post_id)
@@ -535,16 +511,10 @@ class PostService:
             # 記事レコードの削除
             self.post_repo.delete(post_id)
 
-            self.db.commit()
+        logger.info("post deleted", extra={"post_id": post_id})
 
-            logger.info("post deleted", extra={"post_id": post_id})
-
-        except:
-            self.db.rollback()
-            raise
-
-    def patch_status(self, status: PostStatus, post_id: int):
-        try:
+    def patch_status(self, status: PostStatus, post_id: int) -> None:
+        with transaction(self.db):
             # 公開ステータスの値によって投稿日時を更新
             published_at = self.set_published_at_from_status(post_id, status)
 
@@ -561,9 +531,4 @@ class PostService:
 
             self.post_repo.update_status_and_published_at(post_id, status, published_at, slug=new_slug)
 
-            self.db.commit()
-
-            logger.info("post status changed", extra={"post_id": post_id, "status": status.value})
-        except:
-            self.db.rollback()
-            raise
+        logger.info("post status changed", extra={"post_id": post_id, "status": status.value})

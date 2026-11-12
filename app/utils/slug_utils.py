@@ -3,7 +3,6 @@ import re
 import time
 import uuid
 from slugify import slugify
-from sqlalchemy.orm import Session
 from app.common.constant import Constant
 from deep_translator import GoogleTranslator
 
@@ -97,7 +96,7 @@ def generate_slug(text: str) -> str:
 """
 
 
-def increment_slug_suffix(base_slug: str, existing_slugs: list[str]):
+def increment_slug_suffix(base_slug: str, existing_slugs: list[str]) -> str:
     # 末尾の数字を解析
     max_number = 0
     pattern = re.compile(rf"^{base_slug}-(\d+)$")

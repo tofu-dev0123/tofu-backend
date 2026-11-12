@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Path
-from sqlalchemy.orm import Session
 from typing import Optional
-from app.db.database import get_db
+from app.api.deps import get_post_service
 from app.core.security import get_current_user
 from app.common.message import Message
 from app.schemas.post import (
@@ -18,26 +17,23 @@ from app.schemas.post import (
 from app.services.post_service import PostService
 from app.models.user import User
 from app.models.post import PostStatus
+from app.common.constant import Constant
 
 
 router = APIRouter(prefix="/posts", tags=["Post 記事関連"])
 
 
-def get_post_service(
-    db: Session = Depends(get_db),
-) -> PostService:
-    return PostService(db)
-
-
 @router.get("", response_model=PostsListGetResponse)
 async def get_posts(
-    keyword: Optional[str] = Query(None, max_length=1000),
+    keyword: Optional[str] = Query(None, max_length=Constant.MAX_KEYWORD_LENGTH),
     status: Optional[PostStatus] = Query(None),
-    offset: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=30),
+    offset: int = Query(Constant.MIN_OFFSET, ge=Constant.MIN_OFFSET),
+    limit: int = Query(
+        Constant.DEFAULT_LIMIT, ge=Constant.MIN_LIMIT, le=Constant.MAX_LIMIT
+    ),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsListGetResponse:
     user_id = current_user.user_id
 
     result = service.get_posts(user_id, offset, limit, keyword, status)
@@ -50,12 +46,8 @@ async def create_posts(
     request: PostsPostRequest,
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
-    try:
-        new_post_id = service.create_all(request, current_user.user_id)
-
-    except:
-        raise
+) -> PostsResponse:
+    new_post_id = service.create_all(request, current_user.user_id)
 
     return PostsResponse(message=Message.POST_CREATE_SUCCESS, post_id=new_post_id)
 
@@ -64,18 +56,16 @@ async def create_posts(
 async def get_summary(
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
-    summary = service.get_summary()
-
-    return PostsSummaryResponse(**summary._mapping)
+) -> PostsSummaryResponse:
+    return service.get_summary()
 
 
 @router.get("/{post_id}", response_model=PostGetResponse)
 async def get_post(
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostGetResponse:
     data = service.get_post_detail(post_id)
 
     return data
@@ -84,10 +74,10 @@ async def get_post(
 @router.put("/{post_id}", response_model=PostsResponse)
 async def update_post(
     request: PostsPutRequest,
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsResponse:
     service.update_all(request, post_id)
 
     return PostsResponse(message=Message.POST_UPDATE_SUCCESS, post_id=post_id)
@@ -95,10 +85,10 @@ async def update_post(
 
 @router.delete("/{post_id}", response_model=PostsDeleteResponse)
 async def delete_post(
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsDeleteResponse:
     service.delete_all(post_id)
 
     return PostsDeleteResponse(message=Message.POST_DELETE_SUCCESS)
@@ -107,10 +97,10 @@ async def delete_post(
 @router.patch("/{post_id}", response_model=PostsPatchResponse)
 async def patch_status(
     request: PostsPatchRequest,
-    post_id: int = Path(..., ge=1, description="記事ID"),
+    post_id: int = Path(..., ge=Constant.MIN_POST_ID, description="記事ID"),
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
-):
+) -> PostsPatchResponse:
     service.patch_status(request.status, post_id)
 
     return PostsPatchResponse(

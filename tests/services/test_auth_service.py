@@ -1,6 +1,6 @@
 from app.core.exceptions.auth_exceptions import LoginFailError
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 
 
 def test_login_success(auth_service):
@@ -9,7 +9,6 @@ def test_login_success(auth_service):
     mock_user.username = "testuser"
     mock_user.password = "hashed_password"
 
-    auth_service.user_repo = MagicMock()
     auth_service.user_repo.find_by_username.return_value = mock_user
 
     with patch("app.services.auth_service.verify_password", return_value=True), patch(
@@ -23,7 +22,6 @@ def test_login_success(auth_service):
 
 
 def test_login_user_not_found(auth_service):
-    auth_service.user_repo = MagicMock()
     auth_service.user_repo.find_by_username.return_value = None
 
     with pytest.raises(LoginFailError):
@@ -38,7 +36,6 @@ def test_login_wrong_password(auth_service):
     mock_user.username = "testuser"
     mock_user.password = "hashed_password"
 
-    auth_service.user_repo = MagicMock()
     auth_service.user_repo.find_by_username.return_value = mock_user
 
     with patch("app.services.auth_service.verify_password", return_value=False):

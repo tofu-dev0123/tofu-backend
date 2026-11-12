@@ -1,52 +1,91 @@
 import boto3
 import logging
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import BinaryIO
 from urllib.parse import urlparse
 from datetime import datetime
-from app.core.config import settings
+from app.core.config import Settings, settings
+from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class S3Config:
+    """S3 接続・URL 組み立てに使う設定値"""
+
+    env: str
+    access_key_id: str | None
+    secret_access_key: str | None
+    region_name: str | None
+    endpoint_url: str | None
+    bucket_name: str | None
+    cloudfront_domain: str | None
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> "S3Config":
+        return cls(
+            env=settings.APP_ENV,
+            access_key_id=settings.AWS_ACCESS_KEY_ID,
+            secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            # S3 バケットのリージョン。本番は Lambda の AWS_REGION (us-east-1) に
+            # フォールバックさせず、バケットの実リージョンを明示する必要がある。
+            region_name=settings.S3_REGION or settings.AWS_DEFAULT_REGION,
+            endpoint_url=settings.S3_ENDPOINT_URL,
+            bucket_name=settings.S3_BUCKET_NAME,
+            cloudfront_domain=settings.CLOUDFRONT_DOMAIN,
+        )
+
+
+def _generate_id() -> str:
+    return str(uuid.uuid4())
+
+
 class S3:
 
-    def __init__(self):
-        self.env = settings.APP_ENV
-        self.ACCESS_KEY_ID = settings.AWS_ACCESS_KEY_ID
-        self.SECRET_ACCESS_KEY = settings.AWS_SECRET_ACCESS_KEY
-        # S3 バケットのリージョン。本番は Lambda の AWS_REGION (us-east-1) に
-        # フォールバックさせず、バケットの実リージョンを明示する必要がある。
-        self.REGION_NAME = settings.S3_REGION or settings.AWS_DEFAULT_REGION
-        self.ENDPOINT_URL = settings.S3_ENDPOINT_URL
-        self.BUCKET_NAME = settings.S3_BUCKET_NAME
-        self.CLOUDFRONT_DOMAIN = settings.CLOUDFRONT_DOMAIN
+    def __init__(
+        self,
+        config: S3Config | None = None,
+        client: BaseClient | None = None,
+        now: Callable[[], datetime] = datetime.now,
+        id_factory: Callable[[], str] = _generate_id,
+    ) -> None:
+        self.config = config or S3Config.from_settings(settings)
+        self._client = client
+        self.now = now
+        self.id_factory = id_factory
 
-    def get_s3_client(self):
+    def get_s3_client(self) -> BaseClient:
+        if self._client is not None:
+            return self._client
+
         kwargs = {
             "service_name": "s3",
-            "region_name": self.REGION_NAME,
+            "region_name": self.config.region_name,
         }
 
         # local (LocalStack) のみ明示クレデンシャルとエンドポイントを使う。
         # 本番 (Lambda) は実行ロールの一時クレデンシャルを使うため明示キーを渡さない。
         # Lambda ランタイムが自動設定する一時アクセスキーを session token 無しで
         # 渡すと InvalidAccessKeyId になるため、boto3 の既定の認証チェーンに任せる。
-        if self.env == "local":
-            kwargs["aws_access_key_id"] = self.ACCESS_KEY_ID
-            kwargs["aws_secret_access_key"] = self.SECRET_ACCESS_KEY
-            if self.ENDPOINT_URL:
-                kwargs["endpoint_url"] = self.ENDPOINT_URL
+        if self.config.env == "local":
+            kwargs["aws_access_key_id"] = self.config.access_key_id
+            kwargs["aws_secret_access_key"] = self.config.secret_access_key
+            if self.config.endpoint_url:
+                kwargs["endpoint_url"] = self.config.endpoint_url
 
         return boto3.client(**kwargs)
 
-    def upload_fileobj(self, fileobj, key: str, content_type: str):
+    def upload_fileobj(self, fileobj: BinaryIO, key: str, content_type: str) -> None:
         s3 = self.get_s3_client()
 
         try:
             s3.upload_fileobj(
                 fileobj,
-                self.BUCKET_NAME,
+                self.config.bucket_name,
                 key,
                 ExtraArgs={
                     "ContentType": content_type,
@@ -57,29 +96,29 @@ class S3:
             logger.exception("S3 upload failed", extra={"key": key})
             raise
 
-    def delete_object(self, key: str):
+    def delete_object(self, key: str) -> None:
         s3 = self.get_s3_client()
         s3.delete_object(
-            Bucket=self.BUCKET_NAME,
+            Bucket=self.config.bucket_name,
             Key=key,
         )
 
     def build_unique_key(self, filename: str) -> str:
-        today = datetime.now()
+        today = self.now()
         ext = filename.split(".")[-1].lower()
-        file_name = f"{uuid.uuid4()}.{ext}"
+        file_name = f"{self.id_factory()}.{ext}"
         object_key = f"images/{today:%Y}/{today:%m}/{today:%d}/{file_name}"
 
         return f"{object_key}"
 
     def build_public_url(self, key: str) -> str:
-        if self.env == "local":
-            return f"http://localhost:4566/{self.BUCKET_NAME}/{key}"
+        if self.config.env == "local":
+            return f"http://localhost:4566/{self.config.bucket_name}/{key}"
 
-        if self.CLOUDFRONT_DOMAIN:
-            return f"https://{self.CLOUDFRONT_DOMAIN}/{key}"
+        if self.config.cloudfront_domain:
+            return f"https://{self.config.cloudfront_domain}/{key}"
 
-        return f"https://{self.BUCKET_NAME}.s3.amazonaws.com/{key}"
+        return f"https://{self.config.bucket_name}.s3.amazonaws.com/{key}"
 
     def extract_key_from_url(self, url: str) -> str:
         """
@@ -89,10 +128,10 @@ class S3:
         path = parsed.path.lstrip("/")
 
         # local (localhost:4566/bucket/key)
-        if self.env == "local":
-            if not path.startswith(f"{self.BUCKET_NAME}/"):
+        if self.config.env == "local":
+            if not path.startswith(f"{self.config.bucket_name}/"):
                 raise ValueError("Invalid S3 local URL")
-            return path.replace(f"{self.BUCKET_NAME}/", "", 1)
+            return path.replace(f"{self.config.bucket_name}/", "", 1)
 
         # cloudfront or s3
         return path
@@ -101,7 +140,7 @@ class S3:
         s3 = self.get_s3_client()
         try:
             s3.head_object(
-                Bucket=self.BUCKET_NAME,
+                Bucket=self.config.bucket_name,
                 Key=key,
             )
             return True
@@ -110,7 +149,3 @@ class S3:
             if error_code in ("404", "NoSuchKey", "NotFound"):
                 return False
             raise
-
-    def exists_by_url(self, url: str) -> bool:
-        key = self.extract_key_from_url(url)
-        return self.exists(key)

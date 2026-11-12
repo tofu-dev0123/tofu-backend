@@ -3,23 +3,27 @@ from sqlalchemy.orm import Session
 from app.repositories.timeline_repository import TimelineRepository
 from app.models.timeline import Timeline as TimelineModel
 from app.schemas.timeline import (
-    Timeline,
     TimelineListResponse,
     TimelinePostRequest,
     TimelinePutRequest,
 )
-from app.core.exceptions.handlers import ApplicationError
-from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.services.transaction import transaction
+from app.services.guards import ensure_exists
+from app.services.mappers import to_timeline
 
 logger = logging.getLogger(__name__)
 
 
 class TimelineService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        timeline_repo: TimelineRepository | None = None,
+    ) -> None:
         self.db = db
-        self.timeline_repo = TimelineRepository(db)
+        self.timeline_repo = timeline_repo or TimelineRepository(db)
 
     """
     年表一覧を取得する
@@ -28,16 +32,7 @@ class TimelineService:
     def get_timelines(self) -> TimelineListResponse:
         timelines = self.timeline_repo.find_all()
 
-        timeline_list = [
-            Timeline(
-                timeline_id=t.timeline_id,
-                year=t.year,
-                title=t.title,
-                body=t.body,
-                sort_order=t.sort_order,
-            )
-            for t in timelines
-        ]
+        timeline_list = [to_timeline(t) for t in timelines]
 
         return TimelineListResponse(timelines=timeline_list)
 
@@ -46,7 +41,7 @@ class TimelineService:
     """
 
     def create_timeline(self, request: TimelinePostRequest) -> int:
-        try:
+        with transaction(self.db):
             timeline = TimelineModel(
                 year=request.year,
                 title=request.title,
@@ -56,26 +51,20 @@ class TimelineService:
 
             timeline_id = self.timeline_repo.create(timeline)
 
-            self.db.commit()
+        logger.info("timeline created", extra={"timeline_id": timeline_id})
 
-            logger.info("timeline created", extra={"timeline_id": timeline_id})
-
-            return timeline_id
-
-        except:
-            self.db.rollback()
-            raise
+        return timeline_id
 
     """
     年表を更新する
     """
 
     def update_timeline(self, timeline_id: int, request: TimelinePutRequest) -> None:
-        try:
-            if not self.timeline_repo.exist_check(timeline_id):
-                raise ApplicationError(
-                    message=ErrorMessage.TIMELINE_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+        with transaction(self.db):
+            ensure_exists(
+                self.timeline_repo.exists_by_id(timeline_id),
+                ErrorMessage.TIMELINE_NOT_EXIST,
+            )
 
             self.timeline_repo.update(
                 timeline_id,
@@ -85,31 +74,19 @@ class TimelineService:
                 request.sort_order,
             )
 
-            self.db.commit()
-
-            logger.info("timeline updated", extra={"timeline_id": timeline_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("timeline updated", extra={"timeline_id": timeline_id})
 
     """
     年表を削除する
     """
 
     def delete_timeline(self, timeline_id: int) -> None:
-        try:
-            if not self.timeline_repo.exist_check(timeline_id):
-                raise ApplicationError(
-                    message=ErrorMessage.TIMELINE_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+        with transaction(self.db):
+            ensure_exists(
+                self.timeline_repo.exists_by_id(timeline_id),
+                ErrorMessage.TIMELINE_NOT_EXIST,
+            )
 
             self.timeline_repo.delete(timeline_id)
 
-            self.db.commit()
-
-            logger.info("timeline deleted", extra={"timeline_id": timeline_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("timeline deleted", extra={"timeline_id": timeline_id})

@@ -42,7 +42,7 @@ def test_public_slugs_cache_header(mock_get_slugs, client):
 # 異常系: エラーレスポンスにはキャッシュ用ヘッダを付けない
 @patch("app.services.public.post_service.PublicPostService.get_post")
 def test_public_post_detail_error_has_no_cache_header(mock_get_post, client):
-    from app.core.exceptions.handlers import ApplicationError
+    from app.core.exceptions.application_exceptions import ApplicationError
 
     mock_get_post.side_effect = ApplicationError(
         message=ErrorMessage.NOT_EXIST,

@@ -1,17 +1,14 @@
 from app.common.message import ErrorMessage
+from app.core.exceptions.base import BaseAppError
 
 
-class S3FileUploadError(Exception):
+class S3FileUploadError(BaseAppError):
     """S3アップロードエラー"""
 
-    def __init__(self, message=ErrorMessage.S3_FILE_UPLOAD_ERROR):
-        self.message = message
-        super().__init__(self.message)
+    default_message = ErrorMessage.S3_FILE_UPLOAD_ERROR
 
 
-class S3FileDeleteError(Exception):
+class S3FileDeleteError(BaseAppError):
     """S3ファイル削除エラー"""
 
-    def __init__(self, message=ErrorMessage.S3_FILE_UPLOAD_ERROR):
-        self.message = message
-        super().__init__(self.message)
+    default_message = ErrorMessage.S3_FILE_DELETE_ERROR

@@ -60,11 +60,13 @@ VALIDATION_MESSAGES = {
     ("year", "int_type"): ErrorMessage.YEAR_TYPE,
     ("year", "greater_than_equal"): ErrorMessage.YEAR_RANGE,
     ("year", "less_than_equal"): ErrorMessage.YEAR_RANGE,
+    ("title", "timeline_title_too_long"): ErrorMessage.TIMELINE_TITLE_MAX_LENGTH,
     ("body", "string_too_long"): ErrorMessage.TIMELINE_BODY_MAX_LENGTH,
     ("sort_order", "greater_than_equal"): ErrorMessage.SORT_ORDER_MIN,
     ("timeline_id", "missing"): ErrorMessage.TIMELINE_ID_REQUIRED,
     ("timeline_id", "greater_than_equal"): ErrorMessage.MIN_TIMELINE_ID,
     # プロダクト関連
+    ("title", "product_title_too_long"): ErrorMessage.PRODUCT_TITLE_MAX_LENGTH,
     ("description", "string_too_long"): ErrorMessage.PRODUCT_DESCRIPTION_MAX_LENGTH,
     ("link_url", "string_too_long"): ErrorMessage.LINK_URL_MAX_LENGTH,
     ("product_id", "missing"): ErrorMessage.PRODUCT_ID_REQUIRED,

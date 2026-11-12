@@ -11,41 +11,27 @@ from app.schemas.product import (
     ProductPostRequest,
     ProductPutRequest,
 )
-from app.schemas.tag import Tag
-from app.core.exceptions.handlers import ApplicationError
-from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
+from app.services.transaction import transaction
+from app.services.guards import ensure_exists
+from app.services.mappers import to_product
 
 logger = logging.getLogger(__name__)
 
 
 class ProductService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        product_repo: ProductRepository | None = None,
+        product_tag_repo: ProductTagRepository | None = None,
+        tag_service: TagService | None = None,
+    ) -> None:
         self.db = db
-        self.product_repo = ProductRepository(db)
-        self.product_tag_repo = ProductTagRepository(db)
-        self.tag_service = TagService(db)
-
-    """
-    プロダクトモデルをスキーマに変換する
-    """
-
-    def _to_schema(self, product: ProductModel) -> Product:
-        tags = [
-            Tag(tag_id=tag.tag_id, name=tag.name, slug=tag.slug)
-            for tag in product.tags
-        ]
-        return Product(
-            product_id=product.product_id,
-            title=product.title,
-            description=product.description,
-            link_url=product.link_url,
-            github_url=product.github_url,
-            published=product.published,
-            sort_order=product.sort_order,
-            tags=tags,
-        )
+        self.product_repo = product_repo or ProductRepository(db)
+        self.product_tag_repo = product_tag_repo or ProductTagRepository(db)
+        self.tag_service = tag_service or TagService(db)
 
     """
     プロダクト一覧を取得する
@@ -53,27 +39,25 @@ class ProductService:
 
     def get_products(self) -> ProductListResponse:
         products = self.product_repo.find_all()
-        return ProductListResponse(products=[self._to_schema(p) for p in products])
+        return ProductListResponse(products=[to_product(p) for p in products])
 
     """
     プロダクト詳細を取得する
     """
 
     def get_product(self, product_id: int) -> Product:
-        product = self.product_repo.find_by_id(product_id)
+        product = ensure_exists(
+            self.product_repo.find_by_id(product_id),
+            ErrorMessage.PRODUCT_NOT_EXIST,
+        )
 
-        if product is None:
-            raise ApplicationError(
-                message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-            )
-
-        return self._to_schema(product)
+        return to_product(product)
 
     """
     中間テーブルにタグを登録する
     """
 
-    def create_product_tag(self, tag_id_list: list[int], product_id: int):
+    def create_product_tag(self, tag_id_list: list[int], product_id: int) -> None:
         for tag_id in tag_id_list:
             self.product_tag_repo.create(
                 ProductTag(product_id=product_id, tag_id=tag_id)
@@ -84,7 +68,7 @@ class ProductService:
     """
 
     def create_product(self, request: ProductPostRequest) -> int:
-        try:
+        with transaction(self.db):
             tag_id_list = self.tag_service.get_or_create_tag_ids(request.tags)
 
             product = ProductModel(
@@ -100,26 +84,20 @@ class ProductService:
 
             self.create_product_tag(tag_id_list, product_id)
 
-            self.db.commit()
+        logger.info("product created", extra={"product_id": product_id})
 
-            logger.info("product created", extra={"product_id": product_id})
-
-            return product_id
-
-        except:
-            self.db.rollback()
-            raise
+        return product_id
 
     """
     プロダクトを更新する
     """
 
     def update_product(self, product_id: int, request: ProductPutRequest) -> None:
-        try:
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+        with transaction(self.db):
+            ensure_exists(
+                self.product_repo.exists_by_id(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_repo.update(
                 product_id,
@@ -136,32 +114,20 @@ class ProductService:
             self.product_tag_repo.delete_product_tags(product_id)
             self.create_product_tag(tag_id_list, product_id)
 
-            self.db.commit()
-
-            logger.info("product updated", extra={"product_id": product_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("product updated", extra={"product_id": product_id})
 
     """
     プロダクトを削除する
     """
 
     def delete_product(self, product_id: int) -> None:
-        try:
-            if not self.product_repo.exist_check(product_id):
-                raise ApplicationError(
-                    message=ErrorMessage.PRODUCT_NOT_EXIST, code=ErrorCode.NOT_EXIST
-                )
+        with transaction(self.db):
+            ensure_exists(
+                self.product_repo.exists_by_id(product_id),
+                ErrorMessage.PRODUCT_NOT_EXIST,
+            )
 
             self.product_tag_repo.delete_product_tags(product_id)
             self.product_repo.delete(product_id)
 
-            self.db.commit()
-
-            logger.info("product deleted", extra={"product_id": product_id})
-
-        except:
-            self.db.rollback()
-            raise
+        logger.info("product deleted", extra={"product_id": product_id})
