@@ -1,123 +1,64 @@
-from unittest.mock import patch
+import pytest
 
 from app.common.constant import Constant
 from app.utils.slug_utils import (
-    TRANSLATE_MAX_ATTEMPTS,
     generate_slug,
     is_draft_generated_slug,
-    is_translation_failed,
-    translate_to_english,
-)
-
-# 翻訳失敗時に Google が返すエラーページ本文
-ERROR_PAGE_TEXT = (
-    "Error 500 (Server Error)!!1500.That’s an error."
-    "There was an error. Please try again later.That’s all we know."
+    truncate_slug,
 )
 
 
-# 翻訳結果の失敗判定: 正常な翻訳結果
-def test_is_translation_failed_with_valid_text():
-    assert is_translation_failed("I tried loop engineering") is False
+# 日本語・英語混じりのタイトル→ローマ字スラグを生成する
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("ループエンジニアリングを実践してみた", "ruupuenjiniaringu-wo-jissen-shitemita"),
+        ("【検索処理】転置インデックスについて", "kensakushori-tenchi-indekkusu-nitsuite"),
+        ("Docker入門", "docker-nyuumon"),
+        ("FastAPI", "fastapi"),
+    ],
+)
+def test_generate_slug_success(text, expected):
+    assert generate_slug(text) == expected
 
 
-# 翻訳結果の失敗判定: None・空文字
-def test_is_translation_failed_with_empty_result():
-    assert is_translation_failed(None) is True
-    assert is_translation_failed("") is True
-    assert is_translation_failed("   ") is True
+# 記号のみ→空文字を返す
+def test_generate_slug_returns_empty_when_only_symbols():
+    assert generate_slug("・！？") == ""
 
 
-# 翻訳結果の失敗判定: Googleのエラーページ本文
-def test_is_translation_failed_with_error_page():
-    assert is_translation_failed(ERROR_PAGE_TEXT) is True
+# 全角英数→半角に正規化してスラグを生成する
+def test_generate_slug_normalizes_full_width():
+    assert generate_slug("ＡＢＣ１２３") == "abc123"
 
 
-# 翻訳成功→翻訳結果を返しリトライしない
-@patch("app.utils.slug_utils.GoogleTranslator")
-def test_translate_to_english_success(mock_translator):
-    mock_translator.return_value.translate.return_value = "I tried loop engineering"
+# 最大文字数を超える→単語の途中で切らずに切り詰める
+def test_generate_slug_truncates_at_hyphen_boundary():
+    result = generate_slug(
+        "【Shelfie】DevLog #05 | Clerk から独自 OAuth プロバイダへ移行した話"
+    )
 
-    result = translate_to_english("ループエンジニアリングを実践してみた")
-
-    assert result == "I tried loop engineering"
-    assert mock_translator.return_value.translate.call_count == 1
-
-
-# 翻訳結果がNone→リトライ後にNoneを返す
-@patch("app.utils.slug_utils.time.sleep")
-@patch("app.utils.slug_utils.GoogleTranslator")
-def test_translate_to_english_returns_none_when_result_is_none(
-    mock_translator, mock_sleep
-):
-    mock_translator.return_value.translate.return_value = None
-
-    result = translate_to_english("・")
-
-    assert result is None
-    assert mock_translator.return_value.translate.call_count == TRANSLATE_MAX_ATTEMPTS
+    assert result == "shelfie-devlog-05-clerk-kara-dokuji-oauth"
+    assert len(result) <= Constant.MAX_SLUG_LENGTH
 
 
-# 翻訳結果がエラーページ本文→リトライ後にNoneを返す
-@patch("app.utils.slug_utils.time.sleep")
-@patch("app.utils.slug_utils.GoogleTranslator")
-def test_translate_to_english_returns_none_when_error_page(mock_translator, mock_sleep):
-    mock_translator.return_value.translate.return_value = ERROR_PAGE_TEXT
+# 最大文字数ちょうどの位置がハイフン→その手前までを返す
+def test_truncate_slug_when_hyphen_at_boundary():
+    word = "a" * Constant.MAX_SLUG_LENGTH
 
-    result = translate_to_english("ループエンジニアリングを実践してみた")
-
-    assert result is None
-    assert mock_translator.return_value.translate.call_count == TRANSLATE_MAX_ATTEMPTS
+    assert truncate_slug(f"{word}-b") == word
 
 
-# 翻訳が例外送出→リトライ後にNoneを返す
-@patch("app.utils.slug_utils.time.sleep")
-@patch("app.utils.slug_utils.GoogleTranslator")
-def test_translate_to_english_returns_none_when_exception(mock_translator, mock_sleep):
-    mock_translator.return_value.translate.side_effect = Exception("Error")
+# ハイフンが無い長い文字列→文字数で切り詰める
+def test_truncate_slug_without_hyphen():
+    result = truncate_slug("a" * (Constant.MAX_SLUG_LENGTH + 10))
 
-    result = translate_to_english("ループエンジニアリングを実践してみた")
-
-    assert result is None
-    assert mock_translator.return_value.translate.call_count == TRANSLATE_MAX_ATTEMPTS
+    assert result == "a" * Constant.MAX_SLUG_LENGTH
 
 
-# 1回目失敗・2回目成功→翻訳結果を返す
-@patch("app.utils.slug_utils.time.sleep")
-@patch("app.utils.slug_utils.GoogleTranslator")
-def test_translate_to_english_success_after_retry(mock_translator, mock_sleep):
-    mock_translator.return_value.translate.side_effect = [
-        ERROR_PAGE_TEXT,
-        "I tried loop engineering",
-    ]
-
-    result = translate_to_english("ループエンジニアリングを実践してみた")
-
-    assert result == "I tried loop engineering"
-    assert mock_translator.return_value.translate.call_count == 2
-    assert mock_sleep.call_count == 1
-
-
-# 翻訳成功→スラグを生成する
-@patch("app.utils.slug_utils.translate_to_english", return_value="I tried loop engineering")
-def test_generate_slug_success(mock_translate):
-    assert generate_slug("ループエンジニアリングを実践してみた") == "i-tried-loop-engineering"
-
-
-# 翻訳失敗→空文字を返す
-@patch("app.utils.slug_utils.translate_to_english", return_value=None)
-def test_generate_slug_returns_empty_when_translation_failed(mock_translate):
-    assert generate_slug("・") == ""
-
-
-# 最大文字数を超える→切り詰める
-@patch("app.utils.slug_utils.translate_to_english")
-def test_generate_slug_truncates_max_length(mock_translate):
-    mock_translate.return_value = "a" * (Constant.MAX_SLUG_LENGTH + 10)
-
-    result = generate_slug("長いタイトル")
-
-    assert len(result) == Constant.MAX_SLUG_LENGTH
+# 最大文字数以内→そのまま返す
+def test_truncate_slug_within_max_length():
+    assert truncate_slug("docker-nyuumon") == "docker-nyuumon"
 
 
 # ドラフトスラグの判定
