@@ -45,6 +45,9 @@ class ErrorMessage:
     TITLE_MAX_LENGTH = (
         f"タイトルは{Constant.MAX_TITLE_LENGTH}文字以内で入力してください"
     )
+    SLUG_MAX_LENGTH = f"スラグは{Constant.MAX_SLUG_LENGTH}文字以内で入力してください"
+    SLUG_FORMAT = "スラグは小文字英数字とハイフンで入力してください"
+    SLUG_ALREADY_EXISTS = "このスラグは既に使用されています"
     CONTENT_MARKDOWN_REQUIRED = "マークダウン本文は必須項目です"
     CONTENT_MARKDOWN_SIZE_OVER = f"マークダウン本文のサイズは{(Constant.MAX_CONTENT_MARKDOWN_SIZE / (1024 * 1024))}MB以内で入力してください"
     CONTENT_HTML_REQUIRED = "HTML本文は必須項目です"
@@ -100,6 +103,9 @@ class ErrorMessage:
     LINK_URL_MAX_LENGTH = (
         f"リンクURLは{Constant.MAX_LINK_URL_LENGTH}文字以内で入力してください"
     )
+    GITHUB_URL_MAX_LENGTH = (
+        f"GitHubリンクURLは{Constant.MAX_LINK_URL_LENGTH}文字以内で入力してください"
+    )
     PRODUCT_ID_REQUIRED = "プロダクトIDは必須項目です"
     MIN_PRODUCT_ID = f"プロダクトIDは{Constant.MIN_PRODUCT_ID}以上の整数で指定してください"
 
@@ -123,6 +129,7 @@ class ErrorMessage:
     IMAGE_ID_REQUIRED = "画像IDは必須項目です"
     MIN_IMAGE_ID = f"画像IDは{Constant.MIN_IMAGE_ID}以上の整数で指定してください"
     INVALID_IMAGE_OWNER = "削除対象の画像ID（{image_id}）がこの記事に紐づいていません"
+    IMAGE_ALREADY_ATTACHED = "画像ID（{image_id}）は他の記事に紐づいています"
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"

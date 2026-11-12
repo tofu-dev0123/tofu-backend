@@ -26,6 +26,7 @@ from app.services.tag_service import TagService
 from app.core.exceptions.image_exceptions import ImageNotExistError
 from app.core.exceptions.s3_exceptions import S3FileDeleteError
 from app.core.exceptions.application_exceptions import ApplicationError
+from app.core.exceptions.post_exceptions import SlugAlreadyExistsError
 from app.common.errorcode import ErrorCode
 from app.common.message import ErrorMessage
 from app.utils.slug_utils import generate_slug, increment_slug_suffix, generate_draft_slug, is_draft_generated_slug
@@ -153,21 +154,31 @@ class PostService:
         return result
 
     """
-    画像IDがImageテーブルに登録されているをチェックする
+    画像IDがImageテーブルに登録されており、他の記事に紐づいていないかをチェックする
+    post_id を省略した場合（記事作成時）は未紐付けの画像のみ許可する
     """
 
-    def check_image_list(self, images: list[int]) -> None:
-        for id in images:
-            image_data = self.image_repo.find_by_image_id(id)
+    def check_image_list(self, images: list[int], post_id: int | None = None) -> None:
+        image_map = {image.image_id: image for image in self.image_repo.find_by_image_ids(images)}
 
-            if image_data is None:
-                raise ImageNotExistError()
+        if not set(images) <= image_map.keys():
+            raise ImageNotExistError()
+
+        for image_id in dict.fromkeys(images):
+            owner_post_id = image_map[image_id].post_id
+            if owner_post_id is not None and owner_post_id != post_id:
+                raise ApplicationError(
+                    message=ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=image_id),
+                    code=ErrorCode.INVALID_IMAGE_OWNER,
+                )
 
     """
     タイトルからスラグを生成する
     """
 
-    def generate_slug_of_title(self, title: str | None) -> str:
+    def generate_slug_of_title(
+        self, title: str | None, exclude_slug: str | None = None
+    ) -> str:
         if not title:
             return generate_draft_slug()
 
@@ -177,8 +188,12 @@ class PostService:
         if not base_slug:
             return generate_draft_slug()
 
-        # DBから同一prefixのスラグ取得
-        existing_slugs = self.post_repo.find_slugs_like(base_slug)
+        # DBから同一prefixのスラグ取得（更新時は自記事の現スラグを重複対象から除く）
+        existing_slugs = [
+            slug
+            for slug in self.post_repo.find_slugs_like(base_slug)
+            if slug != exclude_slug
+        ]
 
         # 同じものがなければそのまま返す
         if base_slug not in existing_slugs:
@@ -188,6 +203,16 @@ class PostService:
         title_slug = increment_slug_suffix(base_slug, existing_slugs)
 
         return title_slug
+
+    """
+    指定されたスラグが他の記事で使われていないかチェックする
+    """
+
+    def ensure_slug_available(
+        self, slug: str, exclude_post_id: int | None = None
+    ) -> None:
+        if self.post_repo.exists_by_slug(slug, exclude_post_id):
+            raise SlugAlreadyExistsError()
 
     """
     タグからスラグを生成してtag_idを取得する
@@ -244,8 +269,7 @@ class PostService:
     """
 
     def attach_post_id_to_image(self, images: list[int], post_id: int) -> None:
-        for id in images:
-            self.image_repo.update_post_id(id, post_id)
+        self.image_repo.update_post_id_by_image_ids(images, post_id)
 
     """
     記事の登録処理をする
@@ -253,12 +277,16 @@ class PostService:
 
     def create_all(self, request: PostsPostRequest, user_id: int) -> int:
         try:
-            # 画像IDの存在チェック
+            # 画像IDの存在・所有者チェック
             if request.images:
                 self.check_image_list(request.images)
 
-            # タイトルからスラグを生成
-            unique_slug = self.generate_slug_of_title(request.title)
+            # スラグの指定があれば重複チェックして採用し、なければタイトルから生成
+            if request.slug:
+                self.ensure_slug_available(request.slug)
+                unique_slug = request.slug
+            else:
+                unique_slug = self.generate_slug_of_title(request.title)
 
             # タグからスラグを生成し登録するIDを取得
             tag_id_list = []
@@ -335,6 +363,28 @@ class PostService:
             raise S3FileDeleteError()
 
     """
+    複数の画像をまとめて削除する
+    """
+
+    def delete_images_from_s3(self, urls: list[str]) -> None:
+        if not urls:
+            return
+
+        try:
+            object_keys = [self.s3.extract_key_from_url(url) for url in urls]
+            failed_keys = self.s3.delete_objects(object_keys)
+        except (ClientError, BotoCoreError):
+            logger.exception("S3 delete failed")
+            raise S3FileDeleteError()
+
+        if failed_keys:
+            logger.error(
+                "S3 delete failed",
+                extra={"failed_count": len(failed_keys), "total_count": len(object_keys)},
+            )
+            raise S3FileDeleteError()
+
+    """
     サムネイルの更新処理を行う
     """
 
@@ -376,8 +426,13 @@ class PostService:
     """
 
     def extract_delete_images(self, post_id: int, images: list[int]) -> None:
-        for id in images:
-            image = self.image_repo.find_by_image_id(id)
+        # 重複を除いた ID をリクエスト順に並べる
+        image_ids = list(dict.fromkeys(images))
+        image_map = {image.image_id: image for image in self.image_repo.find_by_image_ids(image_ids)}
+
+        # 全件をチェックしてから削除する（エラー時に一部だけ削除されないようにする）
+        for id in image_ids:
+            image = image_map.get(id)
 
             if not image:
                 raise ImageNotExistError()
@@ -388,9 +443,9 @@ class PostService:
                     code=ErrorCode.INVALID_IMAGE_OWNER,
                 )
 
-            self.delete_image_from_s3(image.url)
+        self.delete_images_from_s3([image_map[id].url for id in image_ids])
 
-            self.image_repo.delete(id)
+        self.image_repo.delete_by_image_ids(image_ids)
 
     """
     タグの更新処理をする
@@ -407,6 +462,43 @@ class PostService:
         self.create_post_tag(tag_id_list, post_id)
 
     """
+    更新後のスラグを決定する
+    """
+
+    def resolve_update_slug(
+        self, request: PostsPutRequest, post_id: int, current_slug: str
+    ) -> str:
+        # スラグ省略時は現在の値を維持（公開時のみドラフトスラグをタイトルベーススラグに上書き）
+        if "slug" not in request.model_fields_set:
+            if request.status == PostStatus.PUBLISHED and is_draft_generated_slug(
+                current_slug
+            ):
+                generated_slug = self.generate_slug_of_title(request.title)
+
+                # 生成に失敗した場合は既存のドラフトスラグを維持する
+                if not is_draft_generated_slug(generated_slug):
+                    return generated_slug
+            return current_slug
+
+        # スラグの指定があれば自記事を除いて重複チェックして採用する
+        if request.slug:
+            self.ensure_slug_available(request.slug, exclude_post_id=post_id)
+            return request.slug
+
+        # 空文字・null の場合はタイトルから再生成する
+        generated_slug = self.generate_slug_of_title(
+            request.title, exclude_slug=current_slug
+        )
+
+        # 再生成でもドラフトスラグになる場合、現在のドラフトスラグは振り直さない
+        if is_draft_generated_slug(generated_slug) and is_draft_generated_slug(
+            current_slug
+        ):
+            return current_slug
+
+        return generated_slug
+
+    """
     記事の更新処理をする
     """
 
@@ -414,23 +506,17 @@ class PostService:
         with transaction(self.db):
             ensure_exists(self.post_repo.exists_by_post_id(post_id))
 
+            # 紐づける画像IDの存在・所有者チェック（S3 削除を伴う処理より前に行う）
+            if request.new_images:
+                self.check_image_list(request.new_images, post_id)
+
             # ステータスの値によって投稿日時をセット
             new_published_at = self.set_published_at_from_status(
                 post_id, request.status
             )
 
-            # 公開時にドラフトスラグをタイトルベーススラグに上書き
             current_post = ensure_exists(self.post_repo.find_by_post_id(post_id))
-            new_slug = current_post.slug
-            if (
-                request.status == PostStatus.PUBLISHED
-                and is_draft_generated_slug(current_post.slug)
-            ):
-                generated_slug = self.generate_slug_of_title(request.title)
-
-                # 生成に失敗した場合は既存のドラフトスラグを維持する
-                if not is_draft_generated_slug(generated_slug):
-                    new_slug = generated_slug
+            new_slug = self.resolve_update_slug(request, post_id, current_post.slug)
 
             # 更新するサムネイルURLをセット
             update_url = self.update_thumbnail(
@@ -485,8 +571,7 @@ class PostService:
     def delete_image_from_post_id(self, post_id: int) -> None:
         image_urls = self.image_repo.find_url_by_post_id(post_id)
 
-        for url in image_urls:
-            self.delete_image_from_s3(url)
+        self.delete_images_from_s3(image_urls)
 
     """
     記事の削除処理をする

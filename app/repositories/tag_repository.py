@@ -8,9 +8,9 @@ class TagRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def find_id_by_name(self, name: str) -> int | None:
-        stmt = select(Tag.tag_id).where(Tag.name == name)
-        return self.db.execute(stmt).scalars().first()
+    def find_ids_by_names(self, names: list[str]) -> dict[str, int]:
+        stmt = select(Tag.name, Tag.tag_id).where(Tag.name.in_(names))
+        return {name: tag_id for name, tag_id in self.db.execute(stmt).all()}
 
     def find_slugs_starting_with(self, slug_base: str) -> list[str]:
         stmt = select(Tag.slug).where(Tag.slug.like(f"{slug_base}%"))
