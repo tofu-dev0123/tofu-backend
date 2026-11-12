@@ -126,6 +126,7 @@ class ErrorMessage:
     IMAGE_ID_REQUIRED = "画像IDは必須項目です"
     MIN_IMAGE_ID = f"画像IDは{Constant.MIN_IMAGE_ID}以上の整数で指定してください"
     INVALID_IMAGE_OWNER = "削除対象の画像ID（{image_id}）がこの記事に紐づいていません"
+    IMAGE_ALREADY_ATTACHED = "画像ID（{image_id}）は他の記事に紐づいています"
 
     # 認証エラー
     TOKEN_REQUIRED = "認証トークンが必要です"

@@ -223,6 +223,36 @@ def test_update_post_invalid_image_owner(mock_update_all, client, auth_headers):
     mock_update_all.assert_called_once()
 
 
+# サービス層例外: 紐づける画像が他の記事に紐づいている
+@patch(
+    "app.services.post_service.PostService.update_all",
+    side_effect=ApplicationError(
+        message=ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=10),
+        code=ErrorCode.INVALID_IMAGE_OWNER,
+    ),
+)
+def test_update_post_new_image_attached_to_other_post(mock_update_all, client, auth_headers):
+    req = {
+        "title": "Test",
+        "content_md": "test_md",
+        "thumbnail_delete_flag": False,
+        "status": "PUBLISHED",
+        "new_images": [10],
+    }
+    response = client.put(
+        "/admin/posts/2",
+        headers=auth_headers,
+        json=req,
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    assert data["error"] == ErrorCode.INVALID_IMAGE_OWNER
+    assert data["message"] == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=10)
+    mock_update_all.assert_called_once()
+
+
 # サービス層例外: 削除対象の画像が存在しない
 @patch(
     "app.services.post_service.PostService.update_all",
