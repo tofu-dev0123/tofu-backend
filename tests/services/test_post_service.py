@@ -893,6 +893,15 @@ def test_delete_images_from_s3_client_error(post_service):
         post_service.delete_images_from_s3(["https://example.com/img1.png"])
 
 
+# delete_images_from_s3: BotoCoreError が発生した場合
+def test_delete_images_from_s3_botocore_error(post_service):
+    post_service.s3.extract_key_from_url.return_value = "key1"
+    post_service.s3.delete_objects.side_effect = BotoCoreError()
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(["https://example.com/img1.png"])
+
+
 # delete_all: 正常系
 @patch("app.services.post_service.PostService.delete_image_from_post_id")
 @patch("app.services.post_service.PostService.delete_thumbnail")
