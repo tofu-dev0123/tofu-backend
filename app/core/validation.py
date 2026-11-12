@@ -23,6 +23,8 @@ VALIDATION_MESSAGES = {
     ("current_email", "value_error"): ErrorMessage.USERNAME_FORMAT_EMAIL,
     ("new_email", "missing"): ErrorMessage.USERNAME_REQUIRED,
     ("new_email", "value_error"): ErrorMessage.USERNAME_FORMAT_EMAIL,
+    ("current_email", "too_long"): ErrorMessage.USERNAME_MAX_LENGTH,
+    ("new_email", "too_long"): ErrorMessage.USERNAME_MAX_LENGTH,
     # 記事関連
     ("title", "missing"): ErrorMessage.TITLE_REQUIRED,
     ("body", "title_required_for_published"): ErrorMessage.TITLE_REQUIRED_FOR_PUBLISHED,
@@ -69,6 +71,7 @@ VALIDATION_MESSAGES = {
     ("title", "product_title_too_long"): ErrorMessage.PRODUCT_TITLE_MAX_LENGTH,
     ("description", "string_too_long"): ErrorMessage.PRODUCT_DESCRIPTION_MAX_LENGTH,
     ("link_url", "string_too_long"): ErrorMessage.LINK_URL_MAX_LENGTH,
+    ("github_url", "string_too_long"): ErrorMessage.GITHUB_URL_MAX_LENGTH,
     ("product_id", "missing"): ErrorMessage.PRODUCT_ID_REQUIRED,
     ("product_id", "greater_than_equal"): ErrorMessage.MIN_PRODUCT_ID,
 }
