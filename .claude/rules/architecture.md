@@ -168,6 +168,14 @@ images
 | POST     | /admin/images/upload     | 画像アップロード |
 | DELETE   | /admin/images/{image_id} | 画像削除         |
 
+#### 記事の slug
+
+- `POST` / `PUT /admin/posts` のリクエストで `slug` を任意指定できる（最大 50 文字、`^[a-z0-9]+(?:-[a-z0-9]+)*$`）
+- POST: 未入力（省略・空文字）ならタイトルから pykakasi で自動生成（重複時は `-N` 付与、タイトルなしは `draft-xxxxxxxx`）
+- PUT: 省略 → 現在の値を維持（公開時のみ `draft-` スラグをタイトルから振り直す）／空文字・null → タイトルから再生成／指定あり → その値に更新
+- 指定した slug が他記事と重複した場合は 400 `SLUG_ALREADY_EXISTS`（自動インクリメントしない）
+- 公開済み記事の slug 変更も可能（公開 URL が変わる）
+
 ### 公開 API
 
 | メソッド | パス           | 説明             |
