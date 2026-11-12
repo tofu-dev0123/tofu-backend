@@ -1,16 +1,14 @@
-import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from datetime import datetime
 from app.common.errorcode import ErrorCode
-from app.common.message import Message, ErrorMessage
-from app.common.constant import Constant
+from app.common.message import ErrorMessage
 from app.models.post import PostStatus
 from app.schemas.post import PostGetResponse
 
 
 # 正常系
 @patch("app.services.post_service.PostService.get_post_detail")
-def test_login_success(mock_get_detail, client, valid_token):
+def test_get_post_detail_success(mock_get_detail, client, auth_headers):
     mock_get_detail.return_value = PostGetResponse(
         post_id=1,
         title="テストタイトル",
@@ -30,7 +28,7 @@ def test_login_success(mock_get_detail, client, valid_token):
 
     response = client.get(
         "/admin/posts/1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 200
@@ -38,10 +36,10 @@ def test_login_success(mock_get_detail, client, valid_token):
 
 
 # 最小値バリデーションエラー
-def test_validation_error_min(client, valid_token):
+def test_validation_error_min(client, auth_headers):
     response = client.get(
         "/admin/posts/-1",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
     )
 
     assert response.status_code == 400

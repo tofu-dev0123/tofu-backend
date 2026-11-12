@@ -2,6 +2,7 @@ from unittest.mock import patch
 from app.schemas.image import ImageUploadResponse
 from app.core.exceptions.image_exceptions import ImageUploadValidationError
 from app.common.errorcode import ErrorCode
+from app.common.message import ErrorMessage
 from app.core.exceptions.s3_exceptions import S3FileUploadError
 
 
@@ -11,7 +12,7 @@ def test_image_upload_success(
     mock_validate,
     mock_upload_file,
     client,
-    valid_token,
+    auth_headers,
 ):
     mock_validate.return_value = None
     mock_upload_file.return_value = ImageUploadResponse(
@@ -29,7 +30,7 @@ def test_image_upload_success(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
         data=data,
     )
@@ -54,7 +55,7 @@ def test_image_upload_success(
 def test_image_upload_validation_error(
     mock_validate,
     client,
-    valid_token,
+    auth_headers,
 ):
     files = {
         "image_file": ("test.png", b"dummy image", "image/png"),
@@ -62,7 +63,7 @@ def test_image_upload_validation_error(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
     )
 
@@ -81,7 +82,7 @@ def test_image_upload_s3_error(
     mock_validate,
     mock_upload_file,
     client,
-    valid_token,
+    auth_headers,
 ):
     files = {
         "image_file": ("test.png", b"dummy image", "image/png"),
@@ -89,8 +90,12 @@ def test_image_upload_s3_error(
 
     response = client.post(
         "admin/images/upload",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         files=files,
     )
 
     assert response.status_code == 400
+
+    data = response.json()
+    assert data["error"] == ErrorCode.S3_ERROR
+    assert data["message"] == ErrorMessage.S3_FILE_UPLOAD_ERROR

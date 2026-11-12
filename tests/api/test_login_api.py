@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import patch
 from app.core.exceptions.auth_exceptions import LoginFailError
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
 from app.common.constant import Constant
+from app.core.security import verify_token
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 
 # 正常系
@@ -21,6 +22,20 @@ def test_login_success(client):
     data = response.json()
     assert data["message"] == Message.LOGIN_SUCCESS
     assert data["token"] == "fake_token"
+
+
+# 正常系: 実 Service と DB のユーザー（bcrypt ハッシュ）でログインできる
+def test_login_success_with_real_user(client, test_user):
+    response = client.post(
+        "/admin/auth/login",
+        json={"username": test_user.username, "password": TEST_USER_PASSWORD},
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["message"] == Message.LOGIN_SUCCESS
+    assert verify_token(data["token"])["sub"] == str(test_user.user_id)
 
 
 # 必須項目バリデーション

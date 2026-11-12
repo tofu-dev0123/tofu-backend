@@ -1,22 +1,21 @@
-class PasswordMismatchError(Exception):
+from app.core.exceptions.base import BaseAppError
+
+
+class PasswordMismatchError(BaseAppError):
     """パスワード不一致エラー"""
 
-    def __init__(self, message: str = ""):
-        self.message = message
-        super().__init__(self.message)
 
-
-class EmailMismatchError(Exception):
+class EmailMismatchError(BaseAppError):
     """メールアドレス不一致エラー"""
 
-    def __init__(self, message: str = ""):
-        self.message = message
-        super().__init__(self.message)
 
-
-class EmailAlreadyExistsError(Exception):
+class EmailAlreadyExistsError(BaseAppError):
     """メールアドレス重複エラー"""
 
-    def __init__(self, message: str = ""):
-        self.message = message
-        super().__init__(self.message)
+
+class NewPasswordSameError(BaseAppError):
+    """新しいパスワードが現在と同一のエラー"""
+
+
+class NewEmailSameError(BaseAppError):
+    """新しいメールアドレスが現在と同一のエラー"""

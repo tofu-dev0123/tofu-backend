@@ -1,11 +1,16 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
-from typing import Self
+from typing import Any, Self
 from datetime import datetime
 from app.common.constant import Constant
 from app.models.post import PostStatus
 from app.schemas.tag import Tag
 from app.schemas.image import Image
+from app.schemas.validators import (
+    empty_string_to_none,
+    validate_content_md_size,
+    validate_tags,
+)
 
 
 class Post(BaseModel):
@@ -15,9 +20,9 @@ class Post(BaseModel):
     slug: str = Field(..., description="スラグ")
     thumbnail_url: str | None = Field(None, description="サムネイルURL")
     status: PostStatus = Field(..., description="公開ステータス")
-    publishedAt: datetime | None = Field(None, description="投稿日時")
-    createdAt: datetime = Field(..., description="作成日時")
-    updatedAt: datetime = Field(..., description="更新日時")
+    published_at: datetime | None = Field(None, description="投稿日時")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
 
 
 class PostPublishAt(BaseModel):
@@ -82,30 +87,13 @@ class PostsPostRequest(BaseModel):
 
     @field_validator("title", mode="before")
     @classmethod
-    def empty_title_to_none(cls, v):
+    def empty_title_to_none(cls, v: Any) -> Any:
         """空文字列を None に変換（DRAFT でのタイトル未入力を許容）"""
         return None if v == "" else v
 
-    @field_validator("content_md")
-    def validate_content_md_size(cls, v):
-        if len(v.encode("utf-8")) > Constant.MAX_CONTENT_MARKDOWN_SIZE:
-            raise PydanticCustomError("size_over", "")
-        return v
-
-    @field_validator("thumbnail_url")
-    def empty_string_to_null(cls, v):
-        return None if v == "" else v
-
-    @field_validator("tags")
-    def validate_tags(cls, v):
-        if len(v) > Constant.MAX_TAGS:
-            raise PydanticCustomError("list_too_long", "")
-
-        for tag in v:
-            if len(tag) > Constant.MAX_TAG_LENGTH:
-                raise PydanticCustomError("string_too_long", "")
-
-        return v
+    _validate_content_md_size = field_validator("content_md")(validate_content_md_size)
+    _empty_string_to_none = field_validator("thumbnail_url")(empty_string_to_none)
+    _validate_tags = field_validator("tags")(validate_tags)
 
     @model_validator(mode="after")
     def validate_title_for_published(self) -> Self:
@@ -135,26 +123,9 @@ class PostsPutRequest(BaseModel):
     )
     tags: list[str] = Field(default_factory=list, description="タグの配列")
 
-    @field_validator("content_md")
-    def validate_content_md_size(cls, v):
-        if len(v.encode("utf-8")) > Constant.MAX_CONTENT_MARKDOWN_SIZE:
-            raise PydanticCustomError("size_over", "")
-        return v
-
-    @field_validator("thumbnail_url")
-    def empty_string_to_null(cls, v):
-        return None if v == "" else v
-
-    @field_validator("tags")
-    def validate_tags(cls, v):
-        if len(v) > Constant.MAX_TAGS:
-            raise PydanticCustomError("list_too_long", "")
-
-        for tag in v:
-            if len(tag) > Constant.MAX_TAG_LENGTH:
-                raise PydanticCustomError("string_too_long", "")
-
-        return v
+    _validate_content_md_size = field_validator("content_md")(validate_content_md_size)
+    _empty_string_to_none = field_validator("thumbnail_url")(empty_string_to_none)
+    _validate_tags = field_validator("tags")(validate_tags)
 
 
 class PostsResponse(BaseModel):
@@ -190,6 +161,12 @@ class PostsPublishAtResponse(BaseModel):
     page: int = Field(..., description="ページ")
     limit: int = Field(..., description="リミット")
     posts: list[PostPublishAt] = Field(default_factory=list, description="記事一覧")
+
+
+class PostSlugsResponse(BaseModel):
+    """公開記事スラグ一覧取得成功レスポンススキーマ"""
+
+    slugs: list[str] = Field(default_factory=list, description="公開記事のスラグ配列")
 
 
 class PostPublishAtResponse(BaseModel):

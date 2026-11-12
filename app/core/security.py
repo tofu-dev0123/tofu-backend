@@ -1,28 +1,33 @@
 from datetime import datetime, timedelta
+from typing import Any
 import bcrypt
 from jose import jwt, JWTError
 from app.core.config import settings
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 from app.models.user import User
+from app.repositories.user_repository import UserRepository
 from app.db.database import get_db
 from app.core.exceptions.auth_exceptions import AuthenticationError
 from app.common.message import ErrorMessage
 
 
-def create_access_token(user_id: int, username: str) -> str:
+def create_access_token(
+    user_id: int, username: str, now: datetime | None = None
+) -> str:
     """
     JWTトークンを生成する
 
     Args:
         user_id: ユーザーID
         username: ユーザー名
+        now: 現在時刻（UTC）。省略時は datetime.utcnow()
 
     Returns:
         JWTトークン文字列
     """
     # 有効期限を設定（現在時刻 + 3時間）
-    expire = datetime.utcnow() + timedelta(hours=3)
+    expire = (now or datetime.utcnow()) + timedelta(hours=3)
 
     # ペイロード（クレーム）を設定
     payload = {
@@ -68,7 +73,7 @@ def hash_password(plain_password: str) -> str:
     return bcrypt.hashpw(plain_password.encode("utf-8"), salt).decode("utf-8")
 
 
-def verify_token(token: str):
+def verify_token(token: str) -> dict[str, Any]:
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
@@ -120,7 +125,7 @@ def get_current_user(
     except (TypeError, ValueError):
         raise AuthenticationError
 
-    user = db.query(User).filter(User.user_id == user_id).first()
+    user = UserRepository(db).find_by_id(user_id)
     if not user:
         raise AuthenticationError
 

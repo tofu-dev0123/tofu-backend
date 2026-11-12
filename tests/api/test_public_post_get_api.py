@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from datetime import datetime
 from app.common.errorcode import ErrorCode
@@ -8,8 +7,36 @@ from app.schemas.post import (
     PostsPublishAtResponse,
     PostPublishAt,
     PostPublishAtResponse,
+    PostSlugsResponse,
 )
 from app.schemas.tag import Tag
+
+
+# 正常系: 公開記事スラグ一覧の取得成功
+@patch("app.services.public.post_service.PublicPostService.get_slugs")
+def test_get_slugs_success(mock_get_slugs, client):
+    mock_get_slugs.return_value = PostSlugsResponse(
+        slugs=["first-post", "second-post", "hello-world"]
+    )
+
+    response = client.get("/posts/slugs")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["slugs"] == ["first-post", "second-post", "hello-world"]
+    mock_get_slugs.assert_called_once_with()
+
+
+# 正常系: 公開記事が0件の場合は空配列を返す
+@patch("app.services.public.post_service.PublicPostService.get_slugs")
+def test_get_slugs_empty(mock_get_slugs, client):
+    mock_get_slugs.return_value = PostSlugsResponse(slugs=[])
+
+    response = client.get("/posts/slugs")
+
+    assert response.status_code == 200
+    assert response.json()["slugs"] == []
+    mock_get_slugs.assert_called_once_with()
 
 
 # 正常系: 公開記事一覧の取得成功（page=1, keywordなし）
@@ -211,7 +238,7 @@ def test_get_post_success_without_tags(mock_get_post, client):
 # 異常系: 記事が存在しない場合
 @patch("app.services.public.post_service.PublicPostService.get_post")
 def test_get_post_not_found(mock_get_post, client):
-    from app.core.exceptions.handlers import ApplicationError
+    from app.core.exceptions.application_exceptions import ApplicationError
 
     mock_get_post.side_effect = ApplicationError(
         message=ErrorMessage.NOT_EXIST,

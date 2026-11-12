@@ -1,23 +1,37 @@
+import logging
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 from app.core.security import verify_password, hash_password
+from app.services.transaction import transaction
 from app.core.exceptions.account_exceptions import (
     PasswordMismatchError,
     EmailMismatchError,
     EmailAlreadyExistsError,
+    NewPasswordSameError,
+    NewEmailSameError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AccountService:
 
-    def __init__(self, db: Session):
+    def __init__(
+        self,
+        db: Session,
+        user_repo: UserRepository | None = None,
+    ) -> None:
         self.db = db
-        self.user_repo = UserRepository(db)
+        self.user_repo = user_repo or UserRepository(db)
 
     def update_account_name(self, user: User, account_name: str) -> User:
         """アカウント名を変更する"""
-        return self.user_repo.update_account_name(user, account_name)
+        with transaction(self.db):
+            updated = self.user_repo.update_account_name(user, account_name)
+        self.db.refresh(updated)
+        logger.info("account name updated", extra={"user_id": user.user_id})
+        return updated
 
     def change_password(
         self, user: User, current_password: str, new_password: str
@@ -27,9 +41,16 @@ class AccountService:
         if not verify_password(current_password, user.password):
             raise PasswordMismatchError()
 
+        # 新しいパスワードが現在と同一ならエラー
+        if new_password == current_password:
+            raise NewPasswordSameError()
+
         # 新しいパスワードをハッシュ化して更新
         hashed_password = hash_password(new_password)
-        self.user_repo.update_password(user, hashed_password)
+        with transaction(self.db):
+            self.user_repo.update_password(user, hashed_password)
+        self.db.refresh(user)
+        logger.info("password changed", extra={"user_id": user.user_id})
 
     def change_email(
         self, user: User, current_email: str, new_email: str, password: str
@@ -43,9 +64,17 @@ class AccountService:
         if not verify_password(password, user.password):
             raise PasswordMismatchError()
 
+        # 新しいメールアドレスが現在と同一ならエラー（重複チェックより優先）
+        if new_email == user.username:
+            raise NewEmailSameError()
+
         # 新しいメールアドレスの重複チェック
         if self.user_repo.exists_by_username(new_email):
             raise EmailAlreadyExistsError()
 
         # メールアドレスを更新
-        return self.user_repo.update_email(user, new_email)
+        with transaction(self.db):
+            updated = self.user_repo.update_email(user, new_email)
+        self.db.refresh(updated)
+        logger.info("email changed", extra={"user_id": user.user_id})
+        return updated

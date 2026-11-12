@@ -1,42 +1,44 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum
 from app.core.config import settings
-from app.db.database import get_db
 from app.api.router import api_router
 from app.core.exceptions.handlers import register_exception_handlers
-import logging
+from app.core.logging.config import setup_logging
+from app.core.logging.middleware import RequestLoggingMiddleware
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
+# root ロガーのハンドラを差し替えるため、プロセスで 1 回だけ初期化する
+setup_logging(is_local=settings.is_local)
 
 
-if not settings.is_local:
-    app = FastAPI(
-        docs_url=None,
-        redoc_url=None,
-        openapi_url=None,
+def create_app() -> FastAPI:
+    """FastAPI アプリケーションを組み立てる"""
+    if not settings.is_local:
+        app = FastAPI(
+            docs_url=None,
+            redoc_url=None,
+            openapi_url=None,
+        )
+    else:
+        app = FastAPI()
+
+    register_exception_handlers(app)
+
+    # CORS設定
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ALLOW_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers=["*"],
     )
-else:
-    app = FastAPI()
 
-register_exception_handlers(app)
+    # リクエストログ / request_id 採番 (最外層に置き全処理を包む)
+    app.add_middleware(RequestLoggingMiddleware)
 
-# CORS設定
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ALLOW_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["*"],
-)
+    # ルーターの登録
+    app.include_router(api_router)
 
-# ルーターの登録
-app.include_router(api_router)
+    return app
 
-# AWS Lambda 用 ASGI ハンドラ (Function URL / API Gateway 互換)
-handler = Mangum(app, lifespan="off")
+
+app = create_app()

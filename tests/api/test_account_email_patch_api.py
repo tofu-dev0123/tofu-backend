@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, Mock
 from app.common.errorcode import ErrorCode
 from app.common.message import Message, ErrorMessage
@@ -8,10 +7,11 @@ from app.core.exceptions.account_exceptions import (
     EmailMismatchError,
     EmailAlreadyExistsError,
 )
+from tests.mock_data.auth import TEST_USER_PASSWORD
 
 
 # 正常系
-def test_change_email_success(client, valid_token):
+def test_change_email_success(client, auth_headers):
     mock_user = Mock()
     mock_user.user_id = 1
     mock_user.username = "new-email@example.com"
@@ -22,7 +22,7 @@ def test_change_email_success(client, valid_token):
     ):
         response = client.patch(
             "/admin/account/email",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_email": "old-email@example.com",
                 "new_email": "new-email@example.com",
@@ -39,10 +39,10 @@ def test_change_email_success(client, valid_token):
 
 
 # 必須項目バリデーション
-def test_validation_error_missing(client, valid_token):
+def test_validation_error_missing(client, auth_headers):
     response = client.patch(
         "/admin/account/email",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={},
     )
 
@@ -57,10 +57,10 @@ def test_validation_error_missing(client, valid_token):
 
 
 # メールアドレス形式バリデーション（current_email）
-def test_validation_error_current_email_format(client, valid_token):
+def test_validation_error_current_email_format(client, auth_headers):
     response = client.patch(
         "/admin/account/email",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_email": "invalid-email",
             "new_email": "new-email@example.com",
@@ -78,10 +78,10 @@ def test_validation_error_current_email_format(client, valid_token):
 
 
 # メールアドレス形式バリデーション（new_email）
-def test_validation_error_new_email_format(client, valid_token):
+def test_validation_error_new_email_format(client, auth_headers):
     response = client.patch(
         "/admin/account/email",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_email": "old-email@example.com",
             "new_email": "invalid-email",
@@ -99,11 +99,11 @@ def test_validation_error_new_email_format(client, valid_token):
 
 
 # パスワード最小文字数バリデーション
-def test_validation_error_password_min_length(client, valid_token):
+def test_validation_error_password_min_length(client, auth_headers):
     small_password = "a" * (Constant.MIN_PASSWORD_LENGTH - 1)
     response = client.patch(
         "/admin/account/email",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_email": "old-email@example.com",
             "new_email": "new-email@example.com",
@@ -121,11 +121,11 @@ def test_validation_error_password_min_length(client, valid_token):
 
 
 # パスワード最大文字数バリデーション
-def test_validation_error_password_max_length(client, valid_token):
+def test_validation_error_password_max_length(client, auth_headers):
     big_password = "a" * (Constant.MAX_PASSWORD_LENGTH + 1)
     response = client.patch(
         "/admin/account/email",
-        headers={"Authorization": f"Bearer {valid_token}"},
+        headers=auth_headers,
         json={
             "current_email": "old-email@example.com",
             "new_email": "new-email@example.com",
@@ -143,14 +143,14 @@ def test_validation_error_password_max_length(client, valid_token):
 
 
 # 現在のメールアドレス不一致エラー
-def test_email_mismatch_error(client, valid_token):
+def test_email_mismatch_error(client, auth_headers):
     with patch(
         "app.services.account_service.AccountService.change_email",
         side_effect=EmailMismatchError,
     ):
         response = client.patch(
             "/admin/account/email",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_email": "wrong-email@example.com",
                 "new_email": "new-email@example.com",
@@ -166,14 +166,14 @@ def test_email_mismatch_error(client, valid_token):
 
 
 # パスワード不一致エラー
-def test_password_mismatch_error(client, valid_token):
+def test_password_mismatch_error(client, auth_headers):
     with patch(
         "app.services.account_service.AccountService.change_email",
         side_effect=PasswordMismatchError,
     ):
         response = client.patch(
             "/admin/account/email",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_email": "old-email@example.com",
                 "new_email": "new-email@example.com",
@@ -189,14 +189,14 @@ def test_password_mismatch_error(client, valid_token):
 
 
 # メールアドレス重複エラー
-def test_email_already_exists_error(client, valid_token):
+def test_email_already_exists_error(client, auth_headers):
     with patch(
         "app.services.account_service.AccountService.change_email",
         side_effect=EmailAlreadyExistsError,
     ):
         response = client.patch(
             "/admin/account/email",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers=auth_headers,
             json={
                 "current_email": "old-email@example.com",
                 "new_email": "existing-email@example.com",
@@ -209,6 +209,25 @@ def test_email_already_exists_error(client, valid_token):
     data = response.json()
     assert data["message"] == ErrorMessage.EMAIL_ALREADY_EXISTS
     assert data["error"] == ErrorCode.EMAIL_ALREADY_EXISTS
+
+
+# 新しいメールアドレスが現在と同一（実 DB のユーザー）
+def test_new_email_same_error(client, auth_headers, test_user):
+    response = client.patch(
+        "/admin/account/email",
+        headers=auth_headers,
+        json={
+            "current_email": test_user.username,
+            "new_email": test_user.username,
+            "password": TEST_USER_PASSWORD,
+        },
+    )
+
+    assert response.status_code == 400
+
+    data = response.json()
+    assert data["message"] == ErrorMessage.NEW_EMAIL_SAME
+    assert data["error"] == ErrorCode.NEW_EMAIL_SAME
 
 
 # トークンなしによる認証エラー

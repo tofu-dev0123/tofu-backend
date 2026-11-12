@@ -4,6 +4,7 @@ class Constant:
     MAX_USERNAME_LENGTH = 50
     MAX_PASSWORD_LENGTH = 50
     MIN_PASSWORD_LENGTH = 8
+    MIN_ACCOUNT_NAME_LENGTH = 1
     MAX_ACCOUNT_NAME_LENGTH = 30
 
     # 記事関連
@@ -17,6 +18,7 @@ class Constant:
     MIN_OFFSET = 0
     MIN_LIMIT = 1
     MAX_LIMIT = 30
+    DEFAULT_LIMIT = 10
     MIN_POST_ID = 1
     MIN_PAGE = 1
 
@@ -28,3 +30,28 @@ class Constant:
 
     # 公開記事関連
     PUBLIC_POST_LIMIT = 10
+
+    # 公開API キャッシュ関連
+    PUBLIC_CACHE_MAX_AGE = 300  # CDN キャッシュ保持時間(秒)
+    PUBLIC_CACHE_CONTROL = f"public, max-age=0, s-maxage={PUBLIC_CACHE_MAX_AGE}"
+
+    # プロフィール関連
+    MAX_HEADLINE_LENGTH = 255
+    MAX_BIO_LENGTH = 2000
+    MAX_SITE_DESCRIPTION_LENGTH = 1000
+
+    # 年表関連
+    MIN_YEAR = 1900
+    MAX_YEAR = 2100
+    MAX_TIMELINE_TITLE_LENGTH = 255
+    MAX_TIMELINE_BODY_LENGTH = 2000
+    MIN_TIMELINE_ID = 1
+
+    # プロダクト関連
+    MAX_PRODUCT_TITLE_LENGTH = 255
+    MAX_PRODUCT_DESCRIPTION_LENGTH = 2000
+    MAX_LINK_URL_LENGTH = 500
+    MIN_PRODUCT_ID = 1
+
+    # 表示順（年表・プロダクト共通）
+    MIN_SORT_ORDER = 0

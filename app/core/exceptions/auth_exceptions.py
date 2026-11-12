@@ -1,14 +1,9 @@
-class LoginFailError(Exception):
+from app.core.exceptions.base import BaseAppError
+
+
+class LoginFailError(BaseAppError):
     """ログイン失敗エラー"""
 
-    def __init__(self, message: str = ""):
-        self.message = message
-        super().__init__(self.message)
 
-
-class AuthenticationError(Exception):
+class AuthenticationError(BaseAppError):
     """認証エラー"""
-
-    def __init__(self, message: str = ""):
-        self.message = message
-        super().__init__(self.message)
