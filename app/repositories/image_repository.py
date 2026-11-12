@@ -1,4 +1,4 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 from app.models.image import Image
 
@@ -20,11 +20,9 @@ class ImageRepository:
         stmt = select(Image.url).where(Image.post_id == id)
         return list(self.db.execute(stmt).scalars().all())
 
-    def update_post_id(self, image_id: int, post_id: int) -> None:
-        image: Image | None = self.db.query(Image).filter(Image.image_id == image_id).first()
-        if image:
-            image.post_id = post_id
-            self.db.commit()
+    def update_post_id_by_image_ids(self, image_ids: list[int], post_id: int) -> None:
+        stmt = update(Image).where(Image.image_id.in_(image_ids)).values(post_id=post_id)
+        self.db.execute(stmt)
 
     def create(self, image: Image) -> int:
         self.db.add(image)

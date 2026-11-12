@@ -496,6 +496,17 @@ def test_extract_delete_images_invalid_owner(post_service):
     assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
 
 
+# attach_post_id_to_image: 一括 UPDATE を 1 回だけ実行し、commit しない
+def test_attach_post_id_to_image_success(post_service):
+    result = post_service.attach_post_id_to_image([1, 2, 3], 10)
+
+    assert result is None
+    post_service.image_repo.update_post_id_by_image_ids.assert_called_once_with(
+        [1, 2, 3], 10
+    )
+    post_service.db.commit.assert_not_called()
+
+
 # update_tags: 正常系
 @patch("app.services.post_service.PostService.generate_slug_of_tag_and_get_id")
 @patch("app.services.post_service.PostService.create_post_tag")

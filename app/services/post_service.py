@@ -244,8 +244,7 @@ class PostService:
     """
 
     def attach_post_id_to_image(self, images: list[int], post_id: int) -> None:
-        for id in images:
-            self.image_repo.update_post_id(id, post_id)
+        self.image_repo.update_post_id_by_image_ids(images, post_id)
 
     """
     記事の登録処理をする
