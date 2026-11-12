@@ -160,6 +160,64 @@ def test_image_not_exist_partially(post_service):
         post_service.check_image_list([1, 2])
 
 
+# 作成時（post_id 省略）: 未紐付けの画像は許可
+def test_check_image_list_unattached_without_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1), _mock_image(2)]
+
+    result = post_service.check_image_list([1, 2])
+
+    assert result is None
+
+
+# 作成時（post_id 省略）: 他の記事に紐づく画像は INVALID_IMAGE_OWNER
+def test_check_image_list_attached_without_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1),
+        _mock_image(2, post_id=5),
+    ]
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.check_image_list([1, 2])
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=2)
+
+
+# 更新時（post_id 指定）: 自分の記事の画像・未紐付けの画像は許可
+def test_check_image_list_own_and_unattached_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1, post_id=10),
+        _mock_image(2),
+    ]
+
+    result = post_service.check_image_list([1, 2], 10)
+
+    assert result is None
+    post_service.image_repo.find_by_image_ids.assert_called_once_with([1, 2])
+
+
+# 更新時（post_id 指定）: 他の記事に紐づく画像は INVALID_IMAGE_OWNER
+def test_check_image_list_other_post_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [
+        _mock_image(1, post_id=10),
+        _mock_image(2, post_id=20),
+    ]
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.check_image_list([1, 2], 10)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=2)
+
+
+# 更新時（post_id 指定）: 存在しない画像は ImageNotExistError
+def test_check_image_list_not_exist_with_post_id(post_service):
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(1, post_id=10)]
+
+    with pytest.raises(ImageNotExistError):
+        post_service.check_image_list([1, 2], 10)
+
+
 # タイトルスラグ衝突なし→新規作成
 @patch("app.services.post_service.generate_slug", return_value="test-title")
 def test_generate_slug_of_title_no_conflict(mock_gen, post_service):
@@ -585,7 +643,9 @@ def test_update_tags_success(mock_create_post_tag, mock_generate_slug, post_serv
 @patch("app.services.post_service.PostService.extract_delete_images")
 @patch("app.services.post_service.PostService.update_thumbnail")
 @patch("app.services.post_service.PostService.set_published_at_from_status")
+@patch("app.services.post_service.PostService.check_image_list")
 def test_update_all_success_full_update(
+    mock_check_image_list,
     mock_set_published_at,
     mock_update_thumbnail,
     mock_extract_delete_images,
@@ -618,6 +678,7 @@ def test_update_all_success_full_update(
 
     assert result is None
     post_service.post_repo.exists_by_post_id.assert_called_once_with(999)
+    mock_check_image_list.assert_called_once_with([3, 4], 999)
     mock_set_published_at.assert_called_once_with(999, PostStatus.PUBLISHED)
     mock_update_thumbnail.assert_called_once_with(
         999, "https://example.com/new-thumb.png", False
@@ -764,6 +825,68 @@ def test_update_all_invalid_image_owner(
         post_service.update_all(req, post_id=1)
 
     assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    post_service.db.rollback.assert_called_once()
+
+
+# update_all: 紐づける画像が存在しない場合は削除・更新前に rollback
+@patch("app.services.post_service.PostService.extract_delete_images")
+def test_update_all_new_images_not_exist(
+    mock_extract_delete_images,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.image_repo.find_by_image_ids.return_value = []
+
+    req = PostsPutRequest(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_url=None,
+        thumbnail_delete_flag=False,
+        status=PostStatus.DRAFT,
+        delete_images=[1],
+        new_images=[999],
+        tags=[],
+    )
+
+    with pytest.raises(ImageNotExistError):
+        post_service.update_all(req, post_id=1)
+
+    mock_extract_delete_images.assert_not_called()
+    post_service.post_repo.update_post.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
+    post_service.db.rollback.assert_called_once()
+
+
+# update_all: 他の記事に紐づく画像を指定した場合は削除・更新前に rollback
+@patch("app.services.post_service.PostService.extract_delete_images")
+def test_update_all_new_images_attached_to_other_post(
+    mock_extract_delete_images,
+    mock_db,
+    post_service,
+):
+    post_service.post_repo.exists_by_post_id.return_value = True
+    post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=2)]
+
+    req = PostsPutRequest(
+        title="Updated Title",
+        content_md="updated_md",
+        thumbnail_url=None,
+        thumbnail_delete_flag=False,
+        status=PostStatus.DRAFT,
+        delete_images=[1],
+        new_images=[10],
+        tags=[],
+    )
+
+    with pytest.raises(ApplicationError) as exc_info:
+        post_service.update_all(req, post_id=1)
+
+    assert exc_info.value.code == ErrorCode.INVALID_IMAGE_OWNER
+    assert exc_info.value.message == ErrorMessage.IMAGE_ALREADY_ATTACHED.format(image_id=10)
+    mock_extract_delete_images.assert_not_called()
+    post_service.post_repo.update_post.assert_not_called()
+    post_service.image_repo.update_post_id_by_image_ids.assert_not_called()
     post_service.db.rollback.assert_called_once()
 
 
