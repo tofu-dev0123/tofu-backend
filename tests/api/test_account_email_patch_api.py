@@ -144,7 +144,7 @@ def test_validation_error_password_max_length(client, auth_headers):
 
 # 現在のメールアドレス最大文字数バリデーション
 def test_validation_error_current_email_max_length(client, auth_headers):
-    local_part = "a" * Constant.MAX_USERNAME_LENGTH
+    local_part = "a" * (Constant.MAX_USERNAME_LENGTH + 1 - len("@example.com"))
     response = client.patch(
         "/admin/account/email",
         headers=auth_headers,
@@ -166,7 +166,7 @@ def test_validation_error_current_email_max_length(client, auth_headers):
 
 # 新しいメールアドレス最大文字数バリデーション
 def test_validation_error_new_email_max_length(client, auth_headers):
-    local_part = "a" * Constant.MAX_USERNAME_LENGTH
+    local_part = "a" * (Constant.MAX_USERNAME_LENGTH + 1 - len("@example.com"))
     response = client.patch(
         "/admin/account/email",
         headers=auth_headers,
