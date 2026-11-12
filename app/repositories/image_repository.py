@@ -1,4 +1,4 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 from app.models.image import Image
 
@@ -12,6 +12,10 @@ class ImageRepository:
         stmt = select(Image).where(Image.image_id == id)
         return self.db.execute(stmt).scalars().first()
 
+    def find_by_image_ids(self, ids: list[int]) -> list[Image]:
+        stmt = select(Image).where(Image.image_id.in_(ids))
+        return list(self.db.execute(stmt).scalars().all())
+
     def find_by_url(self, url: str) -> Image | None:
         stmt = select(Image).where(Image.url == url)
         return self.db.execute(stmt).scalars().first()
@@ -20,11 +24,9 @@ class ImageRepository:
         stmt = select(Image.url).where(Image.post_id == id)
         return list(self.db.execute(stmt).scalars().all())
 
-    def update_post_id(self, image_id: int, post_id: int) -> None:
-        image: Image | None = self.db.query(Image).filter(Image.image_id == image_id).first()
-        if image:
-            image.post_id = post_id
-            self.db.commit()
+    def update_post_id_by_image_ids(self, image_ids: list[int], post_id: int) -> None:
+        stmt = update(Image).where(Image.image_id.in_(image_ids)).values(post_id=post_id)
+        self.db.execute(stmt)
 
     def create(self, image: Image) -> int:
         self.db.add(image)
@@ -33,6 +35,10 @@ class ImageRepository:
 
     def delete(self, image_id: int) -> None:
         stmt = delete(Image).where(Image.image_id == image_id)
+        self.db.execute(stmt)
+
+    def delete_by_image_ids(self, ids: list[int]) -> None:
+        stmt = delete(Image).where(Image.image_id.in_(ids))
         self.db.execute(stmt)
 
     def delete_from_post_id(self, post_id: int) -> None:

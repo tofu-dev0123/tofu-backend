@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 from botocore.exceptions import ClientError
-from app.infra.storage.s3 import S3, S3Config
+from app.infra.storage.s3 import S3, S3Config, S3_DELETE_OBJECTS_MAX_KEYS
 
 
 def _config(**overrides: Any) -> S3Config:
@@ -152,6 +152,57 @@ def test_delete_object():
     s3.delete_object("images/a.png")
 
     client.delete_object.assert_called_once_with(Bucket="bucket", Key="images/a.png")
+
+
+def test_delete_objects():
+    client = MagicMock()
+    client.delete_objects.return_value = {}
+    s3 = S3(config=_config(), client=client)
+
+    failed = s3.delete_objects(["images/a.png", "images/b.png"])
+
+    assert failed == []
+    client.delete_objects.assert_called_once_with(
+        Bucket="bucket",
+        Delete={
+            "Objects": [{"Key": "images/a.png"}, {"Key": "images/b.png"}],
+            "Quiet": True,
+        },
+    )
+
+
+def test_delete_objects_returns_failed_keys():
+    client = MagicMock()
+    client.delete_objects.return_value = {
+        "Errors": [{"Key": "images/b.png", "Code": "AccessDenied", "Message": ""}]
+    }
+    s3 = S3(config=_config(), client=client)
+
+    failed = s3.delete_objects(["images/a.png", "images/b.png"])
+
+    assert failed == ["images/b.png"]
+
+
+def test_delete_objects_splits_by_max_keys():
+    client = MagicMock()
+    client.delete_objects.return_value = {}
+    s3 = S3(config=_config(), client=client)
+    keys = [f"images/{i}.png" for i in range(S3_DELETE_OBJECTS_MAX_KEYS + 1)]
+
+    s3.delete_objects(keys)
+
+    assert client.delete_objects.call_count == 2
+    first, second = client.delete_objects.call_args_list
+    assert len(first.kwargs["Delete"]["Objects"]) == S3_DELETE_OBJECTS_MAX_KEYS
+    assert second.kwargs["Delete"]["Objects"] == [{"Key": keys[-1]}]
+
+
+def test_delete_objects_empty_keys():
+    client = MagicMock()
+    s3 = S3(config=_config(), client=client)
+
+    assert s3.delete_objects([]) == []
+    client.delete_objects.assert_not_called()
 
 
 def test_exists_true():

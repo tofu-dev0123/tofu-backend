@@ -15,15 +15,57 @@ def test_create_and_find(db):
     assert repo.find_by_url("https://cdn/none.png") is None
 
 
-def test_update_post_id_and_find_url_by_post_id(db, make_post):
+def test_update_post_id_by_image_ids_and_find_url_by_post_id(db, make_post):
     repo = ImageRepository(db)
     post = make_post("slug")
     a = repo.create(Image(url="https://cdn/a.png"))
-    repo.create(Image(url="https://cdn/b.png"))
+    b = repo.create(Image(url="https://cdn/b.png"))
+    repo.create(Image(url="https://cdn/c.png"))
 
-    repo.update_post_id(a, post.post_id)
+    # 存在しない ID が混ざっていてもエラーにならない
+    repo.update_post_id_by_image_ids([a, b, b + 100], post.post_id)
 
-    assert repo.find_url_by_post_id(post.post_id) == ["https://cdn/a.png"]
+    assert sorted(repo.find_url_by_post_id(post.post_id)) == [
+        "https://cdn/a.png",
+        "https://cdn/b.png",
+    ]
+
+
+# リポジトリ内で commit しない（呼び出し元の rollback で取り消される）
+def test_update_post_id_by_image_ids_does_not_commit(db, make_post):
+    repo = ImageRepository(db)
+    post = make_post("slug")
+    image_id = repo.create(Image(url="https://cdn/a.png"))
+    db.commit()
+
+    repo.update_post_id_by_image_ids([image_id], post.post_id)
+    db.rollback()
+
+    assert repo.find_url_by_post_id(post.post_id) == []
+
+
+def test_find_by_image_ids(db):
+    repo = ImageRepository(db)
+    a = repo.create(Image(url="https://cdn/a.png"))
+    b = repo.create(Image(url="https://cdn/b.png"))
+    repo.create(Image(url="https://cdn/c.png"))
+
+    result = repo.find_by_image_ids([a, b, b + 100])
+
+    assert sorted(image.image_id for image in result) == [a, b]
+    assert repo.find_by_image_ids([]) == []
+
+
+def test_delete_by_image_ids(db):
+    repo = ImageRepository(db)
+    a = repo.create(Image(url="https://cdn/a.png"))
+    b = repo.create(Image(url="https://cdn/b.png"))
+    other = repo.create(Image(url="https://cdn/c.png"))
+
+    repo.delete_by_image_ids([a, b])
+
+    assert repo.find_by_image_ids([a, b]) == []
+    assert repo.find_by_image_id(other) is not None
 
 
 def test_delete(db):

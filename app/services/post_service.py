@@ -157,11 +157,10 @@ class PostService:
     """
 
     def check_image_list(self, images: list[int]) -> None:
-        for id in images:
-            image_data = self.image_repo.find_by_image_id(id)
+        found_ids = {image.image_id for image in self.image_repo.find_by_image_ids(images)}
 
-            if image_data is None:
-                raise ImageNotExistError()
+        if not set(images) <= found_ids:
+            raise ImageNotExistError()
 
     """
     タイトルからスラグを生成する
@@ -244,8 +243,7 @@ class PostService:
     """
 
     def attach_post_id_to_image(self, images: list[int], post_id: int) -> None:
-        for id in images:
-            self.image_repo.update_post_id(id, post_id)
+        self.image_repo.update_post_id_by_image_ids(images, post_id)
 
     """
     記事の登録処理をする
@@ -335,6 +333,28 @@ class PostService:
             raise S3FileDeleteError()
 
     """
+    複数の画像をまとめて削除する
+    """
+
+    def delete_images_from_s3(self, urls: list[str]) -> None:
+        if not urls:
+            return
+
+        try:
+            object_keys = [self.s3.extract_key_from_url(url) for url in urls]
+            failed_keys = self.s3.delete_objects(object_keys)
+        except (ClientError, BotoCoreError):
+            logger.exception("S3 delete failed")
+            raise S3FileDeleteError()
+
+        if failed_keys:
+            logger.error(
+                "S3 delete failed",
+                extra={"failed_count": len(failed_keys), "total_count": len(object_keys)},
+            )
+            raise S3FileDeleteError()
+
+    """
     サムネイルの更新処理を行う
     """
 
@@ -376,8 +396,13 @@ class PostService:
     """
 
     def extract_delete_images(self, post_id: int, images: list[int]) -> None:
-        for id in images:
-            image = self.image_repo.find_by_image_id(id)
+        # 重複を除いた ID をリクエスト順に並べる
+        image_ids = list(dict.fromkeys(images))
+        image_map = {image.image_id: image for image in self.image_repo.find_by_image_ids(image_ids)}
+
+        # 全件をチェックしてから削除する（エラー時に一部だけ削除されないようにする）
+        for id in image_ids:
+            image = image_map.get(id)
 
             if not image:
                 raise ImageNotExistError()
@@ -388,9 +413,9 @@ class PostService:
                     code=ErrorCode.INVALID_IMAGE_OWNER,
                 )
 
-            self.delete_image_from_s3(image.url)
+        self.delete_images_from_s3([image_map[id].url for id in image_ids])
 
-            self.image_repo.delete(id)
+        self.image_repo.delete_by_image_ids(image_ids)
 
     """
     タグの更新処理をする
@@ -485,8 +510,7 @@ class PostService:
     def delete_image_from_post_id(self, post_id: int) -> None:
         image_urls = self.image_repo.find_url_by_post_id(post_id)
 
-        for url in image_urls:
-            self.delete_image_from_s3(url)
+        self.delete_images_from_s3(image_urls)
 
     """
     記事の削除処理をする
