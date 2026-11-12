@@ -100,6 +100,9 @@ class ErrorMessage:
     LINK_URL_MAX_LENGTH = (
         f"リンクURLは{Constant.MAX_LINK_URL_LENGTH}文字以内で入力してください"
     )
+    GITHUB_URL_MAX_LENGTH = (
+        f"GitHubリンクURLは{Constant.MAX_LINK_URL_LENGTH}文字以内で入力してください"
+    )
     PRODUCT_ID_REQUIRED = "プロダクトIDは必須項目です"
     MIN_PRODUCT_ID = f"プロダクトIDは{Constant.MIN_PRODUCT_ID}以上の整数で指定してください"
 
