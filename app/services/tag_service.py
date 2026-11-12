@@ -30,10 +30,13 @@ class TagService:
         if not tags:
             return id_list
 
-        for tag_name in tags:
-            id = self.tag_repo.find_id_by_name(tag_name)
+        # 既存タグのIDをまとめて取得する
+        existing_ids = self.tag_repo.find_ids_by_names(tags)
 
-            # DBからidを取得できたらそのidを使う
+        for tag_name in tags:
+            id = existing_ids.get(tag_name)
+
+            # 既存タグ（同一リクエスト内で作成済みのものを含む）ならそのidを使う
             if id:
                 id_list.append(id)
                 continue
@@ -51,6 +54,7 @@ class TagService:
             if base_slug not in existing_slugs:
                 new_id = self.tag_repo.create(tag_name, base_slug)
                 logger.debug("tag created", extra={"tag_id": new_id})
+                existing_ids[tag_name] = new_id
                 id_list.append(new_id)
                 continue
 
@@ -59,6 +63,7 @@ class TagService:
             new_id = self.tag_repo.create(tag_name, tag_slug)
             logger.debug("tag created", extra={"tag_id": new_id})
 
+            existing_ids[tag_name] = new_id
             id_list.append(new_id)
 
         return id_list
