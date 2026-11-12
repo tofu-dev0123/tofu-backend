@@ -478,7 +478,7 @@ def test_update_thumbnail_flag_false_new_url(post_service):
 
 
 # extract_delete_images: 正常系（SELECT・DELETE は 1 回ずつ）
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_extract_delete_images_success(mock_delete, post_service):
     post_service.image_repo.find_by_image_ids.return_value = [
         _mock_image(10, post_id=1),
@@ -490,11 +490,13 @@ def test_extract_delete_images_success(mock_delete, post_service):
     assert result is None
     post_service.image_repo.find_by_image_ids.assert_called_once_with([10, 20])
     post_service.image_repo.delete_by_image_ids.assert_called_once_with([10, 20])
-    assert mock_delete.call_count == 2
+    mock_delete.assert_called_once_with(
+        ["https://example.com/img10.png", "https://example.com/img20.png"]
+    )
 
 
 # extract_delete_images: 重複 ID は 1 件として扱う
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_extract_delete_images_with_duplicate_ids(mock_delete, post_service):
     post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=1)]
 
@@ -502,7 +504,7 @@ def test_extract_delete_images_with_duplicate_ids(mock_delete, post_service):
 
     post_service.image_repo.find_by_image_ids.assert_called_once_with([10])
     post_service.image_repo.delete_by_image_ids.assert_called_once_with([10])
-    assert mock_delete.call_count == 1
+    mock_delete.assert_called_once_with(["https://example.com/img10.png"])
 
 
 # extract_delete_images: 画像が存在しない
@@ -529,7 +531,7 @@ def test_extract_delete_images_invalid_owner(post_service):
 
 
 # extract_delete_images: エラー時は先に正常な画像があっても S3・DB とも削除しない
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_extract_delete_images_no_side_effect_on_error(mock_delete, post_service):
     post_service.image_repo.find_by_image_ids.return_value = [_mock_image(10, post_id=1)]
 
@@ -825,26 +827,24 @@ def test_delete_thumbnail_no_thumbnail(post_service):
     post_service.post_repo.find_thumbnail_url_by_post_id.assert_called_once_with(1)
 
 
-# delete_image_from_post_id: 正常系（画像URLが複数ある場合）
-@patch("app.services.post_service.PostService.delete_image_from_s3")
+# delete_image_from_post_id: 正常系（画像URLが複数ある場合はまとめて削除する）
+@patch("app.services.post_service.PostService.delete_images_from_s3")
 def test_delete_image_from_post_id_success(mock_delete, post_service):
-    post_service.image_repo.find_url_by_post_id.return_value = [
+    urls = [
         "https://example.com/img1.png",
         "https://example.com/img2.png",
         "https://example.com/img3.png",
     ]
+    post_service.image_repo.find_url_by_post_id.return_value = urls
 
     result = post_service.delete_image_from_post_id(1)
 
     assert result is None
     post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
-    assert mock_delete.call_count == 3
-    mock_delete.assert_any_call("https://example.com/img1.png")
-    mock_delete.assert_any_call("https://example.com/img2.png")
-    mock_delete.assert_any_call("https://example.com/img3.png")
+    mock_delete.assert_called_once_with(urls)
 
 
-# delete_image_from_post_id: 正常系（画像URLが空の場合）
+# delete_image_from_post_id: 正常系（画像URLが空の場合は S3 を呼ばない）
 def test_delete_image_from_post_id_empty_list(post_service):
     post_service.image_repo.find_url_by_post_id.return_value = []
 
@@ -852,6 +852,45 @@ def test_delete_image_from_post_id_empty_list(post_service):
 
     assert result is None
     post_service.image_repo.find_url_by_post_id.assert_called_once_with(1)
+    post_service.s3.delete_objects.assert_not_called()
+
+
+# delete_images_from_s3: 正常系（1 回の delete_objects でまとめて削除する）
+def test_delete_images_from_s3_success(post_service):
+    post_service.s3.extract_key_from_url.side_effect = ["key1", "key2"]
+    post_service.s3.delete_objects.return_value = []
+
+    result = post_service.delete_images_from_s3(
+        ["https://example.com/img1.png", "https://example.com/img2.png"]
+    )
+
+    assert result is None
+    post_service.s3.delete_objects.assert_called_once_with(["key1", "key2"])
+
+
+# delete_images_from_s3: 一部のキーの削除に失敗した場合
+def test_delete_images_from_s3_partial_failure(post_service, caplog):
+    post_service.s3.extract_key_from_url.side_effect = ["key1", "key2"]
+    post_service.s3.delete_objects.return_value = ["key2"]
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(
+            ["https://example.com/img1.png", "https://example.com/img2.png"]
+        )
+
+    assert any(
+        r.levelname == "ERROR" and r.getMessage() == "S3 delete failed"
+        for r in caplog.records
+    )
+
+
+# delete_images_from_s3: ClientError が発生した場合
+def test_delete_images_from_s3_client_error(post_service):
+    post_service.s3.extract_key_from_url.return_value = "key1"
+    post_service.s3.delete_objects.side_effect = ClientError({}, "DeleteObjects")
+
+    with pytest.raises(S3FileDeleteError):
+        post_service.delete_images_from_s3(["https://example.com/img1.png"])
 
 
 # delete_all: 正常系

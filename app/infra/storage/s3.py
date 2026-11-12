@@ -12,6 +12,9 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
+# delete_objects で 1 リクエストに指定できるキー数の上限
+S3_DELETE_OBJECTS_MAX_KEYS = 1000
+
 
 @dataclass(frozen=True)
 class S3Config:
@@ -102,6 +105,28 @@ class S3:
             Bucket=self.config.bucket_name,
             Key=key,
         )
+
+    def delete_objects(self, keys: list[str]) -> list[str]:
+        """
+        複数オブジェクトをまとめて削除し、削除に失敗したキーを返す。
+        delete_objects はキー単位の失敗を例外ではなくレスポンスの Errors で返す。
+        """
+        if not keys:
+            return []
+
+        s3 = self.get_s3_client()
+        failed_keys: list[str] = []
+
+        # 1 リクエストあたりのキー数上限ごとに分割する
+        for i in range(0, len(keys), S3_DELETE_OBJECTS_MAX_KEYS):
+            chunk = keys[i : i + S3_DELETE_OBJECTS_MAX_KEYS]
+            response = s3.delete_objects(
+                Bucket=self.config.bucket_name,
+                Delete={"Objects": [{"Key": key} for key in chunk], "Quiet": True},
+            )
+            failed_keys.extend(error["Key"] for error in response.get("Errors", []))
+
+        return failed_keys
 
     def build_unique_key(self, filename: str) -> str:
         today = self.now()

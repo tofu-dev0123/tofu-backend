@@ -333,6 +333,28 @@ class PostService:
             raise S3FileDeleteError()
 
     """
+    複数の画像をまとめて削除する
+    """
+
+    def delete_images_from_s3(self, urls: list[str]) -> None:
+        if not urls:
+            return
+
+        try:
+            object_keys = [self.s3.extract_key_from_url(url) for url in urls]
+            failed_keys = self.s3.delete_objects(object_keys)
+        except (ClientError, BotoCoreError):
+            logger.exception("S3 delete failed")
+            raise S3FileDeleteError()
+
+        if failed_keys:
+            logger.error(
+                "S3 delete failed",
+                extra={"failed_count": len(failed_keys), "total_count": len(object_keys)},
+            )
+            raise S3FileDeleteError()
+
+    """
     サムネイルの更新処理を行う
     """
 
@@ -391,8 +413,7 @@ class PostService:
                     code=ErrorCode.INVALID_IMAGE_OWNER,
                 )
 
-        for id in image_ids:
-            self.delete_image_from_s3(image_map[id].url)
+        self.delete_images_from_s3([image_map[id].url for id in image_ids])
 
         self.image_repo.delete_by_image_ids(image_ids)
 
@@ -489,8 +510,7 @@ class PostService:
     def delete_image_from_post_id(self, post_id: int) -> None:
         image_urls = self.image_repo.find_url_by_post_id(post_id)
 
-        for url in image_urls:
-            self.delete_image_from_s3(url)
+        self.delete_images_from_s3(image_urls)
 
     """
     記事の削除処理をする
